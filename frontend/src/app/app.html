@@ -1,0 +1,29 @@
+<p-toolbar class="border-0 rounded-none">
+  <div class="p-toolbar-group-start gap-2 flex items-center">
+    <img
+      src="assets/logo.svg"
+      alt="Logo"
+      class="h-6 w-6"
+      onerror="this.style.display='none'"
+    />
+    <a routerLink="/" class="font-semibold">Supply Chain</a>
+  </div>
+  <div class="p-toolbar-group-end flex gap-3">
+    <a routerLink="/" class="hover:underline">Home</a>
+    <a routerLink="/demo" class="hover:underline">Demo</a>
+    @if (auth.isAuthenticated()) {
+    <button
+      pButton
+      size="small"
+      label="Logout"
+      (click)="auth.logout()"
+    ></button>
+    } @else {
+    <a routerLink="/login" class="hover:underline">Login</a>
+    }
+  </div>
+</p-toolbar>
+
+<main class="p-4">
+  <router-outlet />
+</main>

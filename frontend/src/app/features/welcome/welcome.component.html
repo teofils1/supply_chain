@@ -1,0 +1,47 @@
+<div class="min-h-screen flex items-center justify-center bg-surface-50 p-6">
+  <p-card class="max-w-xl w-full shadow-sm">
+    <ng-template pTemplate="header">
+      <div class="flex items-center gap-3">
+        <img
+          src="assets/logo.svg"
+          alt="Logo"
+          class="h-8 w-8"
+          onerror="this.style.display='none'"
+        />
+        <h1 class="text-2xl font-semibold">Supply Chain Tracking</h1>
+      </div>
+    </ng-template>
+
+    <div class="prose dark:prose-invert max-w-none">
+      <p class="mt-2 text-muted-color">
+        Welcome! This app uses Angular 20, PrimeNG, and Tailwind CSS. Use the
+        button below to explore UI components.
+      </p>
+    </div>
+
+    <div class="mt-6 flex gap-3">
+      <a
+        pButton
+        pRipple
+        routerLink="/demo"
+        label="View Button Demo"
+        class="p-button-rounded"
+      ></a>
+      <a
+        pButton
+        pRipple
+        href="https://angular.dev"
+        target="_blank"
+        rel="noreferrer"
+        label="Angular Docs"
+        class="p-button-outlined"
+      ></a>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <div class="text-xs text-muted-color">
+        Angular 20 • PrimeNG 20 • Tailwind CSS 4
+      </div>
+    </ng-template>
+  </p-card>
+</div>
