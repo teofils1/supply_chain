@@ -1,0 +1,85 @@
+{
+  "app": {
+    "title": "Supply Chain",
+    "toggleDrawer": "Toggle drawer"
+  },
+  "nav": {
+    "navigate": "Navigate",
+    "home": "Home",
+    "products": "Products",
+    "batches": "Batches",
+    "packs": "Packs",
+    "shipments": "Shipments",
+    "events": "Events",
+    "trace": "Trace",
+    "devices": "Devices",
+    "excursions": "Excursions",
+    "dashboard": "User Dashboard"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "user": {
+    "menu": "User",
+    "dashboard": "Dashboard",
+    "language": "Language",
+    "logout": "Logout",
+    "lang": {
+      "en": "English",
+      "ro": "Romanian"
+    }
+  },
+  "welcome": {
+    "headline": "Supply Chain Tracking",
+    "intro": "Welcome! This app uses Angular 20, PrimeNG, and Tailwind CSS.",
+    "viewDemo": "View Button Demo",
+    "angularDocs": "Angular Docs",
+    "footer": "Angular 20 • PrimeNG 20 • Tailwind CSS 4"
+  },
+  "login": {
+    "title": "Sign in",
+    "username": "Username",
+    "password": "Password",
+    "submit": "Login",
+    "invalid": "Invalid credentials"
+  },
+  "pages": {
+    "products": {
+      "title": "Products",
+      "empty": "Products list coming soon."
+    },
+    "batches": {
+      "title": "Batches",
+      "empty": "Batches list coming soon."
+    },
+    "packs": {
+      "title": "Packs",
+      "empty": "Pack search and aggregation coming soon."
+    },
+    "shipments": {
+      "title": "Shipments",
+      "empty": "Shipments list and wizard coming soon."
+    },
+    "events": {
+      "title": "Events",
+      "empty": "Timeline and filters coming soon."
+    },
+    "trace": {
+      "title": "Trace",
+      "empty": "Chain of custody and telemetry overlays coming soon."
+    },
+    "devices": {
+      "title": "Devices",
+      "empty": "Device registration and status coming in P2."
+    },
+    "excursions": {
+      "title": "Excursions",
+      "empty": "Triage board coming in P2."
+    },
+    "dashboard": {
+      "title": "User Dashboard",
+      "empty": "Welcome to your dashboard."
+    }
+  }
+}

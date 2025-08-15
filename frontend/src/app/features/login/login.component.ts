@@ -7,6 +7,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { RippleModule } from 'primeng/ripple';
 import { AuthService } from '../../shared/auth.service';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-login',
@@ -18,12 +19,14 @@ import { AuthService } from '../../shared/auth.service';
     InputTextModule,
     PasswordModule,
     RippleModule,
+    TranslateModule,
   ],
   templateUrl: './login.component.html',
 })
 export class LoginComponent {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private i18n = inject(TranslateService);
 
   username = '';
   password = '';
@@ -45,7 +48,9 @@ export class LoginComponent {
         this.router.navigateByUrl('/');
       },
       error: (err) => {
-        this.error.set(err?.error?.detail || 'Invalid credentials');
+        this.error.set(
+          err?.error?.detail || this.i18n.instant('login.invalid')
+        );
       },
       complete: () => this.loading.set(false),
     });

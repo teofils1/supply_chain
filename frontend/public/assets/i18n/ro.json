@@ -1,0 +1,85 @@
+{
+  "app": {
+    "title": "Lanț de aprovizionare",
+    "toggleDrawer": "Comută panoul"
+  },
+  "nav": {
+    "navigate": "Navigare",
+    "home": "Acasă",
+    "products": "Produse",
+    "batches": "Loturi",
+    "packs": "Pachete",
+    "shipments": "Expedieri",
+    "events": "Evenimente",
+    "trace": "Trasabilitate",
+    "devices": "Dispozitive",
+    "excursions": "Excursii de temperatură",
+    "dashboard": "Panou utilizator"
+  },
+  "auth": {
+    "login": "Autentificare",
+    "logout": "Deconectare"
+  },
+  "user": {
+    "menu": "Utilizator",
+    "dashboard": "Panou",
+    "language": "Limbă",
+    "logout": "Deconectare",
+    "lang": {
+      "en": "Engleză",
+      "ro": "Română"
+    }
+  },
+  "welcome": {
+    "headline": "Urmărirea lanțului de aprovizionare",
+    "intro": "Bine ai venit! Această aplicație folosește Angular 20, PrimeNG și Tailwind CSS.",
+    "viewDemo": "Vezi demo butoane",
+    "angularDocs": "Documentație Angular",
+    "footer": "Angular 20 • PrimeNG 20 • Tailwind CSS 4"
+  },
+  "login": {
+    "title": "Autentificare",
+    "username": "Utilizator",
+    "password": "Parolă",
+    "submit": "Autentificare",
+    "invalid": "Date de autentificare invalide"
+  },
+  "pages": {
+    "products": {
+      "title": "Produse",
+      "empty": "Lista de produse în curând."
+    },
+    "batches": {
+      "title": "Loturi",
+      "empty": "Lista de loturi în curând."
+    },
+    "packs": {
+      "title": "Pachete",
+      "empty": "Căutare pachete și agregare în curând."
+    },
+    "shipments": {
+      "title": "Expedieri",
+      "empty": "Lista de expedieri și asistent în curând."
+    },
+    "events": {
+      "title": "Evenimente",
+      "empty": "Cronologie și filtre în curând."
+    },
+    "trace": {
+      "title": "Trasabilitate",
+      "empty": "Lanț de custodie și suprapuneri telemetrie în curând."
+    },
+    "devices": {
+      "title": "Dispozitive",
+      "empty": "Înregistrare dispozitive și status în P2."
+    },
+    "excursions": {
+      "title": "Excursii de temperatură",
+      "empty": "Tablou de triere în P2."
+    },
+    "dashboard": {
+      "title": "Panou utilizator",
+      "empty": "Bun venit în panoul tău."
+    }
+  }
+}
