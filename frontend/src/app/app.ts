@@ -1,4 +1,5 @@
 import { Component, signal, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import {
   Router,
   RouterLink,
@@ -7,7 +8,7 @@ import {
 } from '@angular/router';
 import { ToolbarModule } from 'primeng/toolbar';
 import { ButtonModule } from 'primeng/button';
-import { MenuModule } from 'primeng/menu';
+import { TieredMenuModule } from 'primeng/tieredmenu';
 import { MenuItem } from 'primeng/api';
 import { AuthService } from './shared/auth.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -16,12 +17,13 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
   selector: 'app-root',
   standalone: true,
   imports: [
+    CommonModule,
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
     ToolbarModule,
     ButtonModule,
-    MenuModule,
+    TieredMenuModule,
     TranslateModule,
   ],
   templateUrl: './app.html',
@@ -68,6 +70,15 @@ export class App {
     this.translate.use(saved);
     this.buildUserMenu();
     this.translate.onLangChange.subscribe(() => this.buildUserMenu());
+
+    // Initialize theme preference
+    const themePref = localStorage.getItem('app.theme') || 'light';
+    if (themePref === 'dark') {
+      document.documentElement.classList.add('dark');
+      this._dark.set(true);
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }
 
   private buildUserMenu() {
@@ -98,5 +109,22 @@ export class App {
         command: () => this.logout(),
       },
     ];
+  }
+
+  // Whether current route is the login page (hide sidebar & adjust layout)
+  isLoginRoute(): boolean {
+    return this.router.url.startsWith('/login');
+  }
+
+  // Theme toggling
+  private _dark = signal(false);
+  isDark() {
+    return this._dark();
+  }
+  toggleTheme() {
+    this._dark.update((v) => !v);
+    const dark = this._dark();
+    document.documentElement.classList.toggle('dark', dark);
+    localStorage.setItem('app.theme', dark ? 'dark' : 'light');
   }
 }

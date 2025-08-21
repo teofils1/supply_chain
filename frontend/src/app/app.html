@@ -1,175 +1,190 @@
-<p-toolbar class="border-0 rounded-none sticky top-0 z-20 w-full">
+<div class="h-screen flex flex-col overflow-hidden">
+  <p-toolbar class="border-0 rounded-none w-full shrink-0">
   <div class="p-toolbar-group-start gap-2 flex items-center">
-    <button
-      pButton
-      pRipple
-      class="p-button-text"
-      (click)="toggleDrawer()"
-      [attr.title]="'app.toggleDrawer' | translate"
-    >
-      <span class="pi pi-bars"></span>
-    </button>
-    <img
-      src="assets/logo.svg"
-      alt="Logo"
-      class="h-6 w-6"
-      onerror="this.style.display='none'"
-    />
-    <a routerLink="/" class="font-semibold">{{ "app.title" | translate }}</a>
-  </div>
-  <div class="p-toolbar-group-end flex items-center gap-3 ml-auto">
-    @if (!auth.isAuthenticated()) {
-    <a routerLink="/login" class="hover:underline">{{
-      "auth.login" | translate
-    }}</a>
-    } @else {
-    <button
-      pButton
-      pRipple
-      class="p-button-text"
-      (click)="userMenu.toggle($event)"
-    >
-      {{ "user.menu" | translate }} ▾
-    </button>
-    }
-  </div>
-  <p-menu #userMenu [popup]="true" [model]="userMenuModel"></p-menu>
-</p-toolbar>
-
-<div class="min-h-[calc(100vh-3rem)] flex">
-  <aside
-    class="shrink-0 border-r transition-all duration-200"
-    [class.w-72]="isExpanded"
-    [class.w-16]="!isExpanded"
-    (mouseenter)="hovering.set(true)"
-    (mouseleave)="hovering.set(false)"
-  >
-    <div class="p-4">
-      <nav class="flex flex-col gap-1">
-        <a
-          routerLink="/"
-          routerLinkActive="font-semibold"
-          class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
+      @if (!isLoginRoute()) {
+        <button
+          pButton
+          pRipple
+          class="p-button-text"
+          (click)="toggleDrawer()"
+          [attr.title]="'app.toggleDrawer' | translate"
         >
-          <span
-            class="pi pi-home w-5 text-center text-surface-900 dark:text-white"
-          ></span>
-          <span class="truncate" [class.hidden]="!isExpanded">{{
-            "nav.home" | translate
-          }}</span>
-        </a>
-        <a
-          routerLink="/products"
-          routerLinkActive="font-semibold"
-          class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
-        >
-          <span
-            class="pi pi-list w-5 text-center text-surface-900 dark:text-white"
-          ></span>
-          <span class="truncate" [class.hidden]="!isExpanded">{{
-            "nav.products" | translate
-          }}</span>
-        </a>
-        <a
-          routerLink="/batches"
-          routerLinkActive="font-semibold"
-          class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
-        >
-          <span
-            class="pi pi-box w-5 text-center text-surface-900 dark:text-white"
-          ></span>
-          <span class="truncate" [class.hidden]="!isExpanded">{{
-            "nav.batches" | translate
-          }}</span>
-        </a>
-        <a
-          routerLink="/packs"
-          routerLinkActive="font-semibold"
-          class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
-        >
-          <span
-            class="pi pi-th-large w-5 text-center text-surface-900 dark:text-white"
-          ></span>
-          <span class="truncate" [class.hidden]="!isExpanded">{{
-            "nav.packs" | translate
-          }}</span>
-        </a>
-        <a
-          routerLink="/shipments"
-          routerLinkActive="font-semibold"
-          class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
-        >
-          <span
-            class="pi pi-truck w-5 text-center text-surface-900 dark:text-white"
-          ></span>
-          <span class="truncate" [class.hidden]="!isExpanded">{{
-            "nav.shipments" | translate
-          }}</span>
-        </a>
-        <a
-          routerLink="/events"
-          routerLinkActive="font-semibold"
-          class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
-        >
-          <span
-            class="pi pi-calendar w-5 text-center text-surface-900 dark:text-white"
-          ></span>
-          <span class="truncate" [class.hidden]="!isExpanded">{{
-            "nav.events" | translate
-          }}</span>
-        </a>
-        <a
-          routerLink="/trace/DEMO123"
-          routerLinkActive="font-semibold"
-          class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
-        >
-          <span
-            class="pi pi-link w-5 text-center text-surface-900 dark:text-white"
-          ></span>
-          <span class="truncate" [class.hidden]="!isExpanded">{{
-            "nav.trace" | translate
-          }}</span>
-        </a>
-        <a
-          routerLink="/devices"
-          routerLinkActive="font-semibold"
-          class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
-        >
-          <span
-            class="pi pi-tablet w-5 text-center text-surface-900 dark:text-white"
-          ></span>
-          <span class="truncate" [class.hidden]="!isExpanded">{{
-            "nav.devices" | translate
-          }}</span>
-        </a>
-        <a
-          routerLink="/excursions"
-          routerLinkActive="font-semibold"
-          class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
-        >
-          <span
-            class="pi pi-exclamation-triangle w-5 text-center text-surface-900 dark:text-white"
-          ></span>
-          <span class="truncate" [class.hidden]="!isExpanded">{{
-            "nav.excursions" | translate
-          }}</span>
-        </a>
-        <a
-          routerLink="/dashboard"
-          routerLinkActive="font-semibold"
-          class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
-        >
-          <span
-            class="pi pi-user w-5 text-center text-surface-900 dark:text-white"
-          ></span>
-          <span class="truncate" [class.hidden]="!isExpanded">{{
-            "nav.dashboard" | translate
-          }}</span>
-        </a>
-      </nav>
+          <span class="pi pi-bars"></span>
+        </button>
+      }
+      <img
+        src="assets/logo.svg"
+        alt="Logo"
+        class="h-6 w-6"
+        onerror="this.style.display='none'"
+      />
+      <a routerLink="/" class="font-semibold">{{ "app.title" | translate }}</a>
     </div>
-  </aside>
-  <main class="flex-1 p-4">
-    <router-outlet />
-  </main>
+    <div class="p-toolbar-group-end flex items-center gap-3 ml-auto">
+      <button
+        pButton
+        pRipple
+        class="p-button-text"
+        (click)="toggleTheme()"
+        [attr.title]="isDark() ? ('theme.light' | translate) : ('theme.dark' | translate)"
+      >
+        <span class="pi" [ngClass]="isDark() ? 'pi-sun' : 'pi-moon'"></span>
+      </button>
+      @if (!auth.isAuthenticated()) {
+      <a routerLink="/login" class="hover:underline">{{
+        "auth.login" | translate
+      }}</a>
+      } @else {
+      <button
+        pButton
+        pRipple
+        class="p-button-text"
+        (click)="userMenu.toggle($event)"
+      >
+        {{ "user.menu" | translate }} ▾
+      </button>
+      }
+    </div>
+  <p-tieredmenu #userMenu [popup]="true" [model]="userMenuModel"></p-tieredmenu>
+  </p-toolbar>
+
+  <div class="flex flex-1 overflow-hidden">
+    @if (!isLoginRoute()) {
+      <aside
+        class="shrink-0 border-r transition-all duration-200 h-full flex flex-col overflow-hidden"
+        [class.w-72]="isExpanded"
+        [class.w-16]="!isExpanded"
+        (mouseenter)="hovering.set(true)"
+        (mouseleave)="hovering.set(false)"
+      >
+        <div class="p-4 overflow-y-auto">
+          <nav class="flex flex-col gap-1">
+          <a
+            routerLink="/"
+            routerLinkActive="font-semibold"
+            class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
+          >
+            <span
+              class="pi pi-home w-5 text-center text-black dark:text-white"
+            ></span>
+            <span class="truncate" [class.hidden]="!isExpanded">{{
+              "nav.home" | translate
+            }}</span>
+          </a>
+          <a
+            routerLink="/products"
+            routerLinkActive="font-semibold"
+            class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
+          >
+            <span
+              class="pi pi-list w-5 text-center text-surface-900 dark:text-white"
+            ></span>
+            <span class="truncate" [class.hidden]="!isExpanded">{{
+              "nav.products" | translate
+            }}</span>
+          </a>
+          <a
+            routerLink="/batches"
+            routerLinkActive="font-semibold"
+            class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
+          >
+            <span
+              class="pi pi-box w-5 text-center text-surface-900 dark:text-white"
+            ></span>
+            <span class="truncate" [class.hidden]="!isExpanded">{{
+              "nav.batches" | translate
+            }}</span>
+          </a>
+          <a
+            routerLink="/packs"
+            routerLinkActive="font-semibold"
+            class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
+          >
+            <span
+              class="pi pi-th-large w-5 text-center text-surface-900 dark:text-white"
+            ></span>
+            <span class="truncate" [class.hidden]="!isExpanded">{{
+              "nav.packs" | translate
+            }}</span>
+          </a>
+          <a
+            routerLink="/shipments"
+            routerLinkActive="font-semibold"
+            class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
+          >
+            <span
+              class="pi pi-truck w-5 text-center text-surface-900 dark:text-white"
+            ></span>
+            <span class="truncate" [class.hidden]="!isExpanded">{{
+              "nav.shipments" | translate
+            }}</span>
+          </a>
+          <a
+            routerLink="/events"
+            routerLinkActive="font-semibold"
+            class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
+          >
+            <span
+              class="pi pi-calendar w-5 text-center text-surface-900 dark:text-white"
+            ></span>
+            <span class="truncate" [class.hidden]="!isExpanded">{{
+              "nav.events" | translate
+            }}</span>
+          </a>
+          <a
+            routerLink="/trace/DEMO123"
+            routerLinkActive="font-semibold"
+            class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
+          >
+            <span
+              class="pi pi-link w-5 text-center text-surface-900 dark:text-white"
+            ></span>
+            <span class="truncate" [class.hidden]="!isExpanded">{{
+              "nav.trace" | translate
+            }}</span>
+          </a>
+          <a
+            routerLink="/devices"
+            routerLinkActive="font-semibold"
+            class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
+          >
+            <span
+              class="pi pi-tablet w-5 text-center text-surface-900 dark:text-white"
+            ></span>
+            <span class="truncate" [class.hidden]="!isExpanded">{{
+              "nav.devices" | translate
+            }}</span>
+          </a>
+          <a
+            routerLink="/excursions"
+            routerLinkActive="font-semibold"
+            class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
+          >
+            <span
+              class="pi pi-exclamation-triangle w-5 text-center text-surface-900 dark:text-white"
+            ></span>
+            <span class="truncate" [class.hidden]="!isExpanded">{{
+              "nav.excursions" | translate
+            }}</span>
+          </a>
+          <a
+            routerLink="/dashboard"
+            routerLinkActive="font-semibold"
+            class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
+          >
+            <span
+              class="pi pi-user w-5 text-center text-surface-900 dark:text-white"
+            ></span>
+            <span class="truncate" [class.hidden]="!isExpanded">{{
+              "nav.dashboard" | translate
+            }}</span>
+          </a>
+          </nav>
+        </div>
+      </aside>
+    }
+    <main class="flex-1 overflow-auto" [ngClass]="{ 'p-0': isLoginRoute(), 'p-4': !isLoginRoute() }">
+      <router-outlet />
+    </main>
+  </div>
 </div>

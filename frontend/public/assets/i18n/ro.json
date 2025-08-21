@@ -44,6 +44,10 @@
     "submit": "Autentificare",
     "invalid": "Date de autentificare invalide"
   },
+  "theme": {
+    "dark": "Comută la modul întunecat",
+    "light": "Comută la modul luminos"
+  },
   "pages": {
     "products": {
       "title": "Produse",

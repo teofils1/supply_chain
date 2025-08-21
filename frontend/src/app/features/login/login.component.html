@@ -1,24 +1,27 @@
-<div class="min-h-screen flex items-center justify-center bg-surface-50 p-6">
+<div class="h-full flex items-center justify-center bg-surface-50 dark:bg-black transition-colors p-6">
   <p-card class="max-w-md w-full shadow-sm">
     <ng-template pTemplate="header">
       <h2 class="text-xl font-semibold">{{ "login.title" | translate }}</h2>
     </ng-template>
 
-    <form (ngSubmit)="submit()" class="flex flex-col gap-3">
+    <form (ngSubmit)="submit()" class="flex flex-col gap-3" autocomplete="on">
       <input
         pInputText
         name="username"
         [(ngModel)]="username"
         [placeholder]="'login.username' | translate"
+        autocomplete="username"
         required
       />
-      <input
-        pPassword
+      <p-password
         name="password"
         [(ngModel)]="password"
         [placeholder]="'login.password' | translate"
         [feedback]="false"
-        toggleMask="true"
+        [toggleMask]="true"
+        inputId="password"
+        autocomplete="current-password"
+        inputStyleClass="w-full"
         required
       />
 
@@ -28,6 +31,7 @@
         type="submit"
         [disabled]="loading()"
         [label]="'login.submit' | translate"
+        [icon]="loading() ? 'pi pi-spin pi-spinner' : ''"
       ></button>
 
       @if (error()) {

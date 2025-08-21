@@ -44,6 +44,10 @@
     "submit": "Login",
     "invalid": "Invalid credentials"
   },
+  "theme": {
+    "dark": "Switch to dark mode",
+    "light": "Switch to light mode"
+  },
   "pages": {
     "products": {
       "title": "Products",
