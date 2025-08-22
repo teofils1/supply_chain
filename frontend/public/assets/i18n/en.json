@@ -14,7 +14,8 @@
     "trace": "Trace",
     "devices": "Devices",
     "excursions": "Excursions",
-    "dashboard": "User Dashboard"
+    "dashboard": "User Dashboard",
+    "users": "Users"
   },
   "auth": {
     "login": "Login",
@@ -23,6 +24,7 @@
   "user": {
     "menu": "User",
     "dashboard": "Dashboard",
+    "users": "Users",
     "language": "Language",
     "logout": "Logout",
     "lang": {
@@ -84,6 +86,10 @@
     "dashboard": {
       "title": "User Dashboard",
       "empty": "Welcome to your dashboard."
+    },
+    "users": {
+      "title": "User Management",
+      "empty": "Manage platform users and roles."
     }
   }
 }

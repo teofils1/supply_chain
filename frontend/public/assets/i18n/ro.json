@@ -14,7 +14,8 @@
     "trace": "Trasabilitate",
     "devices": "Dispozitive",
     "excursions": "Excursii de temperatură",
-    "dashboard": "Panou utilizator"
+    "dashboard": "Panou utilizator",
+    "users": "Utilizatori"
   },
   "auth": {
     "login": "Autentificare",
@@ -23,6 +24,7 @@
   "user": {
     "menu": "Utilizator",
     "dashboard": "Panou",
+    "users": "Utilizatori",
     "language": "Limbă",
     "logout": "Deconectare",
     "lang": {
@@ -84,6 +86,10 @@
     "dashboard": {
       "title": "Panou utilizator",
       "empty": "Bun venit în panoul tău."
+    },
+    "users": {
+      "title": "Administrare utilizatori",
+      "empty": "Gestionează utilizatorii și rolurile platformei."
     }
   }
 }

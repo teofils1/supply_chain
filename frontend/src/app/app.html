@@ -1,16 +1,16 @@
 <div class="h-screen flex flex-col overflow-hidden">
   <p-toolbar class="border-0 rounded-none w-full shrink-0">
-  <div class="p-toolbar-group-start gap-2 flex items-center">
+    <div class="p-toolbar-group-start gap-2 flex items-center">
       @if (!isLoginRoute()) {
-        <button
-          pButton
-          pRipple
-          class="p-button-text"
-          (click)="toggleDrawer()"
-          [attr.title]="'app.toggleDrawer' | translate"
-        >
-          <span class="pi pi-bars"></span>
-        </button>
+      <button
+        pButton
+        pRipple
+        class="p-button-text"
+        (click)="toggleDrawer()"
+        [attr.title]="'app.toggleDrawer' | translate"
+      >
+        <span class="pi pi-bars"></span>
+      </button>
       }
       <img
         src="assets/logo.svg"
@@ -26,7 +26,9 @@
         pRipple
         class="p-button-text"
         (click)="toggleTheme()"
-        [attr.title]="isDark() ? ('theme.light' | translate) : ('theme.dark' | translate)"
+        [attr.title]="
+          isDark() ? ('theme.light' | translate) : ('theme.dark' | translate)
+        "
       >
         <span class="pi" [ngClass]="isDark() ? 'pi-sun' : 'pi-moon'"></span>
       </button>
@@ -45,145 +47,172 @@
       </button>
       }
     </div>
-  <p-tieredmenu #userMenu [popup]="true" [model]="userMenuModel"></p-tieredmenu>
+    <p-tieredmenu
+      #userMenu
+      [popup]="true"
+      [model]="userMenuModel"
+    ></p-tieredmenu>
   </p-toolbar>
 
   <div class="flex flex-1 overflow-hidden">
     @if (!isLoginRoute()) {
-      <aside
-        class="shrink-0 border-r transition-all duration-200 h-full flex flex-col overflow-hidden"
-        [class.w-72]="isExpanded"
-        [class.w-16]="!isExpanded"
-        (mouseenter)="hovering.set(true)"
-        (mouseleave)="hovering.set(false)"
-      >
-        <div class="p-4 overflow-y-auto">
-          <nav class="flex flex-col gap-1">
+    <aside
+      class="shrink-0 border-r transition-all duration-0 h-full flex flex-col overflow-hidden"
+      [class.w-72]="isExpanded"
+      [class.w-16]="!isExpanded"
+      (mouseenter)="hovering.set(true)"
+      (mouseleave)="hovering.set(false)"
+    >
+      <div class="p-4 overflow-y-auto">
+        <nav class="flex flex-col gap-1">
           <a
             routerLink="/"
             routerLinkActive="font-semibold"
             class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
           >
-            <span
-              class="pi pi-home w-5 text-center text-black dark:text-white"
-            ></span>
-            <span class="truncate" [class.hidden]="!isExpanded">{{
-              "nav.home" | translate
-            }}</span>
+            <div class="d-flex">
+              <span
+                class="pi pi-home w-5 text-center text-black dark:text-white"
+              ></span>
+              <span class="truncate ml-3" [class.hidden]="!isExpanded">{{
+                "nav.home" | translate
+              }}</span>
+            </div>
           </a>
           <a
             routerLink="/products"
             routerLinkActive="font-semibold"
             class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
           >
-            <span
-              class="pi pi-list w-5 text-center text-surface-900 dark:text-white"
-            ></span>
-            <span class="truncate" [class.hidden]="!isExpanded">{{
-              "nav.products" | translate
-            }}</span>
+            <div class="d-flex">
+              <span
+                class="pi pi-list w-5 text-center text-surface-900 dark:text-white"
+              ></span>
+              <span class="truncate ml-3" [class.hidden]="!isExpanded">{{
+                "nav.products" | translate
+              }}</span>
+            </div>
           </a>
           <a
             routerLink="/batches"
             routerLinkActive="font-semibold"
             class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
           >
-            <span
-              class="pi pi-box w-5 text-center text-surface-900 dark:text-white"
-            ></span>
-            <span class="truncate" [class.hidden]="!isExpanded">{{
-              "nav.batches" | translate
-            }}</span>
+            <div class="d-flex">
+              <span
+                class="pi pi-box w-5 text-center text-surface-900 dark:text-white"
+              ></span>
+              <span class="truncate ml-3" [class.hidden]="!isExpanded">{{
+                "nav.batches" | translate
+              }}</span>
+            </div>
           </a>
           <a
             routerLink="/packs"
             routerLinkActive="font-semibold"
             class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
           >
-            <span
-              class="pi pi-th-large w-5 text-center text-surface-900 dark:text-white"
-            ></span>
-            <span class="truncate" [class.hidden]="!isExpanded">{{
-              "nav.packs" | translate
-            }}</span>
+            <div class="d-flex">
+              <span
+                class="pi pi-th-large w-5 text-center text-surface-900 dark:text-white"
+              ></span>
+              <span class="truncate ml-3" [class.hidden]="!isExpanded">{{
+                "nav.packs" | translate
+              }}</span>
+            </div>
           </a>
           <a
             routerLink="/shipments"
             routerLinkActive="font-semibold"
             class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
           >
-            <span
-              class="pi pi-truck w-5 text-center text-surface-900 dark:text-white"
-            ></span>
-            <span class="truncate" [class.hidden]="!isExpanded">{{
-              "nav.shipments" | translate
-            }}</span>
+            <div class="d-flex">
+              <span
+                class="pi pi-truck w-5 text-center text-surface-900 dark:text-white"
+              ></span>
+              <span class="truncate ml-3" [class.hidden]="!isExpanded">{{
+                "nav.shipments" | translate
+              }}</span>
+            </div>
           </a>
           <a
             routerLink="/events"
             routerLinkActive="font-semibold"
             class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
           >
-            <span
-              class="pi pi-calendar w-5 text-center text-surface-900 dark:text-white"
-            ></span>
-            <span class="truncate" [class.hidden]="!isExpanded">{{
-              "nav.events" | translate
-            }}</span>
+            <div class="d-flex">
+              <span
+                class="pi pi-calendar w-5 text-center text-surface-900 dark:text-white"
+              ></span>
+              <span class="truncate ml-3" [class.hidden]="!isExpanded">{{
+                "nav.events" | translate
+              }}</span>
+            </div>
           </a>
           <a
             routerLink="/trace/DEMO123"
             routerLinkActive="font-semibold"
             class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
           >
-            <span
-              class="pi pi-link w-5 text-center text-surface-900 dark:text-white"
-            ></span>
-            <span class="truncate" [class.hidden]="!isExpanded">{{
-              "nav.trace" | translate
-            }}</span>
+            <div class="d-flex">
+              <span
+                class="pi pi-link w-5 text-center text-surface-900 dark:text-white"
+              ></span>
+              <span class="truncate ml-3" [class.hidden]="!isExpanded">{{
+                "nav.trace" | translate
+              }}</span>
+            </div>
           </a>
           <a
             routerLink="/devices"
             routerLinkActive="font-semibold"
             class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
           >
-            <span
-              class="pi pi-tablet w-5 text-center text-surface-900 dark:text-white"
-            ></span>
-            <span class="truncate" [class.hidden]="!isExpanded">{{
-              "nav.devices" | translate
-            }}</span>
+            <div class="d-flex">
+              <span
+                class="pi pi-tablet w-5 text-center text-surface-900 dark:text-white"
+              ></span>
+              <span class="truncate ml-3" [class.hidden]="!isExpanded">{{
+                "nav.devices" | translate
+              }}</span>
+            </div>
           </a>
           <a
             routerLink="/excursions"
             routerLinkActive="font-semibold"
             class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
           >
-            <span
-              class="pi pi-exclamation-triangle w-5 text-center text-surface-900 dark:text-white"
-            ></span>
-            <span class="truncate" [class.hidden]="!isExpanded">{{
-              "nav.excursions" | translate
-            }}</span>
+            <div class="d-flex">
+              <span
+                class="pi pi-exclamation-triangle w-5 text-center text-surface-900 dark:text-white"
+              ></span>
+              <span class="truncate ml-3" [class.hidden]="!isExpanded">{{
+                "nav.excursions" | translate
+              }}</span>
+            </div>
           </a>
           <a
-            routerLink="/dashboard"
+            routerLink="/users"
             routerLinkActive="font-semibold"
             class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
           >
-            <span
-              class="pi pi-user w-5 text-center text-surface-900 dark:text-white"
-            ></span>
-            <span class="truncate" [class.hidden]="!isExpanded">{{
-              "nav.dashboard" | translate
-            }}</span>
+            <div class="d-flex">
+              <span
+                class="pi pi-users w-5 text-center text-surface-900 dark:text-white"
+              ></span>
+              <span class="truncate ml-3" [class.hidden]="!isExpanded">{{
+                "nav.users" | translate
+              }}</span>
+            </div>
           </a>
-          </nav>
-        </div>
-      </aside>
+        </nav>
+      </div>
+    </aside>
     }
-    <main class="flex-1 overflow-auto" [ngClass]="{ 'p-0': isLoginRoute(), 'p-4': !isLoginRoute() }">
+    <main
+      class="flex-1 overflow-auto"
+      [ngClass]="{ 'p-0': isLoginRoute(), 'p-4': !isLoginRoute() }"
+    >
       <router-outlet />
     </main>
   </div>

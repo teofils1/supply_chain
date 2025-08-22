@@ -30,6 +30,16 @@ dev = [
     "ruff>=0.12.8",
 ]
 
+[tool.uv]
+dev-dependencies = [
+    "ruff",
+]
+
+# Ruff configuration can also go here instead of ruff.toml
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
  
 [tool.hatch.build.targets.wheel]
 packages = ["src/api", "src/supplychain"]

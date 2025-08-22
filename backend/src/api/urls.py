@@ -14,6 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import path
@@ -21,17 +22,27 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
-from supplychain.views import MeView
+
+import supplychain.views as views
 
 
 def health(_request):
     return JsonResponse({"status": "ok"})
 
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('health/', health, name='health'),
+    path("admin/", admin.site.urls),
+    path("health/", health, name="health"),
     # Auth (JWT)
-    path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/auth/me/', MeView.as_view(), name='me'),
+    path("api/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("api/auth/me/", views.MeView.as_view(), name="me"),
+    # User management
+    path("api/users/", views.UserListCreateView.as_view(), name="user-list-create"),
+    path(
+        "api/users/<int:pk>/", views.UserDetailUpdateView.as_view(), name="user-detail"
+    ),
+    path(
+        "api/users/<int:pk>/delete/", views.UserDeleteView.as_view(), name="user-delete"
+    ),
 ]

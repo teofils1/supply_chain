@@ -56,8 +56,8 @@ export class App {
     this.buildUserMenu();
   }
 
-  goDashboard() {
-    this.router.navigateByUrl('/dashboard');
+  goUsers() {
+    this.router.navigateByUrl('/users');
   }
 
   logout() {
@@ -84,9 +84,9 @@ export class App {
   private buildUserMenu() {
     this.userMenuModel = [
       {
-        label: this.translate.instant('user.dashboard'),
-        icon: 'pi pi-user',
-        command: () => this.goDashboard(),
+        label: this.translate.instant('user.users'),
+        icon: 'pi pi-users',
+        command: () => this.goUsers(),
       },
       {
         label: this.translate.instant('user.language'),
