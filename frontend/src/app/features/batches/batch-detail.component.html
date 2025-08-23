@@ -1,0 +1,370 @@
+<div class="flex flex-col gap-4">
+  <!-- Header -->
+  <div class="flex justify-between items-center">
+    <div class="flex items-center gap-4">
+      <p-button
+        icon="pi pi-arrow-left"
+        class="p-button-text"
+        (onClick)="goBack()"
+        pTooltip="Back to Batches"
+      ></p-button>
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">
+        {{
+          isNewBatch()
+            ? "Create Batch"
+            : isEditMode()
+            ? "Edit Batch"
+            : "Batch Details"
+        }}
+      </h2>
+    </div>
+
+    <div class="flex gap-2" *ngIf="!loading()">
+      <!-- Edit button - only for existing batches in view mode -->
+      <p-button
+        *ngIf="!isNewBatch() && !isEditMode()"
+        label="Edit"
+        icon="pi pi-pencil"
+        (onClick)="toggleEditMode()"
+        class="p-button-primary"
+      ></p-button>
+
+      <!-- Save button - for both new batches and editing existing batches -->
+      <p-button
+        *ngIf="isNewBatch() || isEditMode()"
+        label="Save"
+        icon="pi pi-check"
+        (onClick)="onSave()"
+        [loading]="saving()"
+        [disabled]="batchForm.invalid"
+        class="p-button-success"
+      ></p-button>
+
+      <!-- Cancel button - for both new batches and editing existing batches -->
+      <p-button
+        *ngIf="isNewBatch() || isEditMode()"
+        label="Cancel"
+        icon="pi pi-times"
+        (onClick)="onCancel()"
+        class="p-button-secondary"
+      ></p-button>
+
+      <!-- Delete button - only for existing batches in view mode -->
+      <p-button
+        *ngIf="!isNewBatch() && !isEditMode()"
+        label="Delete"
+        icon="pi pi-trash"
+        (onClick)="onDelete()"
+        class="p-button-danger"
+      ></p-button>
+    </div>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="loading()" class="flex justify-center py-8">
+    <p-progressSpinner></p-progressSpinner>
+  </div>
+
+  <!-- Batch Form -->
+  <form [formGroup]="batchForm" *ngIf="!loading()">
+    <!-- Basic Information -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Basic Information</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Product -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">
+            Product <span class="text-red-500">*</span>
+          </label>
+          <p-select
+            [options]="products()"
+            optionLabel="name"
+            optionValue="id"
+            formControlName="product"
+            placeholder="Select product"
+            [class.ng-invalid]="
+              batchForm.get('product')?.invalid &&
+              batchForm.get('product')?.touched
+            "
+          ></p-select>
+          <small class="text-red-500" *ngIf="getFieldError('product')">
+            {{ getFieldError("product") }}
+          </small>
+        </div>
+
+        <!-- Lot Number -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">
+            Lot Number <span class="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            pInputText
+            formControlName="lot_number"
+            placeholder="Enter lot number"
+            [class.ng-invalid]="
+              batchForm.get('lot_number')?.invalid &&
+              batchForm.get('lot_number')?.touched
+            "
+          />
+          <small class="text-red-500" *ngIf="getFieldError('lot_number')">
+            {{ getFieldError("lot_number") }}
+          </small>
+        </div>
+
+        <!-- Manufacturing Date -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">
+            Manufacturing Date <span class="text-red-500">*</span>
+          </label>
+          <p-datepicker
+            formControlName="manufacturing_date"
+            placeholder="Select manufacturing date"
+            dateFormat="yy-mm-dd"
+            iconDisplay="input"
+            [disabled]="!isEditMode()"
+          ></p-datepicker>
+          <small
+            class="text-red-500"
+            *ngIf="getFieldError('manufacturing_date')"
+          >
+            {{ getFieldError("manufacturing_date") }}
+          </small>
+        </div>
+
+        <!-- Expiry Date -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">
+            Expiry Date <span class="text-red-500">*</span>
+          </label>
+          <p-datepicker
+            formControlName="expiry_date"
+            placeholder="Select expiry date"
+            dateFormat="yy-mm-dd"
+            iconDisplay="input"
+            [disabled]="!isEditMode()"
+          ></p-datepicker>
+          <small class="text-red-500" *ngIf="getFieldError('expiry_date')">
+            {{ getFieldError("expiry_date") }}
+          </small>
+        </div>
+
+        <!-- Quantity Produced -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">
+            Quantity Produced <span class="text-red-500">*</span>
+          </label>
+          <p-inputNumber
+            formControlName="quantity_produced"
+            placeholder="Enter quantity"
+            [min]="1"
+            [useGrouping]="true"
+            [class.ng-invalid]="
+              batchForm.get('quantity_produced')?.invalid &&
+              batchForm.get('quantity_produced')?.touched
+            "
+          ></p-inputNumber>
+          <small
+            class="text-red-500"
+            *ngIf="getFieldError('quantity_produced')"
+          >
+            {{ getFieldError("quantity_produced") }}
+          </small>
+        </div>
+
+        <!-- Batch Size -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">Batch Size</label>
+          <input
+            type="text"
+            pInputText
+            formControlName="batch_size"
+            placeholder="e.g., 1000 units, 500L"
+          />
+        </div>
+
+        <!-- Status -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">
+            Status <span class="text-red-500">*</span>
+          </label>
+          <p-select
+            [options]="statusOptions"
+            optionLabel="label"
+            optionValue="value"
+            formControlName="status"
+            placeholder="Select status"
+          ></p-select>
+        </div>
+
+        <!-- Quality Control Passed -->
+        <div class="flex flex-col justify-center">
+          <label class="text-sm font-medium mb-2">
+            Quality checked
+          </label>
+          <p-checkbox
+            formControlName="quality_control_passed"
+            label="Quality Control Passed"
+            [binary]="true"
+          ></p-checkbox>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Manufacturing Information -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Manufacturing Information</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Manufacturing Location -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">Manufacturing Location</label>
+          <input
+            type="text"
+            pInputText
+            formControlName="manufacturing_location"
+            placeholder="Enter manufacturing location"
+          />
+        </div>
+
+        <!-- Manufacturing Facility -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">Manufacturing Facility</label>
+          <input
+            type="text"
+            pInputText
+            formControlName="manufacturing_facility"
+            placeholder="Enter manufacturing facility"
+          />
+        </div>
+
+        <!-- Supplier Batch Number -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">Supplier Batch Number</label>
+          <input
+            type="text"
+            pInputText
+            formControlName="supplier_batch_number"
+            placeholder="Enter supplier batch number"
+          />
+        </div>
+
+        <!-- Regulatory Approval Number -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2"
+            >Regulatory Approval Number</label
+          >
+          <input
+            type="text"
+            pInputText
+            formControlName="regulatory_approval_number"
+            placeholder="Enter regulatory approval number"
+          />
+        </div>
+      </div>
+
+      <p-divider></p-divider>
+
+      <!-- Certificate of Analysis -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Certificate of Analysis</label>
+        <input
+          type="text"
+          pInputText
+          formControlName="certificate_of_analysis"
+          placeholder="Enter certificate reference"
+        />
+      </div>
+
+      <p-divider></p-divider>
+
+      <!-- Quality Control Notes -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Quality Control Notes</label>
+        <textarea
+          pTextarea
+          formControlName="quality_control_notes"
+          placeholder="Enter quality control notes"
+          rows="4"
+        ></textarea>
+      </div>
+    </p-card>
+
+    <!-- Batch Status Information (View Mode Only) -->
+    <p-card *ngIf="batch() && !isNewBatch()">
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Batch Status</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">Current Status</label>
+          <p-tag
+            [value]="batch()?.status"
+            [severity]="getStatusSeverity(batch()?.status || '')"
+            class="capitalize w-fit"
+          ></p-tag>
+        </div>
+
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">Expiry Status</label>
+          <p-tag
+            [value]="batch()?.is_expired ? 'Expired' : 'Active'"
+            [severity]="batch()?.is_expired ? 'danger' : 'success'"
+            class="w-fit"
+          ></p-tag>
+        </div>
+
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">Days Until Expiry</label>
+          <p class="text-gray-700 dark:text-gray-300">
+            {{
+              (batch()?.days_until_expiry ?? 0) > 0
+                ? (batch()?.days_until_expiry ?? 0) + " days"
+                : "Expired " +
+                  Math.abs(batch()?.days_until_expiry ?? 0) +
+                  " days ago"
+            }}
+          </p>
+        </div>
+
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">Shelf Life Remaining</label>
+          <p class="text-gray-700 dark:text-gray-300">
+            {{ batch()?.shelf_life_remaining_percent | number : "1.1-1" }}%
+          </p>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Timestamps (View Mode Only) -->
+    <p-card *ngIf="batch() && !isNewBatch()">
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Timestamps</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">Created</label>
+          <p class="text-gray-700 dark:text-gray-300">
+            {{ batch()?.created_at | date : "medium" }}
+          </p>
+        </div>
+        <div class="flex flex-col" *ngIf="batch()?.updated_at">
+          <label class="text-sm font-medium mb-2">Last Updated</label>
+          <p class="text-gray-700 dark:text-gray-300">
+            {{ batch()?.updated_at | date : "medium" }}
+          </p>
+        </div>
+      </div>
+    </p-card>
+  </form>
+</div>
+
+<!-- Toast for notifications -->
+<p-toast></p-toast>

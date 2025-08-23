@@ -53,4 +53,12 @@ urlpatterns = [
     path(
         "api/products/<int:pk>/delete/", views.ProductDeleteView.as_view(), name="product-delete"
     ),
+    # Batch management
+    path("api/batches/", views.BatchListCreateView.as_view(), name="batch-list-create"),
+    path(
+        "api/batches/<int:pk>/", views.BatchDetailUpdateView.as_view(), name="batch-detail"
+    ),
+    path(
+        "api/batches/<int:pk>/delete/", views.BatchDeleteView.as_view(), name="batch-delete"
+    ),
 ]

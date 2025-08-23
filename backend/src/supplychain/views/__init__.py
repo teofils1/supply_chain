@@ -9,6 +9,11 @@ from .product import (
     ProductDetailUpdateView,
     ProductListCreateView,
 )
+from .batch import (
+    BatchDeleteView,
+    BatchDetailUpdateView,
+    BatchListCreateView,
+)
 
 __all__ = [
     "MeView",
@@ -18,4 +23,7 @@ __all__ = [
     "ProductListCreateView",
     "ProductDetailUpdateView",
     "ProductDeleteView",
+    "BatchListCreateView",
+    "BatchDetailUpdateView",
+    "BatchDeleteView",
 ]

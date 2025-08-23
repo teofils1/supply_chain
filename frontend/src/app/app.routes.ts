@@ -4,6 +4,7 @@ import { LoginComponent } from './features/login/login.component';
 import { ProductsComponent } from './features/products/products.component';
 import { ProductDetailComponent } from './features/products/product-detail.component';
 import { BatchesComponent } from './features/batches/batches.component';
+import { BatchDetailComponent } from './features/batches/batch-detail.component';
 import { PacksComponent } from './features/packs/packs.component';
 import { ShipmentsComponent } from './features/shipments/shipments.component';
 import { EventsComponent } from './features/events/events.component';
@@ -33,6 +34,21 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   { path: 'batches', component: BatchesComponent, canActivate: [authGuard] },
+  {
+    path: 'batches/new',
+    component: BatchDetailComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'batches/:id',
+    component: BatchDetailComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'batches/:id/edit',
+    component: BatchDetailComponent,
+    canActivate: [authGuard],
+  },
   { path: 'packs', component: PacksComponent, canActivate: [authGuard] },
   {
     path: 'shipments',

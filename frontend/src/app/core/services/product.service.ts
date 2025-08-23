@@ -3,7 +3,15 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 
 export type ProductStatus = 'active' | 'inactive' | 'discontinued';
-export type ProductForm = 'tablet' | 'capsule' | 'liquid' | 'injection' | 'cream' | 'ointment' | 'powder' | 'other';
+export type ProductForm =
+  | 'tablet'
+  | 'capsule'
+  | 'liquid'
+  | 'injection'
+  | 'cream'
+  | 'ointment'
+  | 'powder'
+  | 'other';
 
 export interface Product {
   id: number;
@@ -68,7 +76,7 @@ export class ProductService {
   private http = inject(HttpClient);
   private _products = signal<ProductListItem[]>([]);
   private _loading = signal(false);
-  
+
   readonly products = computed(() => this._products());
   readonly loading = computed(() => this._loading());
 
@@ -77,7 +85,7 @@ export class ProductService {
    */
   load(filters?: ProductFilters): Observable<ProductListItem[]> {
     this._loading.set(true);
-    
+
     let params = new HttpParams();
     if (filters?.search) {
       params = params.set('search', filters.search);
@@ -92,14 +100,12 @@ export class ProductService {
       params = params.set('manufacturer', filters.manufacturer);
     }
 
-    return this.http
-      .get<ProductListItem[]>('/api/products/', { params })
-      .pipe(
-        tap((products) => {
-          this._products.set(products);
-          this._loading.set(false);
-        })
-      );
+    return this.http.get<ProductListItem[]>('/api/products/', { params }).pipe(
+      tap((products) => {
+        this._products.set(products);
+        this._loading.set(false);
+      })
+    );
   }
 
   /**
@@ -113,56 +119,52 @@ export class ProductService {
    * Create a new product
    */
   create(data: CreateProductData): Observable<Product> {
-    return this.http
-      .post<Product>('/api/products/', data)
-      .pipe(
-        tap((product) => {
-          // Add the new product to the list (convert to list item format)
-          const listItem: ProductListItem = {
-            id: product.id,
-            gtin: product.gtin,
-            name: product.name,
-            form: product.form,
-            strength: product.strength,
-            manufacturer: product.manufacturer,
-            status: product.status,
-            storage_range_display: product.storage_range_display,
-            created_at: product.created_at,
-            updated_at: product.updated_at,
-            is_deleted: product.is_deleted,
-          };
-          this._products.update((list) => [...list, listItem]);
-        })
-      );
+    return this.http.post<Product>('/api/products/', data).pipe(
+      tap((product) => {
+        // Add the new product to the list (convert to list item format)
+        const listItem: ProductListItem = {
+          id: product.id,
+          gtin: product.gtin,
+          name: product.name,
+          form: product.form,
+          strength: product.strength,
+          manufacturer: product.manufacturer,
+          status: product.status,
+          storage_range_display: product.storage_range_display,
+          created_at: product.created_at,
+          updated_at: product.updated_at,
+          is_deleted: product.is_deleted,
+        };
+        this._products.update((list) => [...list, listItem]);
+      })
+    );
   }
 
   /**
    * Update an existing product
    */
   update(id: number, data: Partial<CreateProductData>): Observable<Product> {
-    return this.http
-      .patch<Product>(`/api/products/${id}/`, data)
-      .pipe(
-        tap((product) => {
-          // Update the product in the list
-          const listItem: ProductListItem = {
-            id: product.id,
-            gtin: product.gtin,
-            name: product.name,
-            form: product.form,
-            strength: product.strength,
-            manufacturer: product.manufacturer,
-            status: product.status,
-            storage_range_display: product.storage_range_display,
-            created_at: product.created_at,
-            updated_at: product.updated_at,
-            is_deleted: product.is_deleted,
-          };
-          this._products.update((list) =>
-            list.map((p) => (p.id === id ? listItem : p))
-          );
-        })
-      );
+    return this.http.patch<Product>(`/api/products/${id}/`, data).pipe(
+      tap((product) => {
+        // Update the product in the list
+        const listItem: ProductListItem = {
+          id: product.id,
+          gtin: product.gtin,
+          name: product.name,
+          form: product.form,
+          strength: product.strength,
+          manufacturer: product.manufacturer,
+          status: product.status,
+          storage_range_display: product.storage_range_display,
+          created_at: product.created_at,
+          updated_at: product.updated_at,
+          is_deleted: product.is_deleted,
+        };
+        this._products.update((list) =>
+          list.map((p) => (p.id === id ? listItem : p))
+        );
+      })
+    );
   }
 
   /**
@@ -173,10 +175,8 @@ export class ProductService {
       .delete<{ message: string }>(`/api/products/${id}/delete/`)
       .pipe(
         tap(() => {
-          // Remove the product from the list or mark as deleted
-          this._products.update((list) =>
-            list.map((p) => (p.id === id ? { ...p, is_deleted: true } : p))
-          );
+          // Remove the product from the list completely
+          this._products.update((list) => list.filter((p) => p.id !== id));
         })
       );
   }

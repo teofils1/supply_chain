@@ -130,7 +130,7 @@
       </ng-template>
 
       <ng-template pTemplate="body" let-product>
-        <tr [class.opacity-50]="product.is_deleted">
+        <tr>
           <td>
             <span class="font-mono text-sm">{{ product.gtin }}</span>
           </td>
@@ -186,7 +186,6 @@
                 class="p-button-text p-button-sm p-button-danger"
                 pTooltip="Delete"
                 (onClick)="deleteProduct(product)"
-                [disabled]="product.is_deleted"
               ></p-button>
             </div>
           </td>
@@ -218,7 +217,8 @@
       </ng-template>
     </p-table>
   </p-card>
-</div><!-- Toast for notifications -->
+</div>
+<!-- Toast for notifications -->
 <p-toast></p-toast>
 
 <!-- Confirmation dialog -->
