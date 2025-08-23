@@ -1,0 +1,575 @@
+<div class="flex flex-col gap-4">
+  <!-- Header -->
+  <div class="flex justify-between items-center">
+    <div class="flex items-center gap-4">
+      <p-button
+        icon="pi pi-arrow-left"
+        class="p-button-text"
+        (onClick)="goBack()"
+        pTooltip="Back to Events"
+      ></p-button>
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">
+        Event Details
+      </h2>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading()" class="flex justify-center py-8">
+    <i class="pi pi-spinner pi-spin text-2xl"></i>
+  </div>
+
+  <!-- Event Details -->
+  <div
+    *ngIf="!loading() && event()"
+    class="grid grid-cols-1 lg:grid-cols-3 gap-4"
+  >
+    <!-- Main Event Information -->
+    <div class="lg:col-span-2 flex flex-col gap-4">
+      <!-- Event Overview -->
+      <p-card>
+        <ng-template pTemplate="header">
+          <h3 class="text-lg font-medium">Event Overview</h3>
+        </ng-template>
+
+        <div class="flex flex-col gap-4">
+          <!-- Event Header -->
+          <div class="flex items-center gap-4 flex-wrap">
+            <div
+              class="flex items-center justify-center w-12 h-12 rounded-full border-2"
+              [ngClass]="{
+                'bg-red-100 border-red-500 text-red-600':
+                  event()?.severity === 'critical',
+                'bg-orange-100 border-orange-500 text-orange-600':
+                  event()?.severity === 'high',
+                'bg-yellow-100 border-yellow-500 text-yellow-600':
+                  event()?.severity === 'medium',
+                'bg-blue-100 border-blue-500 text-blue-600':
+                  event()?.severity === 'low',
+                'bg-green-100 border-green-500 text-green-600':
+                  event()?.severity === 'info'
+              }"
+            >
+              <i
+                [class]="'pi ' + getEventTypeIcon(event()?.event_type || '')"
+                class="text-lg"
+              ></i>
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
+                <p-tag
+                  [value]="event()?.event_type_display"
+                  [severity]="getSeverityColor(event()?.severity || '')"
+                  class="text-sm"
+                ></p-tag>
+                <p-tag
+                  [value]="event()?.entity_type_display"
+                  severity="secondary"
+                  class="text-sm"
+                ></p-tag>
+                <p-tag
+                  [value]="event()?.severity_display"
+                  [severity]="getSeverityColor(event()?.severity || '')"
+                  class="text-sm"
+                ></p-tag>
+                <span
+                  *ngIf="event()?.is_critical"
+                  class="text-red-600 text-sm font-bold"
+                  >CRITICAL</span
+                >
+                <span
+                  *ngIf="event()?.is_alert && !event()?.is_critical"
+                  class="text-orange-600 text-sm font-bold"
+                  >ALERT</span
+                >
+                <span
+                  *ngIf="isRecent(event()?.timestamp || '')"
+                  class="text-blue-600 text-sm font-bold"
+                  >RECENT</span
+                >
+              </div>
+
+              <div class="text-sm text-gray-600">
+                <span [title]="formatTimestamp(event()?.timestamp || '')">
+                  {{ getRelativeTime(event()?.timestamp || "") }}
+                </span>
+                <span class="mx-2">•</span>
+                <span>{{ formatTimestamp(event()?.timestamp || "") }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Event Description -->
+          <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+            <h4 class="font-medium mb-2">Description</h4>
+            <p class="text-gray-800 dark:text-gray-200">
+              {{ event()?.description }}
+            </p>
+          </div>
+
+          <!-- Location and User -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div *ngIf="event()?.location" class="flex items-center gap-2">
+              <i class="pi pi-map-marker text-gray-500"></i>
+              <div>
+                <span class="text-sm font-medium text-gray-600">Location</span>
+                <p class="text-gray-800">{{ event()?.location }}</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <i class="pi pi-user text-gray-500"></i>
+              <div>
+                <span class="text-sm font-medium text-gray-600"
+                  >Triggered By</span
+                >
+                <p class="text-gray-800">
+                  {{
+                    event()?.user_full_name ||
+                      event()?.user_username ||
+                      "System"
+                  }}
+                </p>
+                <p *ngIf="event()?.user_email" class="text-sm text-gray-600">
+                  {{ event()?.user_email }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </p-card>
+
+      <!-- Entity Context -->
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="flex justify-between items-center">
+            <h3 class="text-lg font-medium">Entity Context</h3>
+            <p-button
+              label="View Entity"
+              icon="pi pi-external-link"
+              class="p-button-sm p-button-outlined"
+              (onClick)="navigateToEntity()"
+            ></p-button>
+          </div>
+        </ng-template>
+
+        <div class="flex flex-col gap-4">
+          <!-- Entity Information -->
+          <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+            <div class="flex items-center gap-2 mb-2">
+              <i class="pi pi-link text-blue-600"></i>
+              <span class="font-medium text-blue-800 dark:text-blue-200">
+                {{ event()?.entity_type_display }} #{{ event()?.entity_id }}
+              </span>
+            </div>
+            <p class="text-blue-700 dark:text-blue-300">
+              {{ getEntityDisplayInfo(event()!) }}
+            </p>
+          </div>
+
+          <!-- Related Entity Details -->
+          <div class="grid grid-cols-1 gap-4">
+            <!-- Product Information -->
+            <div
+              *ngIf="event()?.related_product"
+              class="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+            >
+              <h4 class="font-medium mb-2 flex items-center gap-2">
+                <i class="pi pi-box text-green-600"></i>
+                Product Information
+              </h4>
+              <div class="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span class="font-medium">Name:</span>
+                  {{ event()?.related_product?.name }}
+                </div>
+                <div>
+                  <span class="font-medium">GTIN:</span>
+                  {{ event()?.related_product?.gtin }}
+                </div>
+                <div>
+                  <span class="font-medium">Form:</span>
+                  {{ event()?.related_product?.form }}
+                </div>
+                <div>
+                  <span class="font-medium">Strength:</span>
+                  {{ event()?.related_product?.strength }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Batch Information -->
+            <div
+              *ngIf="event()?.related_batch"
+              class="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+            >
+              <h4 class="font-medium mb-2 flex items-center gap-2">
+                <i class="pi pi-clone text-blue-600"></i>
+                Batch Information
+              </h4>
+              <div class="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span class="font-medium">Lot Number:</span>
+                  {{ event()?.related_batch?.lot_number }}
+                </div>
+                <div>
+                  <span class="font-medium">Status:</span>
+                  {{ event()?.related_batch?.status }}
+                </div>
+                <div>
+                  <span class="font-medium">Manufacturing Date:</span>
+                  {{ event()?.related_batch?.manufacturing_date | date }}
+                </div>
+                <div>
+                  <span class="font-medium">Expiry Date:</span>
+                  {{ event()?.related_batch?.expiry_date | date }}
+                </div>
+                <div>
+                  <span class="font-medium">Quantity:</span>
+                  {{ event()?.related_batch?.quantity_produced }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Pack Information -->
+            <div
+              *ngIf="event()?.related_pack"
+              class="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+            >
+              <h4 class="font-medium mb-2 flex items-center gap-2">
+                <i class="pi pi-tag text-purple-600"></i>
+                Pack Information
+              </h4>
+              <div class="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span class="font-medium">Serial Number:</span>
+                  {{ event()?.related_pack?.serial_number }}
+                </div>
+                <div>
+                  <span class="font-medium">Status:</span>
+                  {{ event()?.related_pack?.status }}
+                </div>
+                <div>
+                  <span class="font-medium">Pack Size:</span>
+                  {{ event()?.related_pack?.pack_size }}
+                </div>
+                <div>
+                  <span class="font-medium">Pack Type:</span>
+                  {{ event()?.related_pack?.pack_type }}
+                </div>
+                <div>
+                  <span class="font-medium">Location:</span>
+                  {{ event()?.related_pack?.location }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Shipment Information -->
+            <div
+              *ngIf="event()?.related_shipment"
+              class="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+            >
+              <h4 class="font-medium mb-2 flex items-center gap-2">
+                <i class="pi pi-truck text-orange-600"></i>
+                Shipment Information
+              </h4>
+              <div class="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span class="font-medium">Tracking Number:</span>
+                  {{ event()?.related_shipment?.tracking_number }}
+                </div>
+                <div>
+                  <span class="font-medium">Status:</span>
+                  {{ event()?.related_shipment?.status }}
+                </div>
+                <div>
+                  <span class="font-medium">Carrier:</span>
+                  {{ event()?.related_shipment?.carrier }}
+                </div>
+                <div>
+                  <span class="font-medium">Service Type:</span>
+                  {{ event()?.related_shipment?.service_type }}
+                </div>
+                <div>
+                  <span class="font-medium">Origin:</span>
+                  {{ event()?.related_shipment?.origin_name }}
+                </div>
+                <div>
+                  <span class="font-medium">Destination:</span>
+                  {{ event()?.related_shipment?.destination_name }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="flex flex-col gap-4">
+      <!-- Technical Details -->
+      <p-card>
+        <ng-template pTemplate="header">
+          <h3 class="text-lg font-medium">Technical Details</h3>
+        </ng-template>
+
+        <div class="flex flex-col gap-4">
+          <!-- System Information -->
+          <div
+            *ngIf="event()?.ip_address || event()?.user_agent"
+            class="text-sm"
+          >
+            <h4 class="font-medium mb-2">System Information</h4>
+            <div class="space-y-1">
+              <div *ngIf="event()?.ip_address" class="flex justify-between">
+                <span class="text-gray-600">IP Address:</span>
+                <span class="font-mono text-xs">{{ event()?.ip_address }}</span>
+              </div>
+              <div *ngIf="event()?.user_agent" class="flex flex-col">
+                <span class="text-gray-600">User Agent:</span>
+                <span class="font-mono text-xs break-all">{{
+                  event()?.user_agent
+                }}</span>
+              </div>
+            </div>
+          </div>
+
+          <p-divider></p-divider>
+
+          <!-- Event IDs -->
+          <div class="text-sm">
+            <h4 class="font-medium mb-2">Identifiers</h4>
+            <div class="space-y-1">
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Event ID:</span>
+                <div class="flex items-center gap-1">
+                  <span class="font-mono text-xs">{{ event()?.id }}</span>
+                  <p-button
+                    icon="pi pi-copy"
+                    class="p-button-text p-button-sm"
+                    (onClick)="copyToClipboard(event()?.id?.toString() || '')"
+                    pTooltip="Copy ID"
+                  ></p-button>
+                </div>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Entity ID:</span>
+                <div class="flex items-center gap-1">
+                  <span class="font-mono text-xs">{{
+                    event()?.entity_id
+                  }}</span>
+                  <p-button
+                    icon="pi pi-copy"
+                    class="p-button-text p-button-sm"
+                    (onClick)="
+                      copyToClipboard(event()?.entity_id?.toString() || '')
+                    "
+                    pTooltip="Copy Entity ID"
+                  ></p-button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </p-card>
+
+      <!-- Metadata -->
+      <p-card *ngIf="getMetadataEntries().length > 0">
+        <ng-template pTemplate="header">
+          <h3 class="text-lg font-medium">Event Metadata</h3>
+        </ng-template>
+
+        <div class="space-y-2">
+          <div
+            *ngFor="let entry of getMetadataEntries()"
+            class="border-b border-gray-200 dark:border-gray-700 pb-2"
+          >
+            <div class="flex justify-between items-start">
+              <span class="font-medium text-sm text-gray-600"
+                >{{ entry.key }}:</span
+              >
+              <div class="flex items-center gap-1">
+                <p-button
+                  icon="pi pi-copy"
+                  class="p-button-text p-button-sm"
+                  (onClick)="copyToClipboard(entry.value)"
+                  pTooltip="Copy Value"
+                ></p-button>
+              </div>
+            </div>
+            <div class="mt-1">
+              <pre
+                *ngIf="entry.value.includes('{') || entry.value.includes('[')"
+                class="text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-x-auto"
+                >{{ entry.value }}</pre
+              >
+              <span
+                *ngIf="!entry.value.includes('{') && !entry.value.includes('[')"
+                class="text-sm"
+                >{{ entry.value }}</span
+              >
+            </div>
+          </div>
+        </div>
+      </p-card>
+
+      <!-- System Info -->
+      <p-card *ngIf="getSystemInfoEntries().length > 0">
+        <ng-template pTemplate="header">
+          <h3 class="text-lg font-medium">System Information</h3>
+        </ng-template>
+
+        <div class="space-y-2">
+          <div
+            *ngFor="let entry of getSystemInfoEntries()"
+            class="border-b border-gray-200 dark:border-gray-700 pb-2"
+          >
+            <div class="flex justify-between items-start">
+              <span class="font-medium text-sm text-gray-600"
+                >{{ entry.key }}:</span
+              >
+              <div class="flex items-center gap-1">
+                <p-button
+                  icon="pi pi-copy"
+                  class="p-button-text p-button-sm"
+                  (onClick)="copyToClipboard(entry.value)"
+                  pTooltip="Copy Value"
+                ></p-button>
+              </div>
+            </div>
+            <div class="mt-1">
+              <pre
+                *ngIf="entry.value.includes('{') || entry.value.includes('[')"
+                class="text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-x-auto"
+                >{{ entry.value }}</pre
+              >
+              <span
+                *ngIf="!entry.value.includes('{') && !entry.value.includes('[')"
+                class="text-sm"
+                >{{ entry.value }}</span
+              >
+            </div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+  </div>
+
+  <!-- Related Events -->
+  <p-card *ngIf="!loading() && event()">
+    <ng-template pTemplate="header">
+      <div class="flex justify-between items-center">
+        <h3 class="text-lg font-medium">Related Events</h3>
+        <p-badge
+          [value]="relatedEvents().length.toString()"
+          severity="info"
+        ></p-badge>
+      </div>
+    </ng-template>
+
+    <!-- Loading Related Events -->
+    <div *ngIf="loadingRelated()" class="flex justify-center py-4">
+      <i class="pi pi-spinner pi-spin text-lg"></i>
+    </div>
+
+    <!-- Related Events Timeline -->
+    <p-timeline
+      *ngIf="!loadingRelated() && relatedEvents().length > 0"
+      [value]="getTimelineEvents()"
+      layout="vertical"
+      class="customized-timeline"
+    >
+      <ng-template pTemplate="marker" let-event>
+        <div
+          class="flex items-center justify-center w-6 h-6 rounded-full border-2"
+          [ngClass]="{
+            'bg-red-100 border-red-500 text-red-600':
+              event.severity === 'critical',
+            'bg-orange-100 border-orange-500 text-orange-600':
+              event.severity === 'high',
+            'bg-yellow-100 border-yellow-500 text-yellow-600':
+              event.severity === 'medium',
+            'bg-blue-100 border-blue-500 text-blue-600':
+              event.severity === 'low',
+            'bg-green-100 border-green-500 text-green-600':
+              event.severity === 'info'
+          }"
+        >
+          <i [class]="'pi ' + event.icon" class="text-xs"></i>
+        </div>
+      </ng-template>
+
+      <ng-template pTemplate="content" let-event>
+        <div
+          class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ml-3"
+        >
+          <!-- Event Header -->
+          <div class="flex justify-between items-start mb-2">
+            <div class="flex items-center gap-2">
+              <p-tag
+                [value]="event.event_type_display"
+                [severity]="getSeverityColor(event.severity)"
+                class="text-xs"
+              ></p-tag>
+              <span
+                *ngIf="event.is_critical"
+                class="text-red-600 text-xs font-bold"
+                >CRITICAL</span
+              >
+              <span
+                *ngIf="event.is_alert && !event.is_critical"
+                class="text-orange-600 text-xs font-bold"
+                >ALERT</span
+              >
+            </div>
+            <div class="text-xs text-gray-500">
+              <span [title]="formatTimestamp(event.timestamp)">{{
+                event.relativeTime
+              }}</span>
+            </div>
+          </div>
+
+          <!-- Event Description -->
+          <p class="text-sm text-gray-800 dark:text-gray-200 mb-2">
+            {{ event.description }}
+          </p>
+
+          <!-- Actions -->
+          <div class="flex justify-between items-center text-xs text-gray-500">
+            <div class="flex items-center gap-2">
+              <span *ngIf="event.location" class="flex items-center gap-1">
+                <i class="pi pi-map-marker"></i>
+                {{ event.location }}
+              </span>
+              <span
+                *ngIf="event.user_full_name"
+                class="flex items-center gap-1"
+              >
+                <i class="pi pi-user"></i>
+                {{ event.user_full_name }}
+              </span>
+            </div>
+            <p-button
+              icon="pi pi-eye"
+              class="p-button-text p-button-sm"
+              pTooltip="View Event"
+              (onClick)="viewRelatedEvent(event)"
+            ></p-button>
+          </div>
+        </div>
+      </ng-template>
+    </p-timeline>
+
+    <!-- No Related Events -->
+    <div
+      *ngIf="!loadingRelated() && relatedEvents().length === 0"
+      class="text-center py-4"
+    >
+      <p class="text-gray-500">No other events found for this entity.</p>
+    </div>
+  </p-card>
+</div>
+
+<!-- Toast for notifications -->
+<p-toast></p-toast>

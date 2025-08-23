@@ -1,8 +1,424 @@
-<p-card>
-  <ng-template pTemplate="header">
-    <h2 class="text-lg font-semibold">
+<div class="flex flex-col gap-4">
+  <!-- Header with Create Button -->
+  <div class="flex justify-between items-center">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">
       {{ "pages.shipments.title" | translate }}
     </h2>
-  </ng-template>
-  <p>{{ "pages.shipments.empty" | translate }}</p>
-</p-card>
+    <p-button
+      label="Create Shipment"
+      icon="pi pi-plus"
+      (onClick)="createShipment()"
+      class="p-button-primary"
+    ></p-button>
+  </div>
+
+  <!-- Filters Card -->
+  <p-card>
+    <ng-template pTemplate="header">
+      <h3 class="text-lg font-medium">Filters</h3>
+    </ng-template>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <!-- Search -->
+      <div class="flex flex-col">
+        <div class="flex">
+          <label class="text-sm font-medium mb-2">Search</label>
+          <i class="pi pi-search ml-2"></i>
+        </div>
+        <input
+          type="text"
+          pInputText
+          placeholder="Search shipments..."
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+          (keyup.enter)="onSearch()"
+          class="w-full"
+        />
+      </div>
+
+      <!-- Status Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Status</label>
+        <p-select
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Statuses"
+          [ngModel]="selectedStatus()"
+          (ngModelChange)="selectedStatus.set($event); onStatusFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Carrier Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Carrier</label>
+        <p-select
+          [options]="carrierOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Carriers"
+          [ngModel]="selectedCarrier()"
+          (ngModelChange)="selectedCarrier.set($event); onCarrierFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Service Type Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Service Type</label>
+        <p-select
+          [options]="serviceTypeOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Types"
+          [ngModel]="selectedServiceType()"
+          (ngModelChange)="
+            selectedServiceType.set($event); onServiceTypeFilter()
+          "
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Temperature Requirement Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Temperature</label>
+        <p-select
+          [options]="temperatureRequirementOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All"
+          [ngModel]="selectedTemperatureRequirement()"
+          (ngModelChange)="
+            selectedTemperatureRequirement.set($event);
+            onTemperatureRequirementFilter()
+          "
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Delivery Status Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Delivery Status</label>
+        <p-select
+          [options]="deliveryStatusOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All"
+          [ngModel]="selectedDeliveryStatus()"
+          (ngModelChange)="
+            selectedDeliveryStatus.set($event); onDeliveryStatusFilter()
+          "
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Special Handling Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Special Handling</label>
+        <p-select
+          [options]="specialHandlingOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All"
+          [ngModel]="selectedSpecialHandling()"
+          (ngModelChange)="
+            selectedSpecialHandling.set($event); onSpecialHandlingFilter()
+          "
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Pack Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Pack</label>
+        <p-select
+          [options]="packs()"
+          optionLabel="serial_number"
+          optionValue="id"
+          placeholder="All Packs"
+          [ngModel]="selectedPack()"
+          (ngModelChange)="selectedPack.set($event); onPackFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+    </div>
+
+    <!-- Second Row of Filters -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+      <!-- Batch Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Batch</label>
+        <p-select
+          [options]="batches()"
+          optionLabel="lot_number"
+          optionValue="id"
+          placeholder="All Batches"
+          [ngModel]="selectedBatch()"
+          (ngModelChange)="selectedBatch.set($event); onBatchFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Product Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Product</label>
+        <p-select
+          [options]="products()"
+          optionLabel="name"
+          optionValue="id"
+          placeholder="All Products"
+          [ngModel]="selectedProduct()"
+          (ngModelChange)="selectedProduct.set($event); onProductFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex flex-col justify-end">
+        <div class="flex gap-2">
+          <p-button
+            label="Search"
+            icon="pi pi-search"
+            (onClick)="onSearch()"
+            class="p-button-primary"
+          ></p-button>
+          <p-button
+            label="Clear"
+            icon="pi pi-times"
+            (onClick)="clearFilters()"
+            class="p-button-secondary"
+          ></p-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Date Filters -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+      <!-- Shipped Date Range -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Shipped Date Range</label>
+        <div class="flex gap-2">
+          <p-datepicker
+            [ngModel]="shippedFromDate()"
+            (ngModelChange)="shippedFromDate.set($event); onShippedDateFilter()"
+            placeholder="From"
+            dateFormat="yy-mm-dd"
+            iconDisplay="input"
+          ></p-datepicker>
+          <p-datepicker
+            [ngModel]="shippedToDate()"
+            (ngModelChange)="shippedToDate.set($event); onShippedDateFilter()"
+            placeholder="To"
+            dateFormat="yy-mm-dd"
+            iconDisplay="input"
+          ></p-datepicker>
+        </div>
+      </div>
+
+      <!-- Estimated Delivery Date Range -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Estimated Delivery Range</label>
+        <div class="flex gap-2">
+          <p-datepicker
+            [ngModel]="estimatedDeliveryFromDate()"
+            (ngModelChange)="
+              estimatedDeliveryFromDate.set($event);
+              onEstimatedDeliveryDateFilter()
+            "
+            placeholder="From"
+            dateFormat="yy-mm-dd"
+            iconDisplay="input"
+          ></p-datepicker>
+          <p-datepicker
+            [ngModel]="estimatedDeliveryToDate()"
+            (ngModelChange)="
+              estimatedDeliveryToDate.set($event);
+              onEstimatedDeliveryDateFilter()
+            "
+            placeholder="To"
+            dateFormat="yy-mm-dd"
+            iconDisplay="input"
+          ></p-datepicker>
+        </div>
+      </div>
+    </div>
+  </p-card>
+
+  <!-- Shipments Table -->
+  <p-card>
+    <p-table
+      [value]="shipments()"
+      [loading]="loading()"
+      [paginator]="true"
+      [rows]="5"
+      size="small"
+      [rowsPerPageOptions]="[5, 10, 20, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} shipments"
+      [globalFilterFields]="[
+        'tracking_number',
+        'origin_name',
+        'destination_name',
+        'carrier'
+      ]"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="tracking_number" class="text-center">
+            Tracking Number <p-sortIcon field="tracking_number"></p-sortIcon>
+          </th>
+          <th pSortableColumn="status" class="text-center">
+            Status <p-sortIcon field="status"></p-sortIcon>
+          </th>
+          <th pSortableColumn="carrier" class="text-center">
+            Carrier <p-sortIcon field="carrier"></p-sortIcon>
+          </th>
+          <th class="text-center">Origin</th>
+          <th class="text-center">Destination</th>
+          <th class="text-center">Packs</th>
+          <th pSortableColumn="shipped_date" class="text-center">
+            Shipped <p-sortIcon field="shipped_date"></p-sortIcon>
+          </th>
+          <th pSortableColumn="estimated_delivery_date" class="text-center">
+            Est. Delivery
+            <p-sortIcon field="estimated_delivery_date"></p-sortIcon>
+          </th>
+          <th class="text-center">Delivery Status</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-shipment>
+        <tr>
+          <td>
+            <span class="font-mono text-sm font-medium">{{ shipment.tracking_number }}</span>
+          </td>
+          <td>
+            <p-tag
+              [value]="shipment.status"
+              [severity]="getStatusSeverity(shipment.status)"
+              class="capitalize"
+            ></p-tag>
+          </td>
+          <td>
+            <span class="capitalize">{{ shipment.carrier }}</span>
+          </td>
+          <td>
+            <div class="text-sm">
+              <div class="font-medium">{{ shipment.origin_name }}</div>
+              <div class="text-gray-500 text-xs">{{ shipment.origin_address }}</div>
+            </div>
+          </td>
+          <td>
+            <div class="text-sm">
+              <div class="font-medium">{{ shipment.destination_name }}</div>
+              <div class="text-gray-500 text-xs">{{ shipment.destination_address }}</div>
+            </div>
+          </td>
+          <td>
+            <div class="flex flex-col gap-1">
+              <span class="font-medium">{{ shipment.pack_count }} packs</span>
+              <div class="text-xs text-gray-600">
+                <div *ngFor="let summary of shipment.pack_summary">
+                  {{ summary.product }}: {{ summary.count }}
+                </div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="text-sm">{{ shipment.shipped_date | date: 'shortDate' }}</span>
+          </td>
+          <td>
+            <span class="text-sm">{{ shipment.estimated_delivery_date | date: 'shortDate' }}</span>
+          </td>
+          <td>
+            <div class="flex flex-col gap-1">
+              <p-tag
+                *ngIf="shipment.is_delivered"
+                value="Delivered"
+                severity="success"
+                class="text-xs"
+              ></p-tag>
+              <p-tag
+                *ngIf="shipment.is_in_transit && !shipment.is_delivered"
+                value="In Transit"
+                severity="warning"
+                class="text-xs"
+              ></p-tag>
+              <p-tag
+                *ngIf="!shipment.is_in_transit && !shipment.is_delivered && isOverdue(shipment)"
+                value="Overdue"
+                severity="danger"
+                class="text-xs"
+              ></p-tag>
+              <span
+                *ngIf="!shipment.is_in_transit && !shipment.is_delivered && !isOverdue(shipment)"
+                class="text-xs text-gray-500"
+              >Pending</span>
+            </div>
+          </td>
+          <td>
+            <div class="flex">
+              <p-button
+                icon="pi pi-eye"
+                class="p-button-text p-button-sm"
+                pTooltip="View"
+                (onClick)="viewShipment(shipment)"
+              ></p-button>
+              <p-button
+                icon="pi pi-pencil"
+                class="p-button-text p-button-sm"
+                pTooltip="Edit"
+                (onClick)="editShipment(shipment)"
+              ></p-button>
+              <p-button
+                icon="pi pi-trash"
+                class="p-button-text p-button-sm p-button-danger"
+                pTooltip="Delete"
+                (onClick)="deleteShipment(shipment)"
+              ></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="10" class="text-center py-8">
+            <div class="flex flex-col items-center gap-4">
+              <i class="pi pi-truck text-4xl text-gray-400"></i>
+              <div>
+                <p class="text-lg font-medium text-gray-600">No shipments found</p>
+                <p class="text-sm text-gray-500">
+                  Try adjusting your search criteria or create a new shipment.
+                </p>
+              </div>
+              <p-button
+                label="Create First Shipment"
+                icon="pi pi-plus"
+                (onClick)="createShipment()"
+                class="p-button-primary"
+              ></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Toast for notifications -->
+<p-toast></p-toast>
+
+<!-- Confirmation dialog -->
+<p-confirmDialog></p-confirmDialog>

@@ -61,4 +61,28 @@ urlpatterns = [
     path(
         "api/batches/<int:pk>/delete/", views.BatchDeleteView.as_view(), name="batch-delete"
     ),
+    # Pack management
+    path("api/packs/", views.PackListCreateView.as_view(), name="pack-list-create"),
+    path(
+        "api/packs/<int:pk>/", views.PackDetailUpdateView.as_view(), name="pack-detail"
+    ),
+    path(
+        "api/packs/<int:pk>/delete/", views.PackDeleteView.as_view(), name="pack-delete"
+    ),
+    # Shipment management
+    path("api/shipments/", views.ShipmentListCreateView.as_view(), name="shipment-list-create"),
+    path(
+        "api/shipments/<int:pk>/", views.ShipmentDetailUpdateView.as_view(), name="shipment-detail"
+    ),
+    path(
+        "api/shipments/<int:pk>/delete/", views.ShipmentDeleteView.as_view(), name="shipment-delete"
+    ),
+    # Event management
+    path("api/events/", views.EventListCreateView.as_view(), name="event-list-create"),
+    path(
+        "api/events/<int:pk>/", views.EventDetailUpdateView.as_view(), name="event-detail"
+    ),
+    path(
+        "api/events/<int:pk>/delete/", views.EventDeleteView.as_view(), name="event-delete"
+    ),
 ]

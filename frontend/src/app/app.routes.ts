@@ -6,8 +6,11 @@ import { ProductDetailComponent } from './features/products/product-detail.compo
 import { BatchesComponent } from './features/batches/batches.component';
 import { BatchDetailComponent } from './features/batches/batch-detail.component';
 import { PacksComponent } from './features/packs/packs.component';
+import { PackDetailComponent } from './features/packs/pack-detail.component';
 import { ShipmentsComponent } from './features/shipments/shipments.component';
+import { ShipmentDetailComponent } from './features/shipments/shipment-detail.component';
 import { EventsComponent } from './features/events/events.component';
+import { EventDetailComponent } from './features/events/event-detail.component';
 import { TraceComponent } from './features/trace/trace.component';
 import { DevicesComponent } from './features/devices/devices.component';
 import { ExcursionsComponent } from './features/excursions/excursions.component';
@@ -51,11 +54,51 @@ export const routes: Routes = [
   },
   { path: 'packs', component: PacksComponent, canActivate: [authGuard] },
   {
+    path: 'packs/new',
+    component: PackDetailComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'packs/:id',
+    component: PackDetailComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'packs/:id/edit',
+    component: PackDetailComponent,
+    canActivate: [authGuard],
+  },
+  {
     path: 'shipments',
     component: ShipmentsComponent,
     canActivate: [authGuard],
   },
+  {
+    path: 'shipments/new',
+    component: ShipmentDetailComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'shipments/:id',
+    component: ShipmentDetailComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'shipments/:id/edit',
+    component: ShipmentDetailComponent,
+    canActivate: [authGuard],
+  },
   { path: 'events', component: EventsComponent, canActivate: [authGuard] },
+  {
+    path: 'events/new',
+    component: EventDetailComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'events/:id',
+    component: EventDetailComponent,
+    canActivate: [authGuard],
+  },
   {
     path: 'trace/:serial',
     component: TraceComponent,

@@ -1,6 +1,411 @@
-<p-card>
-  <ng-template pTemplate="header">
-    <h2 class="text-lg font-semibold">{{ "pages.packs.title" | translate }}</h2>
-  </ng-template>
-  <p>{{ "pages.packs.empty" | translate }}</p>
-</p-card>
+<div class="flex flex-col gap-4">
+  <!-- Header with Create Button -->
+  <div class="flex justify-between items-center shrink-0">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">
+      {{ "pages.packs.title" | translate }}
+    </h2>
+    <p-button
+      label="Create Pack"
+      icon="pi pi-plus"
+      (onClick)="createPack()"
+      class="p-button-primary"
+    ></p-button>
+  </div>
+
+  <!-- Filters Card -->
+  <p-card class="shrink-0">
+    <ng-template pTemplate="header">
+      <h3 class="text-lg font-medium">Filters</h3>
+    </ng-template>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <!-- Search -->
+      <div class="flex flex-col">
+        <div class="flex">
+          <label class="text-sm font-medium mb-2">Search</label>
+          <i class="pi pi-search ml-2"></i>
+        </div>
+        <input
+          type="text"
+          pInputText
+          placeholder="Search packs..."
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+          (keyup.enter)="onSearch()"
+          class="w-full"
+        />
+      </div>
+
+      <!-- Batch Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Batch</label>
+        <p-select
+          [options]="batches()"
+          optionLabel="lot_number"
+          optionValue="id"
+          placeholder="All Batches"
+          [ngModel]="selectedBatch()"
+          (ngModelChange)="selectedBatch.set($event); onBatchFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Product Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Product</label>
+        <p-select
+          [options]="products()"
+          optionLabel="name"
+          optionValue="id"
+          placeholder="All Products"
+          [ngModel]="selectedProduct()"
+          (ngModelChange)="selectedProduct.set($event); onProductFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Status</label>
+        <p-select
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Statuses"
+          [ngModel]="selectedStatus()"
+          (ngModelChange)="selectedStatus.set($event); onStatusFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Pack Type Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Pack Type</label>
+        <p-select
+          [options]="packTypeOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Types"
+          [ngModel]="selectedPackType()"
+          (ngModelChange)="selectedPackType.set($event); onPackTypeFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Location Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Location</label>
+        <input
+          type="text"
+          pInputText
+          placeholder="Filter by location"
+          [ngModel]="selectedLocation()"
+          (ngModelChange)="selectedLocation.set($event); onLocationFilter()"
+          class="w-full"
+        />
+      </div>
+
+      <!-- Shipping Status Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Shipping Status</label>
+        <p-select
+          [options]="shippingStatusOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All"
+          [ngModel]="selectedShippingStatus()"
+          (ngModelChange)="
+            selectedShippingStatus.set($event); onShippingStatusFilter()
+          "
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- QC Status Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">QC Status</label>
+        <p-select
+          [options]="qcOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All"
+          [ngModel]="selectedQcPassed()"
+          (ngModelChange)="selectedQcPassed.set($event); onQcFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+    </div>
+
+    <!-- Second Row of Filters -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+      <!-- Expiry Status Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Expiry Status</label>
+        <p-select
+          [options]="expiryStatusOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All"
+          [ngModel]="selectedExpiryStatus()"
+          (ngModelChange)="
+            selectedExpiryStatus.set($event); onExpiryStatusFilter()
+          "
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Expiry Date Range -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Expiry Date Range</label>
+        <div class="flex gap-2">
+          <p-datepicker
+            [ngModel]="expiryFromDate()"
+            (ngModelChange)="expiryFromDate.set($event); onExpiryDateFilter()"
+            placeholder="From"
+            dateFormat="yy-mm-dd"
+            iconDisplay="input"
+          ></p-datepicker>
+          <p-datepicker
+            [ngModel]="expiryToDate()"
+            (ngModelChange)="expiryToDate.set($event); onExpiryDateFilter()"
+            placeholder="To"
+            dateFormat="yy-mm-dd"
+            iconDisplay="input"
+          ></p-datepicker>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex flex-col justify-end">
+        <div class="flex gap-2 flex-wrap">
+          <p-button
+            label="Search"
+            icon="pi pi-search"
+            (onClick)="onSearch()"
+            size="small"
+            class="p-button-primary flex-1 md:flex-none"
+          ></p-button>
+          <p-button
+            label="Clear"
+            icon="pi pi-times"
+            (onClick)="clearFilters()"
+            size="small"
+            class="p-button-secondary flex-1 md:flex-none"
+          ></p-button>
+        </div>
+      </div>
+    </div>
+  </p-card>
+
+  <!-- Packs Table -->
+  <p-card>
+    <p-table
+      [value]="packs()"
+      [loading]="loading()"
+      [paginator]="true"
+      [rows]="5"
+      size="small"
+      [rowsPerPageOptions]="[5, 10, 20, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} packs"
+      [globalFilterFields]="[
+        'serial_number',
+        'batch_lot_number',
+        'product_name',
+        'location'
+      ]"
+    >
+      <ng-template pTemplate="header">
+        <tr class="text-center">
+          <th pSortableColumn="serial_number" class="text-center align-middle">
+            Serial Number <p-sortIcon field="serial_number"></p-sortIcon>
+          </th>
+          <th pSortableColumn="product_name" class="text-center align-middle">
+            Product <p-sortIcon field="product_name"></p-sortIcon>
+          </th>
+          <th pSortableColumn="batch_lot_number" class="text-center align-middle">
+            Batch <p-sortIcon field="batch_lot_number"></p-sortIcon>
+          </th>
+          <th pSortableColumn="pack_type" class="text-center align-middle">
+            Type <p-sortIcon field="pack_type"></p-sortIcon>
+          </th>
+          <th pSortableColumn="pack_size" class="text-center align-middle">
+            Size <p-sortIcon field="pack_size"></p-sortIcon>
+          </th>
+          <th pSortableColumn="effective_expiry_date" class="text-center align-middle">
+            Expiry Date <p-sortIcon field="effective_expiry_date"></p-sortIcon>
+          </th>
+          <th class="text-center align-middle">Expiry Status</th>
+          <th class="text-center align-middle">Location</th>
+          <th pSortableColumn="status" class="text-center align-middle">
+            Status <p-sortIcon field="status"></p-sortIcon>
+          </th>
+          <th class="text-center align-middle">QC</th>
+          <th class="text-center align-middle">Shipping</th>
+          <th class="text-center align-middle">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-pack>
+        <tr>
+          <td>
+            <span class="font-mono text-sm font-medium">{{
+              pack.serial_number
+            }}</span>
+          </td>
+          <td>
+            <div>
+              <div class="font-medium">{{ pack.product_name }}</div>
+              <div class="text-xs text-gray-500">{{ pack.product_gtin }}</div>
+            </div>
+          </td>
+          <td>
+            <span class="font-mono text-sm">{{ pack.batch_lot_number }}</span>
+          </td>
+          <td>
+            <span class="capitalize">{{ pack.pack_type }}</span>
+          </td>
+          <td>
+            <span>{{ pack.pack_size | number }}</span>
+          </td>
+          <td>
+            <span class="text-sm">{{
+              pack.effective_expiry_date | date : "shortDate"
+            }}</span>
+          </td>
+          <td>
+            <div class="flex flex-col gap-1">
+              <p-tag
+                [value]="
+                  pack.is_expired
+                    ? 'Expired'
+                    : pack.days_until_expiry <= 30
+                    ? 'Expiring Soon'
+                    : 'Active'
+                "
+                [severity]="getExpiryStatusSeverity(pack)"
+                class="text-xs"
+              ></p-tag>
+              <div class="text-xs text-gray-600">
+                {{
+                  pack.days_until_expiry > 0
+                    ? pack.days_until_expiry + " days"
+                    : "Expired " +
+                      Math.abs(pack.days_until_expiry) +
+                      " days ago"
+                }}
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="text-sm">{{ pack.location || "-" }}</span>
+          </td>
+          <td>
+            <p-tag
+              [value]="pack.status"
+              [severity]="getStatusSeverity(pack.status)"
+              class="capitalize"
+            ></p-tag>
+          </td>
+          <td>
+            <i
+              [class]="
+                pack.quality_control_passed
+                  ? 'pi pi-check-circle text-green-500'
+                  : 'pi pi-times-circle text-red-500'
+              "
+              [pTooltip]="
+                pack.quality_control_passed ? 'QC Passed' : 'QC Failed'
+              "
+            ></i>
+          </td>
+          <td>
+            <div class="flex flex-col gap-1">
+              <p-tag
+                *ngIf="pack.is_delivered"
+                value="Delivered"
+                severity="success"
+                class="text-xs"
+              ></p-tag>
+              <p-tag
+                *ngIf="pack.is_shipped && !pack.is_delivered"
+                value="Shipped"
+                severity="warning"
+                class="text-xs"
+              ></p-tag>
+              <span *ngIf="!pack.is_shipped" class="text-xs text-gray-500"
+                >Not Shipped</span
+              >
+              <div *ngIf="pack.delivered_date" class="text-xs text-gray-600">
+                {{ pack.delivered_date | date : "shortDate" }}
+              </div>
+              <div
+                *ngIf="pack.shipped_date && !pack.delivered_date"
+                class="text-xs text-gray-600"
+              >
+                {{ pack.shipped_date | date : "shortDate" }}
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="flex">
+              <p-button
+                icon="pi pi-eye"
+                class="p-button-text p-button-sm"
+                pTooltip="View"
+                (onClick)="viewPack(pack)"
+              ></p-button>
+              <p-button
+                icon="pi pi-pencil"
+                class="p-button-text p-button-sm"
+                pTooltip="Edit"
+                (onClick)="editPack(pack)"
+              ></p-button>
+              <p-button
+                icon="pi pi-trash"
+                class="p-button-text p-button-sm p-button-danger"
+                pTooltip="Delete"
+                (onClick)="deletePack(pack)"
+              ></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="12" class="text-center py-8">
+            <div class="flex flex-col items-center gap-4">
+              <i class="pi pi-box text-4xl text-gray-400"></i>
+              <div>
+                <p class="text-lg font-medium text-gray-600">No packs found</p>
+                <p class="text-sm text-gray-500">
+                  Try adjusting your search criteria or create a new pack.
+                </p>
+              </div>
+              <p-button
+                label="Create First Pack"
+                icon="pi pi-plus"
+                (onClick)="createPack()"
+                class="p-button-primary"
+              ></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Toast for notifications -->
+<p-toast></p-toast>
+
+<!-- Confirmation dialog -->
+<p-confirmDialog></p-confirmDialog>

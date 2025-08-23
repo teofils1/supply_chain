@@ -1,0 +1,822 @@
+<div class="flex flex-col gap-4">
+  <!-- Header -->
+  <div class="flex justify-between items-center">
+    <div class="flex items-center gap-4">
+      <p-button
+        icon="pi pi-arrow-left"
+        class="p-button-text"
+        (onClick)="goBack()"
+        pTooltip="Back to Shipments"
+      ></p-button>
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">
+        <span *ngIf="isCreateMode()">Create Shipment</span>
+        <span *ngIf="isViewMode() && shipment()"
+          >Shipment Details - {{ shipment()?.tracking_number }}</span
+        >
+        <span *ngIf="isEditMode() && shipment()"
+          >Edit Shipment - {{ shipment()?.tracking_number }}</span
+        >
+      </h2>
+    </div>
+    <div class="flex gap-2">
+      <p-button
+        *ngIf="isViewMode()"
+        label="Edit"
+        icon="pi pi-pencil"
+        (onClick)="enableEdit()"
+        class="p-button-primary"
+      ></p-button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading()" class="flex justify-center py-8">
+    <i class="pi pi-spinner pi-spin text-2xl"></i>
+  </div>
+
+  <!-- Product → Batch → Pack → Shipment Hierarchy Display -->
+  <p-card *ngIf="isViewMode() && shipment()" class="mb-4">
+    <ng-template pTemplate="header">
+      <h3 class="text-lg font-medium">
+        Product → Batch → Pack → Shipment Hierarchy
+      </h3>
+    </ng-template>
+
+    <div class="flex flex-col gap-4">
+      <div class="flex items-center gap-4 text-sm">
+        <div class="flex flex-col">
+          <span class="font-medium text-gray-600">Shipment</span>
+          <span class="font-semibold">{{ shipment()?.tracking_number }}</span>
+          <span class="text-gray-500"
+            >{{ shipment()?.carrier | titlecase }} -
+            {{ shipment()?.service_type | titlecase }}</span
+          >
+        </div>
+        <i class="pi pi-arrow-down text-gray-400"></i>
+        <div class="flex flex-col">
+          <span class="font-medium text-gray-600"
+            >Contains {{ shipment()?.pack_count }} Packs</span
+          >
+          <div class="text-xs text-gray-500">
+            <div *ngFor="let pack of shipment()?.shipment_packs">
+              {{ pack.pack_serial_number }} ({{ pack.product_name }})
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Timeline -->
+      <div class="flex items-center gap-2 mt-4">
+        <p-tag
+          [value]="shipment()?.status"
+          [severity]="getStatusSeverity(shipment()?.status || '')"
+          class="capitalize"
+        ></p-tag>
+        <span *ngIf="shipment()?.is_delivered" class="text-green-600 text-sm">
+          <i class="pi pi-check-circle mr-1"></i>Delivered
+        </span>
+        <span
+          *ngIf="shipment()?.is_in_transit && !shipment()?.is_delivered"
+          class="text-orange-600 text-sm"
+        >
+          <i class="pi pi-truck mr-1"></i>In Transit
+        </span>
+        <span *ngIf="isOverdue()" class="text-red-600 text-sm">
+          <i class="pi pi-exclamation-triangle mr-1"></i>Overdue
+        </span>
+      </div>
+    </div>
+  </p-card>
+
+  <!-- Shipment Form -->
+  <form [formGroup]="shipmentForm" (ngSubmit)="onSubmit()" *ngIf="!loading()">
+    <!-- Basic Information -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Basic Information</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Tracking Number -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="tracking_number">
+            Tracking Number <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="tracking_number"
+            type="text"
+            pInputText
+            formControlName="tracking_number"
+            placeholder="Enter tracking number"
+            [class.ng-invalid]="isFieldInvalid('tracking_number')"
+            class="w-full"
+          />
+          <small *ngIf="isFieldInvalid('tracking_number')" class="text-red-500">
+            {{ getFieldError("tracking_number") }}
+          </small>
+        </div>
+
+        <!-- Status -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="status">
+            Status <span class="text-red-500">*</span>
+          </label>
+          <p-select
+            id="status"
+            formControlName="status"
+            [options]="statusOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Select status"
+            [class.ng-invalid]="isFieldInvalid('status')"
+            class="w-full"
+          ></p-select>
+          <small *ngIf="isFieldInvalid('status')" class="text-red-500">
+            {{ getFieldError("status") }}
+          </small>
+        </div>
+
+        <!-- Carrier -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="carrier">
+            Carrier <span class="text-red-500">*</span>
+          </label>
+          <p-select
+            id="carrier"
+            formControlName="carrier"
+            [options]="carrierOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Select carrier"
+            [class.ng-invalid]="isFieldInvalid('carrier')"
+            class="w-full"
+          ></p-select>
+          <small *ngIf="isFieldInvalid('carrier')" class="text-red-500">
+            {{ getFieldError("carrier") }}
+          </small>
+        </div>
+
+        <!-- Service Type -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="service_type">
+            Service Type <span class="text-red-500">*</span>
+          </label>
+          <p-select
+            id="service_type"
+            formControlName="service_type"
+            [options]="serviceTypeOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Select service type"
+            [class.ng-invalid]="isFieldInvalid('service_type')"
+            class="w-full"
+          ></p-select>
+          <small *ngIf="isFieldInvalid('service_type')" class="text-red-500">
+            {{ getFieldError("service_type") }}
+          </small>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Pack Selection -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Pack Selection</h3>
+      </ng-template>
+
+      <div class="flex flex-col gap-4">
+        <!-- Pack Multi-Select -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="pack_ids">
+            Select Packs <span class="text-red-500">*</span>
+          </label>
+
+          <!-- Edit/Create Mode: Show multiselect -->
+          <p-multiSelect
+            *ngIf="!isViewMode()"
+            id="pack_ids"
+            formControlName="pack_ids"
+            [options]="availablePacks()"
+            optionLabel="serial_number"
+            optionValue="id"
+            placeholder="Select packs to include in shipment"
+            [class.ng-invalid]="isFieldInvalid('pack_ids')"
+            class="w-full"
+            [showToggleAll]="false"
+            [filter]="true"
+            filterBy="serial_number,product_name,batch_lot_number"
+          >
+            <ng-template pTemplate="item" let-pack>
+              <div class="flex flex-col">
+                <span class="font-medium">{{ pack.serial_number }}</span>
+                <span class="text-sm text-gray-600"
+                  >{{ pack.product_name }} - Batch:
+                  {{ pack.batch_lot_number }}</span
+                >
+                <span class="text-xs text-gray-500"
+                  >Size: {{ pack.pack_size }} | Type:
+                  {{ pack.pack_type | titlecase }}</span
+                >
+              </div>
+            </ng-template>
+          </p-multiSelect>
+
+          <!-- View Mode: Show selected packs as read-only list -->
+          <div
+            *ngIf="isViewMode()"
+            class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-800"
+          >
+            <div
+              *ngIf="getShipmentPacks().length === 0"
+              class="text-gray-500 text-sm"
+            >
+              No packs assigned to this shipment
+            </div>
+            <div
+              *ngFor="let pack of getShipmentPacks()"
+              class="flex flex-col py-2 border-b border-gray-200 dark:border-gray-600 last:border-b-0"
+            >
+              <span class="font-medium">{{ pack.serial_number }}</span>
+              <span class="text-sm text-gray-600 dark:text-gray-400"
+                >{{ pack.product_name }} - Batch:
+                {{ pack.batch_lot_number }}</span
+              >
+              <span class="text-xs text-gray-500"
+                >Size: {{ pack.pack_size }} | Type:
+                {{ pack.pack_type | titlecase }}
+                <span *ngIf="pack.quantity_shipped">
+                  | Shipped Qty: {{ pack.quantity_shipped }}</span
+                >
+              </span>
+            </div>
+          </div>
+
+          <small *ngIf="isFieldInvalid('pack_ids')" class="text-red-500">
+            {{ getFieldError("pack_ids") }}
+          </small>
+          <small *ngIf="!isViewMode()" class="text-gray-500 mt-1">
+            Only active packs not already in shipments are shown
+          </small>
+        </div>
+
+        <!-- Selected Packs Summary -->
+        <div
+          *ngIf="getDisplayedPacks().length > 0"
+          class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700"
+        >
+          <h4 class="font-medium mb-2 text-gray-900 dark:text-white">
+            <span *ngIf="isViewMode()"
+              >Shipment Packs ({{ getDisplayedPacks().length }})</span
+            >
+            <span *ngIf="!isViewMode()"
+              >Selected Packs ({{ getDisplayedPacks().length }})</span
+            >
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div *ngFor="let pack of getDisplayedPacks()" class="text-sm">
+              <span class="font-medium text-gray-800 dark:text-gray-100">
+                {{ pack.serial_number }}
+              </span>
+              <span class="text-gray-600 dark:text-gray-300">
+                - {{ pack.product_name }}
+              </span>
+              <span class="text-xs text-gray-500 block">
+                Batch: {{ pack.batch_lot_number }}
+                <span *ngIf="pack.quantity_shipped">
+                  | Qty: {{ pack.quantity_shipped }}</span
+                >
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Origin Address -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Origin Address</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Origin Name -->
+        <div class="flex flex-col md:col-span-2">
+          <label class="text-sm font-medium mb-2" for="origin_name">
+            Company/Facility Name <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="origin_name"
+            type="text"
+            pInputText
+            formControlName="origin_name"
+            placeholder="Enter origin company/facility name"
+            [class.ng-invalid]="isFieldInvalid('origin_name')"
+            class="w-full"
+          />
+          <small *ngIf="isFieldInvalid('origin_name')" class="text-red-500">
+            {{ getFieldError("origin_name") }}
+          </small>
+        </div>
+
+        <!-- Origin Address Line 1 -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="origin_address_line1">
+            Address Line 1 <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="origin_address_line1"
+            type="text"
+            pInputText
+            formControlName="origin_address_line1"
+            placeholder="Enter street address"
+            [class.ng-invalid]="isFieldInvalid('origin_address_line1')"
+            class="w-full"
+          />
+          <small
+            *ngIf="isFieldInvalid('origin_address_line1')"
+            class="text-red-500"
+          >
+            {{ getFieldError("origin_address_line1") }}
+          </small>
+        </div>
+
+        <!-- Origin Address Line 2 -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="origin_address_line2">
+            Address Line 2
+          </label>
+          <input
+            id="origin_address_line2"
+            type="text"
+            pInputText
+            formControlName="origin_address_line2"
+            placeholder="Apartment, suite, etc. (optional)"
+            class="w-full"
+          />
+        </div>
+
+        <!-- Origin City -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="origin_city">
+            City <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="origin_city"
+            type="text"
+            pInputText
+            formControlName="origin_city"
+            placeholder="Enter city"
+            [class.ng-invalid]="isFieldInvalid('origin_city')"
+            class="w-full"
+          />
+          <small *ngIf="isFieldInvalid('origin_city')" class="text-red-500">
+            {{ getFieldError("origin_city") }}
+          </small>
+        </div>
+
+        <!-- Origin State -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="origin_state">
+            State/Province <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="origin_state"
+            type="text"
+            pInputText
+            formControlName="origin_state"
+            placeholder="Enter state/province"
+            [class.ng-invalid]="isFieldInvalid('origin_state')"
+            class="w-full"
+          />
+          <small *ngIf="isFieldInvalid('origin_state')" class="text-red-500">
+            {{ getFieldError("origin_state") }}
+          </small>
+        </div>
+
+        <!-- Origin Postal Code -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="origin_postal_code">
+            Postal Code <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="origin_postal_code"
+            type="text"
+            pInputText
+            formControlName="origin_postal_code"
+            placeholder="Enter postal/ZIP code"
+            [class.ng-invalid]="isFieldInvalid('origin_postal_code')"
+            class="w-full"
+          />
+          <small
+            *ngIf="isFieldInvalid('origin_postal_code')"
+            class="text-red-500"
+          >
+            {{ getFieldError("origin_postal_code") }}
+          </small>
+        </div>
+
+        <!-- Origin Country -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="origin_country">
+            Country <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="origin_country"
+            type="text"
+            pInputText
+            formControlName="origin_country"
+            placeholder="Enter country"
+            [class.ng-invalid]="isFieldInvalid('origin_country')"
+            class="w-full"
+          />
+          <small *ngIf="isFieldInvalid('origin_country')" class="text-red-500">
+            {{ getFieldError("origin_country") }}
+          </small>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Destination Address -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Destination Address</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Destination Name -->
+        <div class="flex flex-col md:col-span-2">
+          <label class="text-sm font-medium mb-2" for="destination_name">
+            Company/Facility Name <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="destination_name"
+            type="text"
+            pInputText
+            formControlName="destination_name"
+            placeholder="Enter destination company/facility name"
+            [class.ng-invalid]="isFieldInvalid('destination_name')"
+            class="w-full"
+          />
+          <small
+            *ngIf="isFieldInvalid('destination_name')"
+            class="text-red-500"
+          >
+            {{ getFieldError("destination_name") }}
+          </small>
+        </div>
+
+        <!-- Destination Address Line 1 -->
+        <div class="flex flex-col">
+          <label
+            class="text-sm font-medium mb-2"
+            for="destination_address_line1"
+          >
+            Address Line 1 <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="destination_address_line1"
+            type="text"
+            pInputText
+            formControlName="destination_address_line1"
+            placeholder="Enter street address"
+            [class.ng-invalid]="isFieldInvalid('destination_address_line1')"
+            class="w-full"
+          />
+          <small
+            *ngIf="isFieldInvalid('destination_address_line1')"
+            class="text-red-500"
+          >
+            {{ getFieldError("destination_address_line1") }}
+          </small>
+        </div>
+
+        <!-- Destination Address Line 2 -->
+        <div class="flex flex-col">
+          <label
+            class="text-sm font-medium mb-2"
+            for="destination_address_line2"
+          >
+            Address Line 2
+          </label>
+          <input
+            id="destination_address_line2"
+            type="text"
+            pInputText
+            formControlName="destination_address_line2"
+            placeholder="Apartment, suite, etc. (optional)"
+            class="w-full"
+          />
+        </div>
+
+        <!-- Destination City -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="destination_city">
+            City <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="destination_city"
+            type="text"
+            pInputText
+            formControlName="destination_city"
+            placeholder="Enter city"
+            [class.ng-invalid]="isFieldInvalid('destination_city')"
+            class="w-full"
+          />
+          <small
+            *ngIf="isFieldInvalid('destination_city')"
+            class="text-red-500"
+          >
+            {{ getFieldError("destination_city") }}
+          </small>
+        </div>
+
+        <!-- Destination State -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="destination_state">
+            State/Province <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="destination_state"
+            type="text"
+            pInputText
+            formControlName="destination_state"
+            placeholder="Enter state/province"
+            [class.ng-invalid]="isFieldInvalid('destination_state')"
+            class="w-full"
+          />
+          <small
+            *ngIf="isFieldInvalid('destination_state')"
+            class="text-red-500"
+          >
+            {{ getFieldError("destination_state") }}
+          </small>
+        </div>
+
+        <!-- Destination Postal Code -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="destination_postal_code">
+            Postal Code <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="destination_postal_code"
+            type="text"
+            pInputText
+            formControlName="destination_postal_code"
+            placeholder="Enter postal/ZIP code"
+            [class.ng-invalid]="isFieldInvalid('destination_postal_code')"
+            class="w-full"
+          />
+          <small
+            *ngIf="isFieldInvalid('destination_postal_code')"
+            class="text-red-500"
+          >
+            {{ getFieldError("destination_postal_code") }}
+          </small>
+        </div>
+
+        <!-- Destination Country -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="destination_country">
+            Country <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="destination_country"
+            type="text"
+            pInputText
+            formControlName="destination_country"
+            placeholder="Enter country"
+            [class.ng-invalid]="isFieldInvalid('destination_country')"
+            class="w-full"
+          />
+          <small
+            *ngIf="isFieldInvalid('destination_country')"
+            class="text-red-500"
+          >
+            {{ getFieldError("destination_country") }}
+          </small>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Dates and Requirements -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Dates and Requirements</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Shipped Date -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="shipped_date">
+            Shipped Date
+          </label>
+          <p-datepicker
+            id="shipped_date"
+            formControlName="shipped_date"
+            placeholder="Select shipped date"
+            dateFormat="yy-mm-dd"
+            iconDisplay="input"
+            class="w-full"
+          ></p-datepicker>
+        </div>
+
+        <!-- Estimated Delivery Date -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="estimated_delivery_date">
+            Estimated Delivery Date
+          </label>
+          <p-datepicker
+            id="estimated_delivery_date"
+            formControlName="estimated_delivery_date"
+            placeholder="Select estimated delivery date"
+            dateFormat="yy-mm-dd"
+            iconDisplay="input"
+            class="w-full"
+          ></p-datepicker>
+        </div>
+
+        <!-- Actual Delivery Date -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="actual_delivery_date">
+            Actual Delivery Date
+          </label>
+          <p-datepicker
+            id="actual_delivery_date"
+            formControlName="actual_delivery_date"
+            placeholder="Select actual delivery date"
+            dateFormat="yy-mm-dd"
+            iconDisplay="input"
+            class="w-full"
+          ></p-datepicker>
+        </div>
+
+        <!-- Temperature Requirement -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="temperature_requirement">
+            Temperature Requirement
+          </label>
+          <p-select
+            id="temperature_requirement"
+            formControlName="temperature_requirement"
+            [options]="temperatureRequirementOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Select temperature requirement"
+            class="w-full"
+          ></p-select>
+        </div>
+
+        <!-- Special Handling Required -->
+        <div class="flex flex-col md:col-span-2">
+          <div class="flex items-center gap-2">
+            <p-checkbox
+              id="special_handling_required"
+              formControlName="special_handling_required"
+              binary="true"
+            ></p-checkbox>
+            <label class="text-sm font-medium" for="special_handling_required">
+              Special Handling Required
+            </label>
+          </div>
+        </div>
+
+        <!-- Special Instructions -->
+        <div class="flex flex-col md:col-span-2">
+          <label class="text-sm font-medium mb-2" for="special_instructions">
+            Special Instructions
+          </label>
+          <textarea
+            id="special_instructions"
+            pTextarea
+            formControlName="special_instructions"
+            placeholder="Enter any special handling instructions"
+            rows="3"
+            class="w-full"
+          ></textarea>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Cost and Billing -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Cost and Billing</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Shipping Cost -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="shipping_cost">
+            Shipping Cost
+          </label>
+          <p-inputNumber
+            id="shipping_cost"
+            formControlName="shipping_cost"
+            placeholder="0.00"
+            mode="currency"
+            currency="USD"
+            locale="en-US"
+            [min]="0"
+            [maxFractionDigits]="2"
+            class="w-full"
+          ></p-inputNumber>
+          <small *ngIf="isFieldInvalid('shipping_cost')" class="text-red-500">
+            {{ getFieldError("shipping_cost") }}
+          </small>
+        </div>
+
+        <!-- Currency -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="currency">
+            Currency
+          </label>
+          <input
+            id="currency"
+            type="text"
+            pInputText
+            formControlName="currency"
+            placeholder="USD"
+            class="w-full"
+          />
+        </div>
+
+        <!-- Billing Reference -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="billing_reference">
+            Billing Reference
+          </label>
+          <input
+            id="billing_reference"
+            type="text"
+            pInputText
+            formControlName="billing_reference"
+            placeholder="Enter billing reference"
+            class="w-full"
+          />
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Additional Information -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Additional Information</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 gap-4">
+        <!-- Notes -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="notes"> Notes </label>
+          <textarea
+            id="notes"
+            pTextarea
+            formControlName="notes"
+            placeholder="Enter any additional notes about this shipment"
+            rows="3"
+            class="w-full"
+          ></textarea>
+        </div>
+
+        <!-- External Tracking URL -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="external_tracking_url">
+            External Tracking URL
+          </label>
+          <input
+            id="external_tracking_url"
+            type="url"
+            pInputText
+            formControlName="external_tracking_url"
+            placeholder="https://tracking.carrier.com/track?id=..."
+            class="w-full"
+          />
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Form Actions -->
+    <div class="flex justify-between items-center pt-4">
+      <p-button
+        label="Cancel"
+        icon="pi pi-times"
+        (onClick)="cancel()"
+        class="p-button-secondary"
+      ></p-button>
+
+      <div class="flex gap-2">
+        <p-button
+          *ngIf="isCreateMode() || isEditMode()"
+          type="submit"
+          [label]="isCreateMode() ? 'Create Shipment' : 'Update Shipment'"
+          [icon]="isCreateMode() ? 'pi pi-plus' : 'pi pi-save'"
+          [loading]="saving()"
+          [disabled]="shipmentForm.invalid"
+          class="p-button-primary"
+        ></p-button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Toast for notifications -->
+<p-toast></p-toast>

@@ -1,8 +1,590 @@
-<p-card>
-  <ng-template pTemplate="header">
-    <h2 class="text-lg font-semibold">
+<div class="flex flex-col gap-4">
+  <!-- Header with Create Button and View Toggle -->
+  <div class="flex justify-between items-center">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">
       {{ "pages.events.title" | translate }}
     </h2>
-  </ng-template>
-  <p>{{ "pages.events.empty" | translate }}</p>
-</p-card>
+    <div class="flex items-center gap-2">
+      <!-- View Toggle -->
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-medium">View:</span>
+        <p-togglebutton
+          [ngModel]="viewMode() === 'table'"
+          (ngModelChange)="toggleView()"
+          [onLabel]="'Table'"
+          [offLabel]="'Timeline'"
+          [onIcon]="'pi pi-table'"
+          [offIcon]="'pi pi-clock'"
+          class="p-button-sm"
+        ></p-togglebutton>
+      </div>
+      <p-button
+        label="Create Event"
+        icon="pi pi-plus"
+        (onClick)="createEvent()"
+        class="p-button-primary"
+      ></p-button>
+    </div>
+  </div>
+
+  <!-- Filters Card -->
+  <p-card>
+    <ng-template pTemplate="header">
+      <h3 class="text-lg font-medium">Filters</h3>
+    </ng-template>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <!-- Search -->
+      <div class="flex flex-col">
+        <div class="flex">
+          <label class="text-sm font-medium mb-2">Search</label>
+          <i class="pi pi-search ml-2"></i>
+        </div>
+        <input
+          type="text"
+          pInputText
+          placeholder="Search events..."
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+          (keyup.enter)="onSearch()"
+          class="w-full"
+        />
+      </div>
+
+      <!-- Event Type Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Event Type</label>
+        <p-select
+          [options]="eventTypeOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Types"
+          [ngModel]="selectedEventType()"
+          (ngModelChange)="selectedEventType.set($event); onEventTypeFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Entity Type Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Entity Type</label>
+        <p-select
+          [options]="entityTypeOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Entities"
+          [ngModel]="selectedEntityType()"
+          (ngModelChange)="selectedEntityType.set($event); onEntityTypeFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Severity Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Severity</label>
+        <p-select
+          [options]="severityOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Severities"
+          [ngModel]="selectedSeverity()"
+          (ngModelChange)="selectedSeverity.set($event); onSeverityFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Product Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Product</label>
+        <p-select
+          [options]="products()"
+          optionLabel="name"
+          optionValue="id"
+          placeholder="All Products"
+          [ngModel]="selectedProduct()"
+          (ngModelChange)="selectedProduct.set($event); onProductFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Batch Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Batch</label>
+        <p-select
+          [options]="batches()"
+          optionLabel="lot_number"
+          optionValue="id"
+          placeholder="All Batches"
+          [ngModel]="selectedBatch()"
+          (ngModelChange)="selectedBatch.set($event); onBatchFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Pack Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Pack</label>
+        <p-select
+          [options]="packs()"
+          optionLabel="serial_number"
+          optionValue="id"
+          placeholder="All Packs"
+          [ngModel]="selectedPack()"
+          (ngModelChange)="selectedPack.set($event); onPackFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Shipment Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Shipment</label>
+        <p-select
+          [options]="shipments()"
+          optionLabel="tracking_number"
+          optionValue="id"
+          placeholder="All Shipments"
+          [ngModel]="selectedShipment()"
+          (ngModelChange)="selectedShipment.set($event); onShipmentFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+    </div>
+
+    <!-- Second Row of Filters -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+      <!-- Recent Days Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Recent</label>
+        <p-select
+          [options]="recentDaysOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Time"
+          [ngModel]="selectedRecentDays()"
+          (ngModelChange)="selectedRecentDays.set($event); onRecentDaysFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Critical Only -->
+      <div class="flex items-center justify-center h-full">
+        <div class="flex items-center gap-2">
+          <p-checkbox
+            [ngModel]="criticalOnly()"
+            (ngModelChange)="criticalOnly.set($event); onCriticalOnlyFilter()"
+            binary="true"
+          ></p-checkbox>
+          <label class="text-sm font-medium">Critical Only</label>
+        </div>
+      </div>
+
+      <!-- Alert Only -->
+      <div class="flex items-center justify-center h-full">
+        <div class="flex items-center gap-2">
+          <p-checkbox
+            [ngModel]="alertOnly()"
+            (ngModelChange)="alertOnly.set($event); onAlertOnlyFilter()"
+            binary="true"
+          ></p-checkbox>
+          <label class="text-sm font-medium">Alerts Only</label>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex flex-col justify-end">
+        <div class="flex gap-2">
+          <p-button
+            label="Search"
+            icon="pi pi-search"
+            (onClick)="onSearch()"
+            class="p-button-primary"
+          ></p-button>
+          <p-button
+            label="Clear"
+            icon="pi pi-times"
+            (onClick)="clearFilters()"
+            class="p-button-secondary"
+          ></p-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Date Range Filters -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+      <!-- Date Range -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Date Range</label>
+        <div class="flex gap-2">
+          <p-datepicker
+            [ngModel]="dateFromFilter()"
+            (ngModelChange)="dateFromFilter.set($event); onDateFilter()"
+            placeholder="From"
+            dateFormat="yy-mm-dd"
+            iconDisplay="input"
+          ></p-datepicker>
+          <p-datepicker
+            [ngModel]="dateToFilter()"
+            (ngModelChange)="dateToFilter.set($event); onDateFilter()"
+            placeholder="To"
+            dateFormat="yy-mm-dd"
+            iconDisplay="input"
+          ></p-datepicker>
+        </div>
+      </div>
+    </div>
+  </p-card>
+
+  <!-- Events Display -->
+  <p-card>
+    <ng-template pTemplate="header">
+      <div class="flex justify-between items-center">
+        <h3 class="text-lg font-medium">
+          {{ viewMode() === "timeline" ? "Event Timeline" : "Events Table" }}
+        </h3>
+        <p-badge [value]="events().length.toString()" severity="info"></p-badge>
+      </div>
+    </ng-template>
+
+    <!-- Loading State -->
+    <div *ngIf="loading()" class="flex justify-center py-8">
+      <i class="pi pi-spinner pi-spin text-2xl"></i>
+    </div>
+
+    <!-- Timeline View -->
+    <p-timeline
+      *ngIf="!loading() && events().length > 0 && viewMode() === 'timeline'"
+      [value]="timelineEvents()"
+      layout="vertical"
+      class="customized-timeline"
+    >
+      <ng-template pTemplate="marker" let-event>
+        <div
+          class="flex items-center justify-center w-8 h-8 rounded-full border-2"
+          [ngClass]="{
+            'bg-red-100 border-red-500 text-red-600':
+              event.severity === 'critical',
+            'bg-orange-100 border-orange-500 text-orange-600':
+              event.severity === 'high',
+            'bg-yellow-100 border-yellow-500 text-yellow-600':
+              event.severity === 'medium',
+            'bg-blue-100 border-blue-500 text-blue-600':
+              event.severity === 'low',
+            'bg-green-100 border-green-500 text-green-600':
+              event.severity === 'info'
+          }"
+        >
+          <i [class]="'pi ' + event.icon" class="text-sm"></i>
+        </div>
+      </ng-template>
+
+      <ng-template pTemplate="content" let-event>
+        <div
+          class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ml-4"
+        >
+          <!-- Event Header -->
+          <div class="flex justify-between items-start mb-2">
+            <div class="flex items-center gap-2">
+              <p-tag
+                [value]="event.event_type_display"
+                [severity]="getSeverityColor(event.severity)"
+                class="text-xs"
+              ></p-tag>
+              <p-tag
+                [value]="event.entity_type_display"
+                severity="secondary"
+                class="text-xs"
+              ></p-tag>
+              <span
+                *ngIf="event.is_critical"
+                class="text-red-600 text-xs font-bold"
+                >CRITICAL</span
+              >
+              <span
+                *ngIf="event.is_alert && !event.is_critical"
+                class="text-orange-600 text-xs font-bold"
+                >ALERT</span
+              >
+              <span
+                *ngIf="event.isRecent"
+                class="text-blue-600 text-xs font-bold"
+                >NEW</span
+              >
+            </div>
+            <div class="text-xs text-gray-500">
+              <span [title]="formatTimestamp(event.timestamp)">{{
+                event.relativeTime
+              }}</span>
+            </div>
+          </div>
+
+          <!-- Event Description -->
+          <p class="text-gray-800 dark:text-gray-200 mb-2">
+            {{ event.description }}
+          </p>
+
+          <!-- Entity Information -->
+          <div
+            class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2"
+          >
+            <i class="pi pi-link text-xs"></i>
+            <span>{{ event.entityDisplay }}</span>
+          </div>
+
+          <!-- Location and User -->
+          <div class="flex justify-between items-center text-xs text-gray-500">
+            <div class="flex items-center gap-4">
+              <span *ngIf="event.location" class="flex items-center gap-1">
+                <i class="pi pi-map-marker"></i>
+                {{ event.location }}
+              </span>
+              <span
+                *ngIf="event.user_full_name"
+                class="flex items-center gap-1"
+              >
+                <i class="pi pi-user"></i>
+                {{ event.user_full_name }}
+              </span>
+              <span
+                *ngIf="!event.user_full_name && event.user_username"
+                class="flex items-center gap-1"
+              >
+                <i class="pi pi-user"></i>
+                {{ event.user_username }}
+              </span>
+              <span
+                *ngIf="!event.user_full_name && !event.user_username"
+                class="flex items-center gap-1"
+              >
+                <i class="pi pi-cog"></i>
+                System
+              </span>
+            </div>
+            <p-button
+              icon="pi pi-eye"
+              class="p-button-text p-button-sm"
+              pTooltip="View Details"
+              (onClick)="viewEvent(event)"
+            ></p-button>
+          </div>
+        </div>
+      </ng-template>
+    </p-timeline>
+
+    <!-- Table View -->
+    <div *ngIf="!loading() && events().length > 0 && viewMode() === 'table'">
+      <p-table
+        [value]="events()"
+        [paginator]="true"
+        [rows]="rows()"
+        [totalRecords]="events().length"
+        [first]="first()"
+        (onPage)="onPageChange($event)"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} events"
+        [rowsPerPageOptions]="[5, 10, 25, 50]"
+        [rows]="5"
+        styleClass="p-datatable-sm"
+        [sortField]="'timestamp'"
+        [sortOrder]="-1"
+        [lazy]="false"
+      >
+        <!-- Event Type Column -->
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="event_type">
+              Event Type
+              <p-sortIcon field="event_type"></p-sortIcon>
+            </th>
+            <th pSortableColumn="entity_type">
+              Entity
+              <p-sortIcon field="entity_type"></p-sortIcon>
+            </th>
+            <th pSortableColumn="severity">
+              Severity
+              <p-sortIcon field="severity"></p-sortIcon>
+            </th>
+            <th pSortableColumn="timestamp">
+              Timestamp
+              <p-sortIcon field="timestamp"></p-sortIcon>
+            </th>
+            <th>Description</th>
+            <th>Location</th>
+            <th>User</th>
+            <th>Actions</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-event>
+          <tr
+            [ngClass]="{
+              'bg-red-50 dark:bg-red-900/10': event.is_critical,
+              'bg-orange-50 dark:bg-orange-900/10':
+                event.is_alert && !event.is_critical
+            }"
+          >
+            <!-- Event Type -->
+            <td>
+              <div class="flex items-center gap-2">
+                <i
+                  [class]="'pi ' + getEventTypeIcon(event.event_type)"
+                  [ngClass]="{
+                    'text-red-600': event.severity === 'critical',
+                    'text-orange-600': event.severity === 'high',
+                    'text-yellow-600': event.severity === 'medium',
+                    'text-blue-600': event.severity === 'low',
+                    'text-green-600': event.severity === 'info'
+                  }"
+                ></i>
+                <div class="flex flex-col">
+                  <span class="font-medium text-sm">{{
+                    event.event_type_display
+                  }}</span>
+                  <div class="flex items-center gap-1">
+                    <span
+                      *ngIf="event.is_critical"
+                      class="text-red-600 text-xs font-bold"
+                      >CRITICAL</span
+                    >
+                    <span
+                      *ngIf="event.is_alert && !event.is_critical"
+                      class="text-orange-600 text-xs font-bold"
+                      >ALERT</span
+                    >
+                    <span
+                      *ngIf="isRecent(event.timestamp)"
+                      class="text-blue-600 text-xs font-bold"
+                      >NEW</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            <!-- Entity -->
+            <td>
+              <div class="flex flex-col">
+                <span class="font-medium text-sm">{{
+                  event.entity_type_display
+                }}</span>
+                <span class="text-xs text-gray-600">{{
+                  getEntityDisplayInfo(event)
+                }}</span>
+              </div>
+            </td>
+
+            <!-- Severity -->
+            <td>
+              <p-tag
+                [value]="event.severity_display"
+                [severity]="getSeverityColor(event.severity)"
+                class="text-xs"
+              ></p-tag>
+            </td>
+
+            <!-- Timestamp -->
+            <td>
+              <div class="flex flex-col">
+                <span
+                  class="text-sm"
+                  [title]="formatTimestamp(event.timestamp)"
+                >
+                  {{ getRelativeTime(event.timestamp) }}
+                </span>
+                <span class="text-xs text-gray-500">{{
+                  formatTimestamp(event.timestamp)
+                }}</span>
+              </div>
+            </td>
+
+            <!-- Description -->
+            <td>
+              <span class="text-sm" [title]="event.description">
+                {{
+                  event.description.length > 50
+                    ? (event.description | slice : 0 : 50) + "..."
+                    : event.description
+                }}
+              </span>
+            </td>
+
+            <!-- Location -->
+            <td>
+              <span
+                *ngIf="event.location"
+                class="text-sm flex items-center gap-1"
+              >
+                <i class="pi pi-map-marker text-xs"></i>
+                {{
+                  event.location.length > 20
+                    ? (event.location | slice : 0 : 20) + "..."
+                    : event.location
+                }}
+              </span>
+              <span *ngIf="!event.location" class="text-gray-400 text-sm"
+                >-</span
+              >
+            </td>
+
+            <!-- User -->
+            <td>
+              <span
+                *ngIf="event.user_full_name || event.user_username"
+                class="text-sm flex items-center gap-1"
+              >
+                <i class="pi pi-user text-xs"></i>
+                {{ event.user_full_name || event.user_username }}
+              </span>
+              <span
+                *ngIf="!event.user_full_name && !event.user_username"
+                class="text-gray-400 text-sm flex items-center gap-1"
+              >
+                <i class="pi pi-cog text-xs"></i>
+                System
+              </span>
+            </td>
+
+            <!-- Actions -->
+            <td>
+              <p-button
+                icon="pi pi-eye"
+                class="p-button-text p-button-sm"
+                pTooltip="View Details"
+                (onClick)="viewEvent(event)"
+              ></p-button>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading() && events().length === 0" class="text-center py-8">
+      <div class="flex flex-col items-center gap-4">
+        <i class="pi pi-calendar text-4xl text-gray-400"></i>
+        <div>
+          <p class="text-lg font-medium text-gray-600">No events found</p>
+          <p class="text-sm text-gray-500">
+            Try adjusting your search criteria or create a new event.
+          </p>
+        </div>
+        <p-button
+          label="Create First Event"
+          icon="pi pi-plus"
+          (onClick)="createEvent()"
+          class="p-button-primary"
+        ></p-button>
+      </div>
+    </div>
+  </p-card>
+</div>
+
+<!-- Toast for notifications -->
+<p-toast></p-toast>

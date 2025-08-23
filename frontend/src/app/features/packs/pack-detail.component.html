@@ -1,0 +1,485 @@
+<div class="flex flex-col gap-4">
+  <!-- Header -->
+  <div class="flex justify-between items-center">
+    <div class="flex items-center gap-4">
+      <p-button
+        icon="pi pi-arrow-left"
+        class="p-button-text"
+        (onClick)="goBack()"
+        pTooltip="Back to Packs"
+      ></p-button>
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">
+        <span *ngIf="isCreateMode()">Create Pack</span>
+        <span *ngIf="isViewMode() && pack()"
+          >Pack Details - {{ pack()?.serial_number }}</span
+        >
+        <span *ngIf="isEditMode() && pack()"
+          >Edit Pack - {{ pack()?.serial_number }}</span
+        >
+      </h2>
+    </div>
+    <div class="flex gap-2">
+      <p-button
+        *ngIf="isViewMode()"
+        label="Edit"
+        icon="pi pi-pencil"
+        (onClick)="enableEdit()"
+        class="p-button-primary"
+      ></p-button>
+      <p-button
+        *ngIf="!isViewMode()"
+        label="Cancel"
+        icon="pi pi-times"
+        (onClick)="cancel()"
+        class="p-button-secondary"
+        type="button"
+      ></p-button>
+      <p-button
+        *ngIf="!isViewMode()"
+        [label]="isCreateMode() ? 'Create Pack' : 'Update Pack'"
+        icon="pi pi-check"
+        type="submit"
+        [loading]="saving()"
+        [disabled]="packForm.invalid"
+        class="p-button-primary"
+      ></p-button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading()" class="flex justify-center py-8">
+    <i class="pi pi-spinner pi-spin text-2xl"></i>
+  </div>
+
+  <!-- Pack Form -->
+  <form [formGroup]="packForm" (ngSubmit)="onSubmit()" *ngIf="!loading()">
+    <!-- Product → Batch → Pack Hierarchy Display -->
+    <p-card *ngIf="isViewMode() && pack()" class="mb-4">
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Product → Batch → Pack Hierarchy</h3>
+      </ng-template>
+
+      <div class="flex items-center gap-4 text-sm">
+        <div class="flex flex-col">
+          <span class="font-medium text-gray-600">Product</span>
+          <span class="font-semibold">{{ pack()?.product_name }}</span>
+          <span class="text-gray-500">{{ pack()?.product_gtin }}</span>
+        </div>
+        <i class="pi pi-arrow-right text-gray-400"></i>
+        <div class="flex flex-col">
+          <span class="font-medium text-gray-600">Batch</span>
+          <span class="font-semibold">{{ pack()?.batch_lot_number }}</span>
+        </div>
+        <i class="pi pi-arrow-right text-gray-400"></i>
+        <div class="flex flex-col">
+          <span class="font-medium text-gray-600">Pack</span>
+          <span class="font-semibold">{{ pack()?.serial_number }}</span>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Basic Information -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Basic Information</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Batch Selection -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="batch">
+            Batch <span class="text-red-500">*</span>
+          </label>
+          <p-select
+            id="batch"
+            formControlName="batch"
+            [options]="batches()"
+            optionLabel="lot_number"
+            optionValue="id"
+            placeholder="Select a batch"
+            [class.ng-invalid]="isFieldInvalid('batch')"
+            class="w-full"
+          >
+            <ng-template pTemplate="selectedItem" let-selectedOption>
+              <div *ngIf="selectedOption">
+                <div class="font-medium">{{ selectedOption.lot_number }}</div>
+                <div class="text-xs text-gray-500">
+                  {{ selectedOption.product_name }}
+                </div>
+              </div>
+            </ng-template>
+            <ng-template pTemplate="item" let-batch>
+              <div>
+                <div class="font-medium">{{ batch.lot_number }}</div>
+                <div class="text-xs text-gray-500">
+                  {{ batch.product_name }}
+                </div>
+              </div>
+            </ng-template>
+          </p-select>
+          <small *ngIf="isFieldInvalid('batch')" class="text-red-500">
+            {{ getFieldError("batch") }}
+          </small>
+        </div>
+
+        <!-- Serial Number -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="serial_number">
+            Serial Number <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="serial_number"
+            type="text"
+            pInputText
+            formControlName="serial_number"
+            placeholder="Enter pack serial number"
+            [class.ng-invalid]="isFieldInvalid('serial_number')"
+            class="w-full"
+          />
+          <small *ngIf="isFieldInvalid('serial_number')" class="text-red-500">
+            {{ getFieldError("serial_number") }}
+          </small>
+        </div>
+
+        <!-- Pack Size -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="pack_size">
+            Pack Size <span class="text-red-500">*</span>
+          </label>
+          <p-inputNumber
+            id="pack_size"
+            formControlName="pack_size"
+            [min]="1"
+            [showButtons]="true"
+            placeholder="Number of units"
+            [class.ng-invalid]="isFieldInvalid('pack_size')"
+            class="w-full"
+          ></p-inputNumber>
+          <small *ngIf="isFieldInvalid('pack_size')" class="text-red-500">
+            {{ getFieldError("pack_size") }}
+          </small>
+        </div>
+
+        <!-- Pack Type -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="pack_type">
+            Pack Type <span class="text-red-500">*</span>
+          </label>
+          <p-select
+            id="pack_type"
+            formControlName="pack_type"
+            [options]="packTypeOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Select pack type"
+            [class.ng-invalid]="isFieldInvalid('pack_type')"
+            class="w-full"
+          ></p-select>
+          <small *ngIf="isFieldInvalid('pack_type')" class="text-red-500">
+            {{ getFieldError("pack_type") }}
+          </small>
+        </div>
+
+        <!-- Status -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="status">
+            Status <span class="text-red-500">*</span>
+          </label>
+          <p-select
+            id="status"
+            formControlName="status"
+            [options]="statusOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Select status"
+            [class.ng-invalid]="isFieldInvalid('status')"
+            class="w-full"
+          ></p-select>
+          <small *ngIf="isFieldInvalid('status')" class="text-red-500">
+            {{ getFieldError("status") }}
+          </small>
+        </div>
+
+        <!-- Quality Control Passed -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">Quality Control</label>
+          <div class="flex items-center gap-2">
+            <p-checkbox
+              formControlName="quality_control_passed"
+              [binary]="true"
+              inputId="qc_passed"
+            ></p-checkbox>
+            <label for="qc_passed" class="text-sm"
+              >Quality Control Passed</label
+            >
+          </div>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Dates -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Dates</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Manufacturing Date -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="manufacturing_date">
+            Manufacturing Date
+          </label>
+          <p-datepicker
+            id="manufacturing_date"
+            formControlName="manufacturing_date"
+            placeholder="Select manufacturing date"
+            dateFormat="yy-mm-dd"
+            iconDisplay="input"
+            class="w-full"
+          ></p-datepicker>
+          <small class="text-gray-500 mt-1">
+            Leave empty to inherit from batch
+          </small>
+        </div>
+
+        <!-- Expiry Date -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="expiry_date">
+            Expiry Date
+          </label>
+          <p-datepicker
+            id="expiry_date"
+            formControlName="expiry_date"
+            placeholder="Select expiry date"
+            dateFormat="yy-mm-dd"
+            iconDisplay="input"
+            class="w-full"
+          ></p-datepicker>
+          <small class="text-gray-500 mt-1">
+            Leave empty to inherit from batch
+          </small>
+        </div>
+
+        <!-- Effective Dates Display (View Mode) -->
+        <div *ngIf="isViewMode() && pack()" class="flex flex-col">
+          <label class="text-sm font-medium mb-2"
+            >Effective Manufacturing Date</label
+          >
+          <span class="text-sm p-2 bg-gray-50 rounded">
+            {{ pack()?.effective_manufacturing_date | date : "shortDate" }}
+          </span>
+        </div>
+
+        <div *ngIf="isViewMode() && pack()" class="flex flex-col">
+          <label class="text-sm font-medium mb-2">Effective Expiry Date</label>
+          <div class="flex items-center gap-2">
+            <span class="text-sm p-2 bg-gray-50 rounded">
+              {{ pack()?.effective_expiry_date | date : "shortDate" }}
+            </span>
+            <p-tag
+              [value]="
+                pack()?.is_expired
+                  ? 'Expired'
+                  : (pack()?.days_until_expiry ?? 0) <= 30
+                  ? 'Expiring Soon'
+                  : 'Active'
+              "
+              [severity]="getExpiryStatusSeverity(pack()!)"
+              class="text-xs"
+            ></p-tag>
+          </div>
+          <small class="text-gray-500 mt-1">
+            {{
+              (pack()?.days_until_expiry ?? 0) > 0
+                ? (pack()?.days_until_expiry ?? 0) + " days remaining"
+                : "Expired " +
+                  Math.abs(pack()?.days_until_expiry ?? 0) +
+                  " days ago"
+            }}
+          </small>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Location Information -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Location Information</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Location -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="location">
+            Location
+          </label>
+          <input
+            id="location"
+            type="text"
+            pInputText
+            formControlName="location"
+            placeholder="Enter location/warehouse"
+            class="w-full"
+          />
+        </div>
+
+        <!-- Warehouse Section -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="warehouse_section">
+            Warehouse Section
+          </label>
+          <input
+            id="warehouse_section"
+            type="text"
+            pInputText
+            formControlName="warehouse_section"
+            placeholder="Enter warehouse section"
+            class="w-full"
+          />
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Quality Control -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Quality Control</h3>
+      </ng-template>
+
+      <div class="flex flex-col gap-4">
+        <!-- Quality Control Notes -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="quality_control_notes">
+            Quality Control Notes
+          </label>
+          <textarea
+            id="quality_control_notes"
+            pTextarea
+            formControlName="quality_control_notes"
+            placeholder="Enter quality control notes"
+            rows="3"
+            class="w-full"
+          ></textarea>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Regulatory Information -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Regulatory Information</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Regulatory Code -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="regulatory_code">
+            Regulatory Code
+          </label>
+          <input
+            id="regulatory_code"
+            type="text"
+            pInputText
+            formControlName="regulatory_code"
+            placeholder="Enter regulatory code"
+            class="w-full"
+          />
+        </div>
+
+        <!-- Customer Reference -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="customer_reference">
+            Customer Reference
+          </label>
+          <input
+            id="customer_reference"
+            type="text"
+            pInputText
+            formControlName="customer_reference"
+            placeholder="Enter customer reference"
+            class="w-full"
+          />
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Shipping Information -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Shipping Information</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Shipped Date -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="shipped_date">
+            Shipped Date
+          </label>
+          <p-datepicker
+            id="shipped_date"
+            formControlName="shipped_date"
+            placeholder="Select shipped date"
+            [showTime]="true"
+            dateFormat="yy-mm-dd"
+            iconDisplay="input"
+            class="w-full"
+          ></p-datepicker>
+        </div>
+
+        <!-- Delivered Date -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="delivered_date">
+            Delivered Date
+          </label>
+          <p-datepicker
+            id="delivered_date"
+            formControlName="delivered_date"
+            placeholder="Select delivered date"
+            [showTime]="true"
+            dateFormat="yy-mm-dd"
+            iconDisplay="input"
+            class="w-full"
+          ></p-datepicker>
+        </div>
+
+        <!-- Tracking Number -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2" for="tracking_number">
+            Tracking Number
+          </label>
+          <input
+            id="tracking_number"
+            type="text"
+            pInputText
+            formControlName="tracking_number"
+            placeholder="Enter tracking number"
+            class="w-full"
+          />
+        </div>
+
+        <!-- Shipping Status Display (View Mode) -->
+        <div *ngIf="isViewMode() && pack()" class="flex flex-col">
+          <label class="text-sm font-medium mb-2">Shipping Status</label>
+          <div class="flex flex-col gap-2">
+            <p-tag
+              *ngIf="pack()?.is_delivered"
+              value="Delivered"
+              severity="success"
+            ></p-tag>
+            <p-tag
+              *ngIf="pack()?.is_shipped && !pack()?.is_delivered"
+              value="Shipped"
+              severity="warning"
+            ></p-tag>
+            <span *ngIf="!pack()?.is_shipped" class="text-sm text-gray-500"
+              >Not Shipped</span
+            >
+          </div>
+        </div>
+      </div>
+    </p-card>
+  </form>
+</div>
+
+<!-- Toast for notifications -->
+<p-toast></p-toast>

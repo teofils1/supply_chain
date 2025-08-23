@@ -14,6 +14,21 @@ from .batch import (
     BatchDetailUpdateView,
     BatchListCreateView,
 )
+from .pack import (
+    PackDeleteView,
+    PackDetailUpdateView,
+    PackListCreateView,
+)
+from .shipment import (
+    ShipmentDeleteView,
+    ShipmentDetailUpdateView,
+    ShipmentListCreateView,
+)
+from .event import (
+    EventDeleteView,
+    EventDetailUpdateView,
+    EventListCreateView,
+)
 
 __all__ = [
     "MeView",
@@ -26,4 +41,13 @@ __all__ = [
     "BatchListCreateView",
     "BatchDetailUpdateView",
     "BatchDeleteView",
+    "PackListCreateView",
+    "PackDetailUpdateView",
+    "PackDeleteView",
+    "ShipmentListCreateView",
+    "ShipmentDetailUpdateView",
+    "ShipmentDeleteView",
+    "EventListCreateView",
+    "EventDetailUpdateView",
+    "EventDeleteView",
 ]
