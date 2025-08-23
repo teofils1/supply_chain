@@ -1,0 +1,325 @@
+<div class="flex flex-col gap-4">
+  <!-- Header -->
+  <div class="flex justify-between items-center">
+    <div class="flex items-center gap-4">
+      <p-button
+        icon="pi pi-arrow-left"
+        class="p-button-text"
+        (onClick)="goBack()"
+        pTooltip="Back to Products"
+      ></p-button>
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">
+        {{
+          isNewProduct()
+            ? "Create Product"
+            : isEditMode()
+            ? "Edit Product"
+            : "Product Details"
+        }}
+      </h2>
+    </div>
+
+    <div class="flex gap-2" *ngIf="!loading()">
+      <!-- Edit button - only for existing products in view mode -->
+      <p-button
+        *ngIf="!isNewProduct() && !isEditMode()"
+        label="Edit"
+        icon="pi pi-pencil"
+        (onClick)="toggleEditMode()"
+        class="p-button-primary"
+      ></p-button>
+
+      <!-- Save button - for both new products and editing existing products -->
+      <p-button
+        *ngIf="isNewProduct() || isEditMode()"
+        label="Save"
+        icon="pi pi-check"
+        (onClick)="onSave()"
+        [loading]="saving()"
+        [disabled]="productForm.invalid"
+        class="p-button-success"
+      ></p-button>
+
+      <!-- Cancel button - for both new products and editing existing products -->
+      <p-button
+        *ngIf="isNewProduct() || isEditMode()"
+        label="Cancel"
+        icon="pi pi-times"
+        (onClick)="onCancel()"
+        class="p-button-secondary"
+      ></p-button>
+
+      <!-- Delete button - only for existing products in view mode -->
+      <p-button
+        *ngIf="!isNewProduct() && !isEditMode()"
+        label="Delete"
+        icon="pi pi-trash"
+        (onClick)="onDelete()"
+        class="p-button-danger"
+      ></p-button>
+    </div>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="loading()" class="flex justify-center py-8">
+    <p-progressSpinner></p-progressSpinner>
+  </div>
+
+  <!-- Product Form -->
+  <form [formGroup]="productForm" *ngIf="!loading()">
+    <!-- Basic Information -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Basic Information</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- GTIN -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">
+            GTIN <span class="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            pInputText
+            formControlName="gtin"
+            placeholder="Enter GTIN (8-14 digits)"
+            [class.ng-invalid]="
+              productForm.get('gtin')?.invalid &&
+              productForm.get('gtin')?.touched
+            "
+          />
+          <small class="text-red-500" *ngIf="getFieldError('gtin')">
+            {{ getFieldError("gtin") }}
+          </small>
+        </div>
+
+        <!-- Name -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">
+            Product Name <span class="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            pInputText
+            formControlName="name"
+            placeholder="Enter product name"
+            [class.ng-invalid]="
+              productForm.get('name')?.invalid &&
+              productForm.get('name')?.touched
+            "
+          />
+          <small class="text-red-500" *ngIf="getFieldError('name')">
+            {{ getFieldError("name") }}
+          </small>
+        </div>
+
+        <!-- Form -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">
+            Form <span class="text-red-500">*</span>
+          </label>
+          <p-select
+            [options]="formOptions"
+            optionLabel="label"
+            optionValue="value"
+            formControlName="form"
+            placeholder="Select form"
+            [class.ng-invalid]="
+              productForm.get('form')?.invalid &&
+              productForm.get('form')?.touched
+            "
+          ></p-select>
+          <small class="text-red-500" *ngIf="getFieldError('form')">
+            {{ getFieldError("form") }}
+          </small>
+        </div>
+
+        <!-- Strength -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">Strength</label>
+          <input
+            type="text"
+            pInputText
+            formControlName="strength"
+            placeholder="e.g., 500mg, 10ml"
+          />
+        </div>
+
+        <!-- Status -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">
+            Status <span class="text-red-500">*</span>
+          </label>
+          <p-select
+            [options]="statusOptions"
+            optionLabel="label"
+            optionValue="value"
+            formControlName="status"
+            placeholder="Select status"
+          ></p-select>
+        </div>
+
+        <!-- Manufacturer -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">Manufacturer</label>
+          <input
+            type="text"
+            pInputText
+            formControlName="manufacturer"
+            placeholder="Enter manufacturer"
+          />
+        </div>
+      </div>
+
+      <p-divider></p-divider>
+
+      <!-- Description -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Description</label>
+        <textarea
+          pInputTextarea
+          formControlName="description"
+          placeholder="Enter product description"
+          rows="3"
+        ></textarea>
+      </div>
+    </p-card>
+
+    <!-- Storage Requirements -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Storage Requirements</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Temperature Range -->
+        <div>
+          <h4 class="text-md font-medium mb-3">Temperature Range (°C)</h4>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col">
+              <label class="text-sm font-medium mb-2">Minimum</label>
+              <p-inputNumber
+                formControlName="storage_temp_min"
+                placeholder="Min temp"
+                [minFractionDigits]="0"
+                [maxFractionDigits]="2"
+                suffix="°C"
+              ></p-inputNumber>
+            </div>
+            <div class="flex flex-col">
+              <label class="text-sm font-medium mb-2">Maximum</label>
+              <p-inputNumber
+                formControlName="storage_temp_max"
+                placeholder="Max temp"
+                [minFractionDigits]="0"
+                [maxFractionDigits]="2"
+                suffix="°C"
+              ></p-inputNumber>
+            </div>
+          </div>
+        </div>
+
+        <!-- Humidity Range -->
+        <div>
+          <h4 class="text-md font-medium mb-3">Humidity Range (%)</h4>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col">
+              <label class="text-sm font-medium mb-2">Minimum</label>
+              <p-inputNumber
+                formControlName="storage_humidity_min"
+                placeholder="Min humidity"
+                [minFractionDigits]="0"
+                [maxFractionDigits]="2"
+                [min]="0"
+                [max]="100"
+                suffix="%"
+              ></p-inputNumber>
+            </div>
+            <div class="flex flex-col">
+              <label class="text-sm font-medium mb-2">Maximum</label>
+              <p-inputNumber
+                formControlName="storage_humidity_max"
+                placeholder="Max humidity"
+                [minFractionDigits]="0"
+                [maxFractionDigits]="2"
+                [min]="0"
+                [max]="100"
+                suffix="%"
+              ></p-inputNumber>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Storage Range Display -->
+      <div *ngIf="product() && !isEditMode()" class="mt-4">
+        <p-divider></p-divider>
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2"
+            >Storage Requirements Summary</label
+          >
+          <p class="text-gray-700 dark:text-gray-300">
+            {{ product()?.storage_range_display }}
+          </p>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Regulatory Information -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Regulatory Information</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- NDC -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">NDC</label>
+          <input
+            type="text"
+            pInputText
+            formControlName="ndc"
+            placeholder="National Drug Code"
+          />
+        </div>
+
+        <!-- Approval Number -->
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">Approval Number</label>
+          <input
+            type="text"
+            pInputText
+            formControlName="approval_number"
+            placeholder="Regulatory approval number"
+          />
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Timestamps (View Mode Only) -->
+    <p-card *ngIf="product() && !isNewProduct()">
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Timestamps</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2">Created</label>
+          <p class="text-gray-700 dark:text-gray-300">
+            {{ product()?.created_at | date : "medium" }}
+          </p>
+        </div>
+        <div class="flex flex-col" *ngIf="product()?.updated_at">
+          <label class="text-sm font-medium mb-2">Last Updated</label>
+          <p class="text-gray-700 dark:text-gray-300">
+            {{ product()?.updated_at | date : "medium" }}
+          </p>
+        </div>
+      </div>
+    </p-card>
+  </form>
+</div>
+
+<!-- Toast for notifications -->
+<p-toast></p-toast>

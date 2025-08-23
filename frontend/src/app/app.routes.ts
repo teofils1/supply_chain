@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { WelcomeComponent } from './features/welcome/welcome.component';
 import { LoginComponent } from './features/login/login.component';
 import { ProductsComponent } from './features/products/products.component';
+import { ProductDetailComponent } from './features/products/product-detail.component';
 import { BatchesComponent } from './features/batches/batches.component';
 import { PacksComponent } from './features/packs/packs.component';
 import { ShipmentsComponent } from './features/shipments/shipments.component';
@@ -16,6 +17,21 @@ export const routes: Routes = [
   { path: '', component: WelcomeComponent, canActivate: [authGuard] },
   { path: 'users', component: UsersComponent, canActivate: [authGuard] },
   { path: 'products', component: ProductsComponent, canActivate: [authGuard] },
+  {
+    path: 'products/new',
+    component: ProductDetailComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'products/:id',
+    component: ProductDetailComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'products/:id/edit',
+    component: ProductDetailComponent,
+    canActivate: [authGuard],
+  },
   { path: 'batches', component: BatchesComponent, canActivate: [authGuard] },
   { path: 'packs', component: PacksComponent, canActivate: [authGuard] },
   {

@@ -22,7 +22,7 @@
     </tr>
   </ng-template>
   <ng-template pTemplate="body" let-user>
-    <tr class="hover:bg-surface-100">
+    <tr class="hover:bg-surface-100 dark:hover:bg-surface-800">
       <td class="font-mono cursor-pointer" (click)="rowClick(user)">
         {{ user.username }}
       </td>
@@ -210,7 +210,7 @@
             type="text"
             [value]="user.username"
             disabled
-            class="w-full bg-surface-100"
+            class="w-full bg-surface-100 dark:bg-surface-900"
           />
         </div>
         <div class="col-span-1">

@@ -45,4 +45,12 @@ urlpatterns = [
     path(
         "api/users/<int:pk>/delete/", views.UserDeleteView.as_view(), name="user-delete"
     ),
+    # Product management
+    path("api/products/", views.ProductListCreateView.as_view(), name="product-list-create"),
+    path(
+        "api/products/<int:pk>/", views.ProductDetailUpdateView.as_view(), name="product-detail"
+    ),
+    path(
+        "api/products/<int:pk>/delete/", views.ProductDeleteView.as_view(), name="product-delete"
+    ),
 ]

@@ -1,8 +1,225 @@
-<p-card>
-  <ng-template pTemplate="header">
-    <h2 class="text-lg font-semibold">
+<div class="flex flex-col gap-4">
+  <!-- Header with Create Button -->
+  <div class="flex justify-between items-center shrink-0">
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">
       {{ "pages.products.title" | translate }}
     </h2>
-  </ng-template>
-  <p>{{ "pages.products.empty" | translate }}</p>
-</p-card>
+    <p-button
+      label="Create Product"
+      icon="pi pi-plus"
+      (onClick)="createProduct()"
+      class="p-button-primary"
+    ></p-button>
+  </div>
+
+  <!-- Filters Card -->
+  <p-card class="shrink-0">
+    <ng-template pTemplate="header">
+      <h3 class="text-lg font-medium">Filters</h3>
+    </ng-template>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Search -->
+      <div class="flex flex-col">
+        <div class="flex">
+          <label class="text-sm font-medium mb-2">Search</label>
+          <i class="pi pi-search ml-2"></i>
+        </div>
+        <span class="p-input-icon-left w-full">
+          <input
+            type="text"
+            pInputText
+            placeholder="Search products..."
+            [ngModel]="searchTerm()"
+            (ngModelChange)="searchTerm.set($event)"
+            (keyup.enter)="onSearch()"
+            class="w-full"
+          />
+        </span>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Status</label>
+        <p-select
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Statuses"
+          [ngModel]="selectedStatus()"
+          (ngModelChange)="selectedStatus.set($event); onStatusFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Form Filter -->
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">Form</label>
+        <p-select
+          [options]="formOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Forms"
+          [ngModel]="selectedForm()"
+          (ngModelChange)="selectedForm.set($event); onFormFilter()"
+          [showClear]="true"
+          class="w-full"
+        ></p-select>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex flex-col justify-end">
+        <div class="flex gap-2 flex-wrap">
+          <p-button
+            label="Search"
+            icon="pi pi-search"
+            (onClick)="onSearch()"
+            size="small"
+            class="p-button-primary flex-1 md:flex-none"
+          ></p-button>
+          <p-button
+            label="Clear"
+            icon="pi pi-times"
+            (onClick)="clearFilters()"
+            size="small"
+            class="p-button-secondary flex-1 md:flex-none"
+          ></p-button>
+        </div>
+      </div>
+    </div>
+  </p-card>
+
+  <!-- Products Table -->
+  <p-card>
+    <p-table
+      [value]="products()"
+      [loading]="loading()"
+      [paginator]="true"
+      [size]="`small`"
+      [rows]="5"
+      [rowsPerPageOptions]="[5, 10, 20, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} products"
+      [globalFilterFields]="['name', 'gtin', 'manufacturer']"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th class="text-center" pSortableColumn="gtin">
+            GTIN <p-sortIcon field="gtin"></p-sortIcon>
+          </th>
+          <th class="text-center" pSortableColumn="name">
+            Name <p-sortIcon field="name"></p-sortIcon>
+          </th>
+          <th class="text-center" pSortableColumn="form">
+            Form <p-sortIcon field="form"></p-sortIcon>
+          </th>
+          <th class="text-center">Strength</th>
+          <th class="text-center" pSortableColumn="manufacturer">
+            Manufacturer <p-sortIcon field="manufacturer"></p-sortIcon>
+          </th>
+          <th class="text-center" pSortableColumn="status">
+            Status <p-sortIcon field="status"></p-sortIcon>
+          </th>
+          <th class="text-center">Storage Requirements</th>
+          <th class="text-center" pSortableColumn="created_at">
+            Created <p-sortIcon field="created_at"></p-sortIcon>
+          </th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-product>
+        <tr [class.opacity-50]="product.is_deleted">
+          <td>
+            <span class="font-mono text-sm">{{ product.gtin }}</span>
+          </td>
+          <td>
+            <div class="font-medium">{{ product.name }}</div>
+          </td>
+          <td>
+            <span class="capitalize">{{ product.form }}</span>
+          </td>
+          <td>
+            <span>{{ product.strength || "-" }}</span>
+          </td>
+          <td>
+            <span>{{ product.manufacturer || "-" }}</span>
+          </td>
+          <td>
+            <p-tag
+              [value]="product.status"
+              [severity]="getStatusSeverity(product.status)"
+              class="capitalize"
+            ></p-tag>
+          </td>
+          <td>
+            <span
+              class="text-sm"
+              [pTooltip]="product.storage_range_display"
+              tooltipPosition="top"
+            >
+              {{ product.storage_range_display }}
+            </span>
+          </td>
+          <td>
+            <span class="text-sm text-gray-600">
+              {{ product.created_at | date : "short" }}
+            </span>
+          </td>
+          <td>
+            <div class="flex">
+              <p-button
+                icon="pi pi-eye"
+                class="p-button-text p-button-sm"
+                pTooltip="View"
+                (onClick)="viewProduct(product)"
+              ></p-button>
+              <p-button
+                icon="pi pi-pencil"
+                class="p-button-text p-button-sm"
+                pTooltip="Edit"
+                (onClick)="editProduct(product)"
+              ></p-button>
+              <p-button
+                icon="pi pi-trash"
+                class="p-button-text p-button-sm p-button-danger"
+                pTooltip="Delete"
+                (onClick)="deleteProduct(product)"
+                [disabled]="product.is_deleted"
+              ></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="text-center py-8">
+            <div class="flex flex-col items-center gap-4">
+              <i class="pi pi-box text-4xl text-gray-400"></i>
+              <div>
+                <p class="text-lg font-medium text-gray-600">
+                  No products found
+                </p>
+                <p class="text-sm text-gray-500">
+                  Try adjusting your search criteria or create a new product.
+                </p>
+              </div>
+              <p-button
+                label="Create First Product"
+                icon="pi pi-plus"
+                (onClick)="createProduct()"
+                class="p-button-primary"
+              ></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div><!-- Toast for notifications -->
+<p-toast></p-toast>
+
+<!-- Confirmation dialog -->
+<p-confirmDialog></p-confirmDialog>
