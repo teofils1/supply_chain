@@ -46,20 +46,32 @@ urlpatterns = [
         "api/users/<int:pk>/delete/", views.UserDeleteView.as_view(), name="user-delete"
     ),
     # Product management
-    path("api/products/", views.ProductListCreateView.as_view(), name="product-list-create"),
     path(
-        "api/products/<int:pk>/", views.ProductDetailUpdateView.as_view(), name="product-detail"
+        "api/products/",
+        views.ProductListCreateView.as_view(),
+        name="product-list-create",
     ),
     path(
-        "api/products/<int:pk>/delete/", views.ProductDeleteView.as_view(), name="product-delete"
+        "api/products/<int:pk>/",
+        views.ProductDetailUpdateView.as_view(),
+        name="product-detail",
+    ),
+    path(
+        "api/products/<int:pk>/delete/",
+        views.ProductDeleteView.as_view(),
+        name="product-delete",
     ),
     # Batch management
     path("api/batches/", views.BatchListCreateView.as_view(), name="batch-list-create"),
     path(
-        "api/batches/<int:pk>/", views.BatchDetailUpdateView.as_view(), name="batch-detail"
+        "api/batches/<int:pk>/",
+        views.BatchDetailUpdateView.as_view(),
+        name="batch-detail",
     ),
     path(
-        "api/batches/<int:pk>/delete/", views.BatchDeleteView.as_view(), name="batch-delete"
+        "api/batches/<int:pk>/delete/",
+        views.BatchDeleteView.as_view(),
+        name="batch-delete",
     ),
     # Pack management
     path("api/packs/", views.PackListCreateView.as_view(), name="pack-list-create"),
@@ -70,19 +82,31 @@ urlpatterns = [
         "api/packs/<int:pk>/delete/", views.PackDeleteView.as_view(), name="pack-delete"
     ),
     # Shipment management
-    path("api/shipments/", views.ShipmentListCreateView.as_view(), name="shipment-list-create"),
     path(
-        "api/shipments/<int:pk>/", views.ShipmentDetailUpdateView.as_view(), name="shipment-detail"
+        "api/shipments/",
+        views.ShipmentListCreateView.as_view(),
+        name="shipment-list-create",
     ),
     path(
-        "api/shipments/<int:pk>/delete/", views.ShipmentDeleteView.as_view(), name="shipment-delete"
+        "api/shipments/<int:pk>/",
+        views.ShipmentDetailUpdateView.as_view(),
+        name="shipment-detail",
+    ),
+    path(
+        "api/shipments/<int:pk>/delete/",
+        views.ShipmentDeleteView.as_view(),
+        name="shipment-delete",
     ),
     # Event management
     path("api/events/", views.EventListCreateView.as_view(), name="event-list-create"),
     path(
-        "api/events/<int:pk>/", views.EventDetailUpdateView.as_view(), name="event-detail"
+        "api/events/<int:pk>/",
+        views.EventDetailUpdateView.as_view(),
+        name="event-detail",
     ),
     path(
-        "api/events/<int:pk>/delete/", views.EventDeleteView.as_view(), name="event-delete"
+        "api/events/<int:pk>/delete/",
+        views.EventDeleteView.as_view(),
+        name="event-delete",
     ),
 ]

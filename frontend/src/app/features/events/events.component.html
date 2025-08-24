@@ -263,6 +263,7 @@
       *ngIf="!loading() && events().length > 0 && viewMode() === 'timeline'"
       [value]="timelineEvents()"
       layout="vertical"
+      [align]="'alternate'"
       class="customized-timeline"
     >
       <ng-template pTemplate="marker" let-event>
@@ -285,94 +286,84 @@
         </div>
       </ng-template>
 
-      <ng-template pTemplate="content" let-event>
+      <ng-template pTemplate="opposite" let-event let-index="index">
         <div
-          class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ml-4"
+          class="p-2 w-full"
         >
-          <!-- Event Header -->
-          <div class="flex justify-between items-start mb-2">
-            <div class="flex items-center gap-2">
-              <p-tag
-                [value]="event.event_type_display"
-                [severity]="getSeverityColor(event.severity)"
-                class="text-xs"
-              ></p-tag>
-              <p-tag
-                [value]="event.entity_type_display"
-                severity="secondary"
-                class="text-xs"
-              ></p-tag>
-              <span
-                *ngIf="event.is_critical"
-                class="text-red-600 text-xs font-bold"
-                >CRITICAL</span
-              >
-              <span
-                *ngIf="event.is_alert && !event.is_critical"
-                class="text-orange-600 text-xs font-bold"
-                >ALERT</span
-              >
-              <span
-                *ngIf="event.isRecent"
-                class="text-blue-600 text-xs font-bold"
-                >NEW</span
-              >
+          <!-- Timestamp and relative time -->
+          <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">
+            <div [title]="formatTimestamp(event.timestamp)">
+              {{ event.relativeTime }}
             </div>
             <div class="text-xs text-gray-500">
-              <span [title]="formatTimestamp(event.timestamp)">{{
-                event.relativeTime
-              }}</span>
+              {{ formatTimestamp(event.timestamp) }}
             </div>
           </div>
+        </div>
+      </ng-template>
 
-          <!-- Event Description -->
-          <p class="text-gray-800 dark:text-gray-200 mb-2">
-            {{ event.description }}
-          </p>
-
-          <!-- Entity Information -->
-          <div
-            class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2"
-          >
-            <i class="pi pi-link text-xs"></i>
-            <span>{{ event.entityDisplay }}</span>
-          </div>
-
-          <!-- Location and User -->
-          <div class="flex justify-between items-center text-xs text-gray-500">
-            <div class="flex items-center gap-4">
-              <span *ngIf="event.location" class="flex items-center gap-1">
-                <i class="pi pi-map-marker"></i>
-                {{ event.location }}
-              </span>
-              <span
-                *ngIf="event.user_full_name"
-                class="flex items-center gap-1"
-              >
-                <i class="pi pi-user"></i>
-                {{ event.user_full_name }}
-              </span>
-              <span
-                *ngIf="!event.user_full_name && event.user_username"
-                class="flex items-center gap-1"
-              >
-                <i class="pi pi-user"></i>
-                {{ event.user_username }}
-              </span>
-              <span
-                *ngIf="!event.user_full_name && !event.user_username"
-                class="flex items-center gap-1"
-              >
-                <i class="pi pi-cog"></i>
-                System
-              </span>
-            </div>
+      <ng-template pTemplate="content" let-event>
+        <div
+          class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 relative"
+        >
+          <!-- Action Button - Top Right Corner -->
+          <div class="absolute top-2 right-2">
             <p-button
               icon="pi pi-eye"
               class="p-button-text p-button-sm"
               pTooltip="View Details"
               (onClick)="viewEvent(event)"
             ></p-button>
+          </div>
+
+          <!-- Event Header -->
+          <div class="flex items-center gap-2 flex-wrap mb-2 pr-10">
+            <p-tag
+              [value]="event.event_type_display"
+              [severity]="getSeverityColor(event.severity)"
+              class="text-xs"
+            ></p-tag>
+            <p-tag
+              [value]="event.entity_type_display"
+              severity="secondary"
+              class="text-xs"
+            ></p-tag>
+            <span
+              *ngIf="event.is_critical"
+              class="text-red-600 text-xs font-bold"
+              >CRITICAL</span
+            >
+            <span
+              *ngIf="event.is_alert && !event.is_critical"
+              class="text-orange-600 text-xs font-bold"
+              >ALERT</span
+            >
+            <span *ngIf="event.isRecent" class="text-blue-600 text-xs font-bold"
+              >NEW</span
+            >
+          </div>
+
+          <!-- Event Description -->
+          <p class="text-gray-800 dark:text-gray-200 mb-3">
+            {{ event.description }}
+          </p>
+
+          <!-- Entity Information -->
+          <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+            <div class="flex items-center gap-2 min-w-0">
+              <i class="pi pi-link text-xs"></i>
+              <span class="truncate">{{ event.entityDisplay }}</span>
+            </div>
+
+            <div *ngIf="event.location" class="flex items-center gap-2 min-w-0">
+              <i class="pi pi-map-marker text-xs"></i>
+              <span class="truncate">{{ event.location }}</span>
+            </div>
+
+            <div class="flex items-center gap-2 min-w-0">
+              <i class="pi pi-user text-xs"></i>
+              <span class="truncate">{{ event.user_full_name || event.user_username || 'System' }}</span>
+            </div>
           </div>
         </div>
       </ng-template>

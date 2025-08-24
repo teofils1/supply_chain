@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -26,6 +26,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 export class LoginComponent {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private i18n = inject(TranslateService);
 
   username = '';
@@ -34,8 +35,10 @@ export class LoginComponent {
   error = signal<string | null>(null);
 
   constructor() {
+    // If user is already authenticated, redirect to home or intended destination
     if (this.auth.isAuthenticated()) {
-      this.router.navigateByUrl('/');
+      const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+      this.router.navigateByUrl(returnUrl);
     }
   }
 
@@ -45,7 +48,12 @@ export class LoginComponent {
     this.auth.login(this.username, this.password).subscribe({
       next: (tokens) => {
         this.auth.setTokens(tokens);
-        this.router.navigateByUrl('/');
+        // Wait for user info to load before redirecting
+        setTimeout(() => {
+          // Redirect to the originally requested URL or home page
+          const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+          this.router.navigateByUrl(returnUrl);
+        }, 100);
       },
       error: (err) => {
         this.error.set(

@@ -27,6 +27,8 @@
     "users": "Utilizatori",
     "language": "Limbă",
     "logout": "Deconectare",
+    "switchRole": "Schimbă rolul",
+    "currentRole": "Rol curent",
     "lang": {
       "en": "Engleză",
       "ro": "Română"

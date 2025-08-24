@@ -56,7 +56,7 @@ export class UserManagementService {
     return this.http
       .patch<AppUser>(`/api/users/${id}/`, {
         ...data,
-        roles: data.roles,
+        roles_input: data.roles, // Send roles as roles_input to backend
         active_role: data.active_role,
       })
       .pipe(

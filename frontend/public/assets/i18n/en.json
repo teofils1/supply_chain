@@ -27,6 +27,8 @@
     "users": "Users",
     "language": "Language",
     "logout": "Logout",
+    "switchRole": "Switch Role",
+    "currentRole": "Current Role",
     "lang": {
       "en": "English",
       "ro": "Romanian"

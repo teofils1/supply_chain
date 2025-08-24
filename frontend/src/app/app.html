@@ -43,7 +43,14 @@
         class="p-button-text"
         (click)="userMenu.toggle($event)"
       >
-        {{ "user.menu" | translate }} ▾
+        @if (auth.currentUser()?.username) {
+        {{ auth.currentUser()?.username }}
+        @if (auth.currentUser()?.active_role) {
+        <span class="text-xs opacity-75"
+          >({{ auth.currentUser()?.active_role }})</span
+        >
+        } ▾ } @else {
+        {{ "user.menu" | translate }} ▾ }
       </button>
       }
     </div>
