@@ -45,6 +45,30 @@ seed-products: ## Seed database with sample products
 seed-products-clear: ## Clear and seed products
 	uv run python src/manage.py seed_products --clear
 
+seed-batches: ## Seed database with sample batches
+	uv run python src/manage.py seed_batches
+
+seed-batches-clear: ## Clear and seed batches
+	uv run python src/manage.py seed_batches --clear
+
+seed-packs: ## Seed database with sample packs
+	uv run python src/manage.py seed_packs
+
+seed-packs-clear: ## Clear and seed packs
+	uv run python src/manage.py seed_packs --clear
+
+seed-shipments: ## Seed database with sample shipments
+	uv run python src/manage.py seed_shipments
+
+seed-shipments-clear: ## Clear and seed shipments
+	uv run python src/manage.py seed_shipments --clear
+
+seed-all: ## Seed all data (products, batches, packs, and shipments)
+	uv run python src/manage.py seed_products
+	uv run python src/manage.py seed_batches
+	uv run python src/manage.py seed_packs
+	uv run python src/manage.py seed_shipments
+
 reset: ## Reset app data (delete all data)
 	uv run python src/reset_app.py
 

@@ -1,7 +1,7 @@
 """
 reset_app.py
 
-Deletes all data from each table in the Django app, preserving the schema.
+Permanently deletes all rows from each table in the Django app, preserving the schema.
 Usage:
     uv run python src/reset_app.py
 """
@@ -10,17 +10,19 @@ import os
 import sys
 
 import django
-from django.db import transaction
-
-import supplychain.models as m
+from django.db import transaction, connection
+from django.conf import settings
 
 # Setup Django
-sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
+# ensure project src is on sys.path
+sys.path.append(os.path.dirname(__file__))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "api.settings")
 django.setup()
 
+import supplychain.models as m
 
-# List all models to clear (order matters for FKs)
+
+# List all models to clear (order given for reference; TRUNCATE CASCADE ignores order)
 MODELS = [
     m.Event,
     m.ShipmentPack,
@@ -33,10 +35,21 @@ MODELS = [
 
 def reset_app():
     with transaction.atomic():
-        for model in MODELS:
-            print(f"Deleting all {model.__name__}...")
-            model.objects.all().delete()
-    print("All data deleted. App is reset.")
+        engine = settings.DATABASES["default"]["ENGINE"].lower()
+        if "postgresql" in engine:
+            # Use a single TRUNCATE for all tables to permanently remove rows and reset sequences
+            tables = ", ".join(connection.ops.quote_name(model._meta.db_table) for model in MODELS)
+            print(f"Truncating tables: {tables}")
+            with connection.cursor() as cursor:
+                cursor.execute(f"TRUNCATE TABLE {tables} RESTART IDENTITY CASCADE;")
+        else:
+            # Fallback: raw DELETE from each table (bypasses Django model delete overrides)
+            with connection.cursor() as cursor:
+                for model in MODELS:
+                    table = connection.ops.quote_name(model._meta.db_table)
+                    print(f"Deleting all rows from {table} (raw SQL)...")
+                    cursor.execute(f"DELETE FROM {table};")
+    print("All data permanently deleted. App is reset.")
 
 
 if __name__ == "__main__":
