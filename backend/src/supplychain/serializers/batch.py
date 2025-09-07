@@ -13,6 +13,7 @@ class BatchListSerializer(serializers.ModelSerializer):
     is_expired = serializers.ReadOnlyField()
     days_until_expiry = serializers.ReadOnlyField()
     shelf_life_remaining_percent = serializers.ReadOnlyField()
+    quantity_used = serializers.ReadOnlyField()
     is_deleted = serializers.BooleanField(read_only=True)
 
     class Meta:
@@ -26,6 +27,8 @@ class BatchListSerializer(serializers.ModelSerializer):
             "manufacturing_date",
             "expiry_date",
             "quantity_produced",
+            "available_quantity",
+            "quantity_used",
             "manufacturing_location",
             "status",
             "quality_control_passed",
@@ -47,6 +50,7 @@ class BatchDetailSerializer(serializers.ModelSerializer):
     days_until_expiry = serializers.ReadOnlyField()
     age_in_days = serializers.ReadOnlyField()
     shelf_life_remaining_percent = serializers.ReadOnlyField()
+    quantity_used = serializers.ReadOnlyField()
     is_deleted = serializers.BooleanField(read_only=True)
 
     class Meta:
@@ -60,6 +64,8 @@ class BatchDetailSerializer(serializers.ModelSerializer):
             "manufacturing_date",
             "expiry_date",
             "quantity_produced",
+            "available_quantity",
+            "quantity_used",
             "manufacturing_location",
             "manufacturing_facility",
             "status",
@@ -131,6 +137,7 @@ class BatchCreateSerializer(serializers.ModelSerializer):
     is_expired = serializers.ReadOnlyField()
     days_until_expiry = serializers.ReadOnlyField()
     shelf_life_remaining_percent = serializers.ReadOnlyField()
+    quantity_used = serializers.ReadOnlyField()
 
     class Meta:
         model = m.Batch
@@ -143,6 +150,8 @@ class BatchCreateSerializer(serializers.ModelSerializer):
             "manufacturing_date",
             "expiry_date",
             "quantity_produced",
+            "available_quantity",
+            "quantity_used",
             "manufacturing_location",
             "manufacturing_facility",
             "status",
@@ -163,6 +172,8 @@ class BatchCreateSerializer(serializers.ModelSerializer):
             "is_expired",
             "days_until_expiry",
             "shelf_life_remaining_percent",
+            "available_quantity",
+            "quantity_used",
         ]
 
     def validate_lot_number(self, value):

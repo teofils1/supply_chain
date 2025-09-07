@@ -124,7 +124,9 @@ class Command(BaseCommand):
                 try:
                     event.mark_blockchain_failed()
                 except Exception:
-                    contextlib.suppress(Exception)  # Don't fail the entire process if we can't update status
+                    contextlib.suppress(
+                        Exception
+                    )  # Don't fail the entire process if we can't update status
 
         if not dry_run:
             self.stdout.write(

@@ -163,6 +163,7 @@
           <th pSortableColumn="quantity_produced">
             Quantity <p-sortIcon field="quantity_produced"></p-sortIcon>
           </th>
+          <th>Availability</th>
           <th>Location</th>
           <th pSortableColumn="status">
             Status <p-sortIcon field="status"></p-sortIcon>
@@ -232,7 +233,42 @@
             </div>
           </td>
           <td>
-            <span class="text-sm">{{ batch.quantity_produced | number }}</span>
+            <div class="flex flex-col">
+              <span class="text-sm font-medium">{{
+                batch.quantity_produced | number
+              }}</span>
+              <span class="text-xs text-gray-500">Produced</span>
+            </div>
+          </td>
+          <td>
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-medium text-green-600">{{
+                  batch.available_quantity | number
+                }}</span>
+                <span class="text-xs text-gray-500">available</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-gray-600">{{
+                  batch.quantity_used | number
+                }}</span>
+                <span class="text-xs text-gray-500">used</span>
+              </div>
+              <p-progressBar
+                [value]="
+                  (batch.available_quantity / batch.quantity_produced) * 100
+                "
+                [showValue]="false"
+                class="h-2"
+                [class]="
+                  batch.available_quantity / batch.quantity_produced > 0.5
+                    ? 'text-green-500'
+                    : batch.available_quantity / batch.quantity_produced > 0.2
+                    ? 'text-yellow-500'
+                    : 'text-red-500'
+                "
+              ></p-progressBar>
+            </div>
           </td>
           <td>
             <span class="text-sm">{{
@@ -285,7 +321,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="10" class="text-center py-8">
+          <td colspan="11" class="text-center py-8">
             <div class="flex flex-col items-center gap-4">
               <i class="pi pi-calendar text-4xl text-gray-400"></i>
               <div>

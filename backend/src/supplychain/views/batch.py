@@ -17,7 +17,7 @@ class BatchListCreateView(generics.ListCreateAPIView):
     """List all batches or create a new batch."""
 
     queryset = m.Batch.objects.select_related("product").all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, p.RoleBasedCRUDPermission]
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -134,7 +134,7 @@ class BatchDetailUpdateView(generics.RetrieveUpdateAPIView):
     """Retrieve or update a specific batch."""
 
     queryset = m.Batch.objects.select_related("product").all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, p.RoleBasedCRUDPermission]
     serializer_class = s.BatchDetailSerializer
 
     def get_queryset(self):
@@ -146,7 +146,7 @@ class BatchDeleteView(generics.DestroyAPIView):
     """Soft delete a batch."""
 
     queryset = m.Batch.objects.all()
-    permission_classes = [IsAuthenticated, p.IsAdminRole]
+    permission_classes = [IsAuthenticated, p.RoleBasedCRUDPermission]
 
     def get_queryset(self):
         """Only allow deletion of active batches."""

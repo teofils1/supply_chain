@@ -11,6 +11,7 @@ import { ButtonModule } from 'primeng/button';
 import { TieredMenuModule } from 'primeng/tieredmenu';
 import { MenuItem } from 'primeng/api';
 import { AuthService } from './shared/auth.service';
+import { RoleService } from './shared/role.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
@@ -32,6 +33,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 export class App {
   protected readonly title = signal('frontend');
   protected auth = inject(AuthService);
+  protected roleService = inject(RoleService);
   private router = inject(Router);
   private translate = inject(TranslateService);
 
@@ -104,13 +106,16 @@ export class App {
   private buildUserMenu() {
     const currentUser = this.auth.currentUser();
 
-    this.userMenuModel = [
-      {
+    this.userMenuModel = [];
+
+    // Only show users menu item if user is admin
+    if (this.roleService.canViewUsers()) {
+      this.userMenuModel.push({
         label: this.translate.instant('user.users'),
         icon: 'pi pi-users',
         command: () => this.goUsers(),
-      },
-    ];
+      });
+    }
 
     // Add role switcher if user has multiple roles
     if (currentUser?.roles && currentUser.roles.length > 1) {

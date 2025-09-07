@@ -188,15 +188,21 @@ class Pack(BaseModel):
         from django.core.exceptions import ValidationError
 
         # Validate dates if provided
-        if self.manufacturing_date and self.expiry_date and self.expiry_date <= self.manufacturing_date:
+        if (
+            self.manufacturing_date
+            and self.expiry_date
+            and self.expiry_date <= self.manufacturing_date
+        ):
             raise ValidationError(
-                {
-                    "expiry_date": "Pack expiry date must be after manufacturing date."
-                }
+                {"expiry_date": "Pack expiry date must be after manufacturing date."}
             )
 
         # Validate shipping dates
-        if self.shipped_date and self.delivered_date and self.delivered_date < self.shipped_date:
+        if (
+            self.shipped_date
+            and self.delivered_date
+            and self.delivered_date < self.shipped_date
+        ):
             raise ValidationError(
                 {"delivered_date": "Delivery date must be after shipping date."}
             )

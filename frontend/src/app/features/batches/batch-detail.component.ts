@@ -18,6 +18,7 @@ import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
 import { ToastModule } from 'primeng/toast';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { ProgressBarModule } from 'primeng/progressbar';
 import { DividerModule } from 'primeng/divider';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TagModule } from 'primeng/tag';
@@ -47,6 +48,7 @@ import { MessageService } from 'primeng/api';
     DatePickerModule,
     ToastModule,
     ProgressSpinnerModule,
+    ProgressBarModule,
     DividerModule,
     CheckboxModule,
     TagModule,

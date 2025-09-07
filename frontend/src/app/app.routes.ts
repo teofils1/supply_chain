@@ -16,15 +16,21 @@ import { DevicesComponent } from './features/devices/devices.component';
 import { ExcursionsComponent } from './features/excursions/excursions.component';
 import { UsersComponent } from './features/users/users.component';
 import { authGuard } from './shared/auth.guard';
+import { adminGuard } from './shared/admin.guard';
+import { operatorOrAdminGuard } from './shared/operator-or-admin.guard';
 
 export const routes: Routes = [
   { path: '', component: WelcomeComponent, canActivate: [authGuard] },
-  { path: 'users', component: UsersComponent, canActivate: [authGuard] },
+  {
+    path: 'users',
+    component: UsersComponent,
+    canActivate: [authGuard, adminGuard],
+  },
   { path: 'products', component: ProductsComponent, canActivate: [authGuard] },
   {
     path: 'products/new',
     component: ProductDetailComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, operatorOrAdminGuard],
   },
   {
     path: 'products/:id',
@@ -34,13 +40,13 @@ export const routes: Routes = [
   {
     path: 'products/:id/edit',
     component: ProductDetailComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, operatorOrAdminGuard],
   },
   { path: 'batches', component: BatchesComponent, canActivate: [authGuard] },
   {
     path: 'batches/new',
     component: BatchDetailComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, operatorOrAdminGuard],
   },
   {
     path: 'batches/:id',
@@ -50,13 +56,13 @@ export const routes: Routes = [
   {
     path: 'batches/:id/edit',
     component: BatchDetailComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, operatorOrAdminGuard],
   },
   { path: 'packs', component: PacksComponent, canActivate: [authGuard] },
   {
     path: 'packs/new',
     component: PackDetailComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, operatorOrAdminGuard],
   },
   {
     path: 'packs/:id',
@@ -66,7 +72,7 @@ export const routes: Routes = [
   {
     path: 'packs/:id/edit',
     component: PackDetailComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, operatorOrAdminGuard],
   },
   {
     path: 'shipments',
@@ -76,7 +82,7 @@ export const routes: Routes = [
   {
     path: 'shipments/new',
     component: ShipmentDetailComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, operatorOrAdminGuard],
   },
   {
     path: 'shipments/:id',
@@ -86,7 +92,7 @@ export const routes: Routes = [
   {
     path: 'shipments/:id/edit',
     component: ShipmentDetailComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, operatorOrAdminGuard],
   },
   { path: 'events', component: EventsComponent, canActivate: [authGuard] },
   {

@@ -5,11 +5,12 @@ Usage:
     uv run python src/manage.py seed_batches
 """
 
+import random
+from datetime import datetime, timedelta
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
-from datetime import datetime, timedelta
-import random
 
 import supplychain.models as m
 
@@ -50,7 +51,7 @@ class Command(BaseCommand):
         # Manufacturing locations and facilities
         locations = [
             "New York, NY, USA",
-            "San Francisco, CA, USA", 
+            "San Francisco, CA, USA",
             "Chicago, IL, USA",
             "Boston, MA, USA",
             "Atlanta, GA, USA",
@@ -91,46 +92,52 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             batches_created = 0
-            
+
             for i in range(options["count"]):
                 # Select random product
                 product = random.choice(products)
-                
+
                 # Generate lot number (format: YYMMDDxxx where xxx is sequential)
                 base_date = datetime.now() - timedelta(days=random.randint(30, 365))
                 lot_number = f"{base_date.strftime('%y%m%d')}{random.randint(100, 999)}"
-                
+
                 # Check if this lot number already exists for this product
-                if m.Batch.objects.filter(product=product, lot_number=lot_number).exists():
+                if m.Batch.objects.filter(
+                    product=product, lot_number=lot_number
+                ).exists():
                     continue
-                
+
                 # Manufacturing date (30-365 days ago)
                 manufacturing_date = base_date.date()
-                
+
                 # Expiry date (1-3 years from manufacturing)
                 expiry_months = random.randint(12, 36)
                 expiry_date = manufacturing_date + timedelta(days=expiry_months * 30)
-                
+
                 # Determine status based on expiry
                 today = timezone.now().date()
                 if expiry_date < today:
                     status = "expired"
                 else:
-                    status = random.choices(statuses[:-1], weights=status_weights[:-1])[0]
-                
+                    status = random.choices(statuses[:-1], weights=status_weights[:-1])[
+                        0
+                    ]
+
                 # Quantity produced (varies by product type)
                 base_quantity = random.randint(1000, 10000)
                 if product.form in ["injection", "liquid"]:
-                    quantity_produced = random.randint(500, 5000)  # Smaller batches for liquids
+                    quantity_produced = random.randint(
+                        500, 5000
+                    )  # Smaller batches for liquids
                 else:
                     quantity_produced = base_quantity
-                
+
                 # Quality control
                 quality_control_passed = status != "quarantined"
                 qc_notes = random.choice(qc_notes_templates)
                 if status == "quarantined":
                     qc_notes = "Batch under investigation for potential quality issues."
-                
+
                 batch_data = {
                     "product": product,
                     "lot_number": lot_number,
@@ -147,24 +154,24 @@ class Command(BaseCommand):
                     "regulatory_approval_number": f"REG-{product.gtin[-6:]}-{lot_number[-3:]}",
                     "certificate_of_analysis": f"COA-{lot_number}-{manufacturing_date.strftime('%Y%m%d')}",
                 }
-                
+
                 try:
                     batch = m.Batch.objects.create(**batch_data)
                     batches_created += 1
-                    
+
                     status_color = {
                         "active": self.style.SUCCESS,
                         "released": self.style.SUCCESS,
                         "quarantined": self.style.WARNING,
                         "expired": self.style.ERROR,
                     }.get(status, self.style.SUCCESS)
-                    
+
                     self.stdout.write(
                         status_color(
                             f"Created batch: {batch.product.name} - Lot {batch.lot_number} ({batch.status})"
                         )
                     )
-                    
+
                 except Exception as e:
                     self.stdout.write(
                         self.style.ERROR(
@@ -175,16 +182,18 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(f"Successfully seeded {batches_created} batches")
         )
-        
+
         # Summary statistics
         total_batches = m.Batch.objects.count()
         active_batches = m.Batch.objects.filter(status="active").count()
         expired_batches = m.Batch.objects.filter(status="expired").count()
         quarantined_batches = m.Batch.objects.filter(status="quarantined").count()
-        
+
         self.stdout.write("\nBatch Summary:")
         self.stdout.write(f"  Total batches: {total_batches}")
         self.stdout.write(f"  Active: {active_batches}")
-        self.stdout.write(f"  Released: {m.Batch.objects.filter(status='released').count()}")
+        self.stdout.write(
+            f"  Released: {m.Batch.objects.filter(status='released').count()}"
+        )
         self.stdout.write(f"  Quarantined: {quarantined_batches}")
         self.stdout.write(f"  Expired: {expired_batches}")

@@ -175,6 +175,36 @@
           </small>
         </div>
 
+        <!-- Available Quantity (View Mode Only) -->
+        <div class="flex flex-col" *ngIf="batch() && !isNewBatch()">
+          <label class="text-sm font-medium mb-2">Available Quantity</label>
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-4">
+              <span class="text-lg font-semibold text-green-600">{{
+                batch()?.available_quantity | number
+              }}</span>
+              <span class="text-sm text-gray-500">available</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="text-lg font-semibold text-gray-600">{{
+                batch()?.quantity_used | number
+              }}</span>
+              <span class="text-sm text-gray-500">used in packs</span>
+            </div>
+            <p-progressBar
+              [value]="
+                batch()?.available_quantity && batch()?.quantity_produced
+                  ? (batch()!.available_quantity / batch()!.quantity_produced) *
+                    100
+                  : 0
+              "
+              [showValue]="true"
+              valueTemplate="{value}% available"
+              class="mt-2"
+            ></p-progressBar>
+          </div>
+        </div>
+
         <!-- Batch Size -->
         <div class="flex flex-col">
           <label class="text-sm font-medium mb-2">Batch Size</label>
@@ -202,9 +232,7 @@
 
         <!-- Quality Control Passed -->
         <div class="flex flex-col justify-center">
-          <label class="text-sm font-medium mb-2">
-            Quality checked
-          </label>
+          <label class="text-sm font-medium mb-2"> Quality checked </label>
           <p-checkbox
             formControlName="quality_control_passed"
             label="Quality Control Passed"
@@ -292,6 +320,71 @@
           placeholder="Enter quality control notes"
           rows="4"
         ></textarea>
+      </div>
+    </p-card>
+
+    <!-- Quantity Information (View Mode Only) -->
+    <p-card *ngIf="batch() && !isNewBatch()">
+      <ng-template pTemplate="header">
+        <h3 class="text-lg font-medium">Quantity Information</h3>
+      </ng-template>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2 text-gray-600"
+            >Total Produced</label
+          >
+          <div class="flex items-center gap-2">
+            <span class="text-2xl font-bold text-blue-600">{{
+              batch()?.quantity_produced | number
+            }}</span>
+            <span class="text-sm text-gray-500">units</span>
+          </div>
+        </div>
+
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2 text-gray-600"
+            >Available</label
+          >
+          <div class="flex items-center gap-2">
+            <span class="text-2xl font-bold text-green-600">{{
+              batch()?.available_quantity | number
+            }}</span>
+            <span class="text-sm text-gray-500">units</span>
+          </div>
+        </div>
+
+        <div class="flex flex-col">
+          <label class="text-sm font-medium mb-2 text-gray-600"
+            >Used in Packs</label
+          >
+          <div class="flex items-center gap-2">
+            <span class="text-2xl font-bold text-orange-600">{{
+              batch()?.quantity_used | number
+            }}</span>
+            <span class="text-sm text-gray-500">units</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6">
+        <label class="text-sm font-medium mb-2 text-gray-600"
+          >Availability Status</label
+        >
+        <p-progressBar
+          [value]="
+            batch()?.available_quantity && batch()?.quantity_produced
+              ? (batch()!.available_quantity / batch()!.quantity_produced) * 100
+              : 0
+          "
+          [showValue]="true"
+          valueTemplate="{value}% available"
+          class="mt-2"
+        ></p-progressBar>
+        <div class="flex justify-between text-xs text-gray-500 mt-1">
+          <span>Empty</span>
+          <span>Full</span>
+        </div>
       </div>
     </p-card>
 

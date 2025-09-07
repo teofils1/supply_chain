@@ -41,6 +41,11 @@ class Batch(BaseModel):
         validators=[MinValueValidator(1)],
         help_text="Total quantity produced in this batch",
     )
+    available_quantity = models.PositiveIntegerField(
+        validators=[MinValueValidator(0)],
+        help_text="Available quantity remaining in this batch",
+        default=0,
+    )
 
     # Location and facility information
     manufacturing_location = models.CharField(
@@ -140,12 +145,37 @@ class Batch(BaseModel):
 
         return (days_remaining / total_shelf_life) * 100
 
+    @property
+    def quantity_used(self) -> int:
+        """Calculate quantity used (quantity_produced - available_quantity)."""
+        return self.quantity_produced - self.available_quantity
+
+    def has_sufficient_quantity(self, required_quantity: int) -> bool:
+        """Check if batch has sufficient available quantity."""
+        return self.available_quantity >= required_quantity
+
+    def consume_quantity(self, quantity: int) -> bool:
+        """
+        Consume quantity from available stock.
+        Returns True if successful, False if insufficient quantity.
+        """
+        if not self.has_sufficient_quantity(quantity):
+            return False
+
+        self.available_quantity -= quantity
+        self.save(update_fields=["available_quantity"])
+        return True
+
     def clean(self):
         """Validate model fields."""
         from django.core.exceptions import ValidationError
 
         # Validate that expiry date is after manufacturing date
-        if self.manufacturing_date and self.expiry_date and self.expiry_date <= self.manufacturing_date:
+        if (
+            self.manufacturing_date
+            and self.expiry_date
+            and self.expiry_date <= self.manufacturing_date
+        ):
             raise ValidationError(
                 {"expiry_date": "Expiry date must be after manufacturing date."}
             )
@@ -155,6 +185,10 @@ class Batch(BaseModel):
             self.status = "expired"
 
     def save(self, *args, **kwargs):
-        """Override save to run clean validation."""
+        """Override save to run clean validation and initialize available_quantity."""
+        # Initialize available_quantity to quantity_produced for new batches
+        if self.pk is None and self.available_quantity == 0:
+            self.available_quantity = self.quantity_produced
+
         self.clean()
         super().save(*args, **kwargs)

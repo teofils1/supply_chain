@@ -17,7 +17,7 @@ class PackListCreateView(generics.ListCreateAPIView):
     """List all packs or create a new pack."""
 
     queryset = m.Pack.objects.select_related("batch__product").all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, p.RoleBasedCRUDPermission]
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -180,7 +180,32 @@ class PackListCreateView(generics.ListCreateAPIView):
         return queryset.order_by("-created_at", "serial_number")
 
     def perform_create(self, serializer):
-        """Create a new pack."""
+        """Create a new pack and subtract quantity from batch."""
+        pack_data = serializer.validated_data
+        batch = pack_data["batch"]
+        pack_size = pack_data["pack_size"]
+
+        # Check if batch has sufficient available quantity
+        if not batch.has_sufficient_quantity(pack_size):
+            from rest_framework.exceptions import ValidationError
+
+            raise ValidationError(
+                {
+                    "pack_size": f"Insufficient quantity in batch. Available: {batch.available_quantity}, Required: {pack_size}"
+                }
+            )
+
+        # Consume the quantity from batch
+        if not batch.consume_quantity(pack_size):
+            from rest_framework.exceptions import ValidationError
+
+            raise ValidationError(
+                {
+                    "pack_size": "Failed to consume quantity from batch. Please try again."
+                }
+            )
+
+        # Save the pack
         serializer.save()
 
 
@@ -188,26 +213,92 @@ class PackDetailUpdateView(generics.RetrieveUpdateAPIView):
     """Retrieve or update a specific pack."""
 
     queryset = m.Pack.objects.select_related("batch__product").all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, p.RoleBasedCRUDPermission]
     serializer_class = s.PackDetailSerializer
 
     def get_queryset(self):
         """Include soft-deleted packs for detail view (admins might need to see them)."""
         return m.Pack.all_objects.select_related("batch__product").all()
 
+    def perform_update(self, serializer):
+        """Update pack and handle quantity changes if pack_size is modified."""
+        instance = serializer.instance
+        old_pack_size = instance.pack_size
+        old_batch = instance.batch
+
+        # Get new values from serializer
+        new_pack_size = serializer.validated_data.get("pack_size", old_pack_size)
+        new_batch = serializer.validated_data.get("batch", old_batch)
+
+        # Calculate quantity difference
+        quantity_diff = new_pack_size - old_pack_size
+
+        # If batch changed, restore old quantity to old batch and consume from new batch
+        if new_batch.id != old_batch.id:
+            # Restore quantity to old batch
+            old_batch.available_quantity += old_pack_size
+            old_batch.save(update_fields=["available_quantity"])
+
+            # Check if new batch has sufficient quantity
+            if not new_batch.has_sufficient_quantity(new_pack_size):
+                from rest_framework.exceptions import ValidationError
+
+                raise ValidationError(
+                    {
+                        "batch": f"Insufficient quantity in new batch. Available: {new_batch.available_quantity}, Required: {new_pack_size}"
+                    }
+                )
+
+            # Consume from new batch
+            if not new_batch.consume_quantity(new_pack_size):
+                from rest_framework.exceptions import ValidationError
+
+                raise ValidationError(
+                    {
+                        "batch": "Failed to consume quantity from new batch. Please try again."
+                    }
+                )
+
+        # If only pack_size changed (same batch)
+        elif quantity_diff != 0:
+            # Check if batch has sufficient quantity for the increase
+            if quantity_diff > 0 and not old_batch.has_sufficient_quantity(
+                quantity_diff
+            ):
+                from rest_framework.exceptions import ValidationError
+
+                raise ValidationError(
+                    {
+                        "pack_size": f"Insufficient quantity in batch. Available: {old_batch.available_quantity}, Additional required: {quantity_diff}"
+                    }
+                )
+
+            # Update batch quantity (subtract if increased, add if decreased)
+            old_batch.available_quantity -= quantity_diff
+            old_batch.save(update_fields=["available_quantity"])
+
+        # Save the pack
+        serializer.save()
+
 
 class PackDeleteView(generics.DestroyAPIView):
     """Soft delete a pack."""
 
     queryset = m.Pack.objects.all()
-    permission_classes = [IsAuthenticated, p.IsAdminRole]
+    permission_classes = [IsAuthenticated, p.RoleBasedCRUDPermission]
 
     def get_queryset(self):
         """Only allow deletion of active packs."""
         return super().get_queryset().filter(deleted_at__isnull=True)
 
     def perform_destroy(self, instance):
-        """Soft delete the pack."""
+        """Soft delete the pack and restore quantity to batch."""
+        # Restore quantity to batch before deleting pack
+        batch = instance.batch
+        batch.available_quantity += instance.pack_size
+        batch.save(update_fields=["available_quantity"])
+
+        # Soft delete the pack
         instance.delete()  # This will use the soft delete from BaseModel
 
     def destroy(self, request, *args, **kwargs):

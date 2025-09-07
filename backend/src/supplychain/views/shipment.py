@@ -22,7 +22,7 @@ class ShipmentListCreateView(generics.ListCreateAPIView):
             queryset=m.ShipmentPack.objects.select_related("pack__batch__product"),
         )
     ).all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, p.RoleBasedCRUDPermission]
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -209,7 +209,7 @@ class ShipmentDetailUpdateView(generics.RetrieveUpdateAPIView):
             queryset=m.ShipmentPack.objects.select_related("pack__batch__product"),
         )
     ).all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, p.RoleBasedCRUDPermission]
     serializer_class = s.ShipmentDetailSerializer
 
     def get_queryset(self):
@@ -232,7 +232,7 @@ class ShipmentDeleteView(generics.DestroyAPIView):
     """Soft delete a shipment."""
 
     queryset = m.Shipment.objects.all()
-    permission_classes = [IsAuthenticated, p.IsAdminRole]
+    permission_classes = [IsAuthenticated, p.RoleBasedCRUDPermission]
 
     def get_queryset(self):
         """Only allow deletion of non-delivered shipments."""

@@ -19,7 +19,7 @@ class EventListCreateView(generics.ListCreateAPIView):
     """List all events or create a new event."""
 
     queryset = m.Event.objects.select_related("user", "content_type").all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, p.RoleBasedCRUDPermission]
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -252,7 +252,7 @@ class EventDetailUpdateView(generics.RetrieveUpdateAPIView):
     """Retrieve or update a specific event."""
 
     queryset = m.Event.objects.select_related("user", "content_type").all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, p.RoleBasedCRUDPermission]
     serializer_class = s.EventDetailSerializer
 
     def get_queryset(self):
@@ -284,7 +284,7 @@ class EventDeleteView(generics.DestroyAPIView):
     """Soft delete an event (admin only)."""
 
     queryset = m.Event.objects.all()
-    permission_classes = [IsAuthenticated, p.IsAdminRole]
+    permission_classes = [IsAuthenticated, p.RoleBasedCRUDPermission]
 
     def get_queryset(self):
         """Only allow deletion of non-deleted events."""
@@ -306,7 +306,7 @@ class EventDeleteView(generics.DestroyAPIView):
 class EventBlockchainAnchorView(APIView):
     """Manually anchor an event to blockchain."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, p.IsOperatorOrAdmin]
 
     def post(self, request, pk):
         """Anchor specific event to blockchain."""
@@ -356,7 +356,7 @@ class EventBlockchainAnchorView(APIView):
 class EventBlockchainVerifyView(APIView):
     """Verify blockchain-anchored event integrity."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, p.IsAuditorOrHigher]
 
     def get(self, request, pk):
         """Verify specific event's blockchain anchoring."""
@@ -389,7 +389,7 @@ class EventBlockchainVerifyView(APIView):
 class EventIntegrityVerifyView(APIView):
     """Verify event data integrity without blockchain check."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, p.IsAuditorOrHigher]
 
     def get(self, request, pk):
         """Verify specific event's data integrity."""

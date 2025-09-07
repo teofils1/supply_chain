@@ -248,14 +248,22 @@ class Shipment(BaseModel):
         from django.core.exceptions import ValidationError
 
         # Validate dates
-        if self.shipped_date and self.estimated_delivery_date and self.estimated_delivery_date < self.shipped_date:
+        if (
+            self.shipped_date
+            and self.estimated_delivery_date
+            and self.estimated_delivery_date < self.shipped_date
+        ):
             raise ValidationError(
                 {
                     "estimated_delivery_date": "Estimated delivery date must be after shipped date."
                 }
             )
 
-        if self.shipped_date and self.actual_delivery_date and self.actual_delivery_date < self.shipped_date:
+        if (
+            self.shipped_date
+            and self.actual_delivery_date
+            and self.actual_delivery_date < self.shipped_date
+        ):
             raise ValidationError(
                 {
                     "actual_delivery_date": "Actual delivery date must be after shipped date."

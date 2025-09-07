@@ -16,7 +16,7 @@ User = get_user_model()
 
 class UserListCreateView(generics.ListCreateAPIView):
     queryset = User.objects.all().select_related("profile")
-    permission_classes = [IsAuthenticated, p.IsAdminRole]
+    permission_classes = [IsAuthenticated, p.UserManagementPermission]
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -51,7 +51,7 @@ class UserListCreateView(generics.ListCreateAPIView):
             m.RoleAssignment.objects.create(user=user, role=profile.active_role)
         self._send_invitation_email(user, raw_password)
 
-    def _send_invitation_email(self, user: User, password: str):
+    def _send_invitation_email(self, user, password: str):
         """Send invitation email with login credentials."""
         if not password:
             print(f"Warning: No password provided for user {user.username}")
@@ -95,7 +95,7 @@ class UserListCreateView(generics.ListCreateAPIView):
 
 class UserDetailUpdateView(generics.RetrieveUpdateAPIView):
     queryset = User.objects.all().select_related("profile")
-    permission_classes = [IsAuthenticated, p.IsAdminRole]
+    permission_classes = [IsAuthenticated, p.UserManagementPermission]
     serializer_class = s.UserDetailSerializer
 
     def get_queryset(self):
@@ -108,7 +108,7 @@ class UserDetailUpdateView(generics.RetrieveUpdateAPIView):
 
 class UserDeleteView(generics.DestroyAPIView):
     queryset = User.objects.all().select_related("profile")
-    permission_classes = [IsAuthenticated, p.IsAdminRole]
+    permission_classes = [IsAuthenticated, p.UserManagementPermission]
 
     def get_queryset(self):
         # Only allow deletion of users with profiles (don't allow deleting superusers without profiles)

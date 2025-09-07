@@ -39,6 +39,7 @@
         [label]="isCreateMode() ? 'Create Pack' : 'Update Pack'"
         icon="pi pi-check"
         type="submit"
+        (onClick)="onSubmit()"
         [loading]="saving()"
         [disabled]="packForm.invalid"
         class="p-button-primary"

@@ -1,6 +1,7 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 // PrimeNG imports
 import { CardModule } from 'primeng/card';
@@ -45,11 +46,14 @@ import { MessageService } from 'primeng/api';
   providers: [MessageService],
   templateUrl: './event-detail.component.html',
 })
-export class EventDetailComponent implements OnInit {
+export class EventDetailComponent implements OnInit, OnDestroy {
   private eventService = inject(EventService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private messageService = inject(MessageService);
+
+  // Subscription to route parameter changes
+  private routeSubscription?: Subscription;
 
   // State
   event = signal<Event | null>(null);
@@ -68,15 +72,37 @@ export class EventDetailComponent implements OnInit {
   eventId = signal<number | null>(null);
 
   ngOnInit() {
-    // Get event ID from route
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id && id !== 'new') {
-      this.eventId.set(parseInt(id, 10));
-      this.loadEvent();
-    } else {
-      // If trying to access /events/new, redirect to events list
-      this.router.navigate(['/events']);
+    // Subscribe to route parameter changes to handle navigation between events
+    this.routeSubscription = this.route.paramMap.subscribe((params) => {
+      const id = params.get('id');
+      if (id && id !== 'new') {
+        const eventId = parseInt(id, 10);
+        this.eventId.set(eventId);
+        this.resetState();
+        this.loadEvent();
+      } else {
+        // If trying to access /events/new, redirect to events list
+        this.router.navigate(['/events']);
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    // Clean up subscription
+    if (this.routeSubscription) {
+      this.routeSubscription.unsubscribe();
     }
+  }
+
+  private resetState() {
+    // Reset all state when navigating to a new event
+    this.event.set(null);
+    this.relatedEvents.set([]);
+    this.verificationResult.set(null);
+    this.integrityResult.set(null);
+    this.anchoringInProgress.set(false);
+    this.verifyingBlockchain.set(false);
+    this.verifyingIntegrity.set(false);
   }
 
   loadEvent() {
@@ -183,6 +209,20 @@ export class EventDetailComponent implements OnInit {
       }
     }
     return `${event.entity_type}#${event.entity_id}`;
+  }
+
+  hasRelatedEntityData(): boolean {
+    const event = this.event();
+    return !!(
+      event?.related_product ||
+      event?.related_batch ||
+      event?.related_pack ||
+      event?.related_shipment
+    );
+  }
+
+  trackByEventId(index: number, event: any): number {
+    return event.id;
   }
 
   getMetadataEntries(): { key: string; value: any }[] {

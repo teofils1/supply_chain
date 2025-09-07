@@ -14,7 +14,7 @@ class ProductListCreateView(generics.ListCreateAPIView):
     """List all products or create a new product."""
 
     queryset = m.Product.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, p.RoleBasedCRUDPermission]
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -61,7 +61,7 @@ class ProductDetailUpdateView(generics.RetrieveUpdateAPIView):
     """Retrieve or update a specific product."""
 
     queryset = m.Product.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, p.RoleBasedCRUDPermission]
     serializer_class = s.ProductDetailSerializer
 
     def get_queryset(self):
@@ -73,7 +73,7 @@ class ProductDeleteView(generics.DestroyAPIView):
     """Soft delete a product."""
 
     queryset = m.Product.objects.all()
-    permission_classes = [IsAuthenticated, p.IsAdminRole]
+    permission_classes = [IsAuthenticated, p.RoleBasedCRUDPermission]
 
     def get_queryset(self):
         """Only allow deletion of active products."""

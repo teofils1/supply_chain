@@ -19,6 +19,8 @@ export interface Batch {
   manufacturing_date: string;
   expiry_date: string;
   quantity_produced: number;
+  available_quantity: number;
+  quantity_used: number;
   manufacturing_location?: string;
   manufacturing_facility?: string;
   status: BatchStatus;
@@ -46,6 +48,8 @@ export interface BatchListItem {
   manufacturing_date: string;
   expiry_date: string;
   quantity_produced: number;
+  available_quantity: number;
+  quantity_used: number;
   manufacturing_location?: string;
   status: BatchStatus;
   quality_control_passed: boolean;
@@ -165,6 +169,8 @@ export class BatchService {
           manufacturing_date: batch.manufacturing_date,
           expiry_date: batch.expiry_date,
           quantity_produced: batch.quantity_produced,
+          available_quantity: batch.available_quantity,
+          quantity_used: batch.quantity_used,
           manufacturing_location: batch.manufacturing_location,
           status: batch.status,
           quality_control_passed: batch.quality_control_passed,
@@ -196,6 +202,8 @@ export class BatchService {
           manufacturing_date: batch.manufacturing_date,
           expiry_date: batch.expiry_date,
           quantity_produced: batch.quantity_produced,
+          available_quantity: batch.available_quantity,
+          quantity_used: batch.quantity_used,
           manufacturing_location: batch.manufacturing_location,
           status: batch.status,
           quality_control_passed: batch.quality_control_passed,

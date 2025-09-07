@@ -3,182 +3,323 @@
   <div class="lg:col-span-2">
     <p-card class="h-full">
       <ng-template pTemplate="header">
-        <div class="flex items-center gap-3">
-          <img
-            src="assets/logo.svg"
-            alt="Logo"
-            class="h-10 w-10"
-            onerror="this.style.display='none'"
-          />
-          <div>
-            <h1 class="text-3xl font-bold text-primary">
-              {{ "welcome.headline" | translate }}
-            </h1>
-            <p class="text-muted-color">
-              End-to-end pharmaceutical supply chain visibility
-            </p>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <img
+              src="assets/logo.svg"
+              alt="Logo"
+              class="h-10 w-10"
+              onerror="this.style.display='none'"
+            />
+            <div>
+              <h1 class="text-3xl font-bold text-primary">
+                {{ "welcome.headline" | translate }}
+              </h1>
+              <p class="text-muted-color">
+                Advanced pharmaceutical supply chain management and traceability
+                platform
+              </p>
+            </div>
           </div>
+          <button
+            pButton
+            pRipple
+            icon="pi pi-refresh"
+            class="p-button-text p-button-rounded"
+            (click)="refresh()"
+            [disabled]="loading()"
+            pTooltip="Refresh data"
+          ></button>
         </div>
       </ng-template>
 
       <div class="space-y-6">
         <div class="prose dark:prose-invert max-w-none">
           <p class="text-lg">{{ "welcome.intro" | translate }}</p>
-          <p class="text-muted-color">
-            Track products from manufacturing to delivery with complete chain of
-            custody, quality control, and regulatory compliance.
+          <p class="text-muted-color leading-relaxed">
+            Our comprehensive supply chain tracking system provides end-to-end
+            visibility for pharmaceutical products from manufacturing to patient
+            delivery. Built with blockchain integrity verification, real-time
+            monitoring, and regulatory compliance at its core, ensuring product
+            safety, authenticity, and traceability throughout the entire supply
+            chain journey.
           </p>
+        </div>
+
+        <!-- Real-time Statistics -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <a
+            routerLink="/products"
+            class="text-center p-4 border border-surface rounded-lg bg-surface-50 dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors cursor-pointer"
+          >
+            @if (loading()) {
+            <p-skeleton
+              height="2rem"
+              width="3rem"
+              class="mx-auto mb-2"
+            ></p-skeleton>
+            <p-skeleton height="1rem" width="5rem" class="mx-auto"></p-skeleton>
+            } @else {
+            <div class="text-2xl font-bold text-primary mb-1">
+              {{ stats().totalProducts }}
+            </div>
+            <div class="text-sm text-muted-color">Products</div>
+            }
+          </a>
+          <a
+            routerLink="/batches"
+            class="text-center p-4 border border-surface rounded-lg bg-surface-50 dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors cursor-pointer"
+          >
+            @if (loading()) {
+            <p-skeleton
+              height="2rem"
+              width="3rem"
+              class="mx-auto mb-2"
+            ></p-skeleton>
+            <p-skeleton height="1rem" width="5rem" class="mx-auto"></p-skeleton>
+            } @else {
+            <div class="text-2xl font-bold text-primary mb-1">
+              {{ stats().totalBatches }}
+            </div>
+            <div class="text-sm text-muted-color">Batches</div>
+            }
+          </a>
+          <a
+            routerLink="/packs"
+            class="text-center p-4 border border-surface rounded-lg bg-surface-50 dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors cursor-pointer"
+          >
+            @if (loading()) {
+            <p-skeleton
+              height="2rem"
+              width="3rem"
+              class="mx-auto mb-2"
+            ></p-skeleton>
+            <p-skeleton height="1rem" width="5rem" class="mx-auto"></p-skeleton>
+            } @else {
+            <div class="text-2xl font-bold text-primary mb-1">
+              {{ stats().totalPacks }}
+            </div>
+            <div class="text-sm text-muted-color">Packs</div>
+            }
+          </a>
+          <a
+            routerLink="/shipments"
+            class="text-center p-4 border border-surface rounded-lg bg-surface-50 dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors cursor-pointer"
+          >
+            @if (loading()) {
+            <p-skeleton
+              height="2rem"
+              width="3rem"
+              class="mx-auto mb-2"
+            ></p-skeleton>
+            <p-skeleton height="1rem" width="5rem" class="mx-auto"></p-skeleton>
+            } @else {
+            <div class="text-2xl font-bold text-primary mb-1">
+              {{ stats().activeShipments }}
+            </div>
+            <div class="text-sm text-muted-color">Active Shipments</div>
+            }
+          </a>
         </div>
 
         <!-- Key Features -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div
-            class="flex items-start gap-3 p-3 border border-surface rounded-lg"
+          <a
+            routerLink="/events"
+            class="flex items-start gap-3 p-4 border border-surface rounded-lg hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors cursor-pointer"
           >
-            <i class="pi pi-box text-primary text-xl mt-1"></i>
+            <i class="pi pi-shield text-primary text-xl mt-1"></i>
             <div>
-              <h3 class="font-semibold">Product Management</h3>
+              <h3 class="font-semibold mb-1">Blockchain Integrity</h3>
               <p class="text-sm text-muted-color">
-                Manage products, batches, and packaging with full traceability
+                Immutable event recording with cryptographic verification
+                ensuring data integrity and authenticity
               </p>
             </div>
-          </div>
-          <div
-            class="flex items-start gap-3 p-3 border border-surface rounded-lg"
+          </a>
+          <a
+            routerLink="/shipments"
+            class="flex items-start gap-3 p-4 border border-surface rounded-lg hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors cursor-pointer"
           >
-            <i class="pi pi-truck text-primary text-xl mt-1"></i>
+            <i class="pi pi-eye text-primary text-xl mt-1"></i>
             <div>
-              <h3 class="font-semibold">Shipment Tracking</h3>
+              <h3 class="font-semibold mb-1">Real-time Tracking</h3>
               <p class="text-sm text-muted-color">
-                Real-time tracking with temperature monitoring and alerts
+                Live monitoring of products, shipments, and environmental
+                conditions throughout the supply chain
               </p>
             </div>
-          </div>
-          <div
-            class="flex items-start gap-3 p-3 border border-surface rounded-lg"
+          </a>
+          <a
+            routerLink="/events"
+            class="flex items-start gap-3 p-4 border border-surface rounded-lg hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors cursor-pointer"
           >
-            <i class="pi pi-calendar text-primary text-xl mt-1"></i>
+            <i class="pi pi-verified text-primary text-xl mt-1"></i>
             <div>
-              <h3 class="font-semibold">Event Timeline</h3>
+              <h3 class="font-semibold mb-1">Regulatory Compliance</h3>
               <p class="text-sm text-muted-color">
-                Complete audit trail of all supply chain events
+                Built-in compliance features for FDA, EMA, and other regulatory
+                requirements with audit trails
               </p>
             </div>
-          </div>
-          <div
-            class="flex items-start gap-3 p-3 border border-surface rounded-lg"
+          </a>
+          <a
+            routerLink="/trace"
+            class="flex items-start gap-3 p-4 border border-surface rounded-lg hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors cursor-pointer"
           >
             <i class="pi pi-search text-primary text-xl mt-1"></i>
             <div>
-              <h3 class="font-semibold">Product Tracing</h3>
+              <h3 class="font-semibold mb-1">Complete Traceability</h3>
               <p class="text-sm text-muted-color">
-                Trace any product through its entire supply chain journey
+                Trace any product through its entire journey from raw materials
+                to end consumer
               </p>
             </div>
-          </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="space-y-3">
-          <h3 class="font-semibold">Quick Actions</h3>
-          <div class="flex flex-wrap gap-2">
-            <a
-              pButton
-              pRipple
-              routerLink="/products"
-              label="View Products"
-              icon="pi pi-box"
-              class="p-button-outlined"
-            ></a>
-            <a
-              pButton
-              pRipple
-              routerLink="/shipments"
-              label="Track Shipments"
-              icon="pi pi-truck"
-              class="p-button-outlined"
-            ></a>
-            <a
-              pButton
-              pRipple
-              routerLink="/events"
-              label="View Events"
-              icon="pi pi-calendar"
-              class="p-button-outlined"
-            ></a>
-          </div>
+          </a>
         </div>
       </div>
 
       <ng-template pTemplate="footer">
         <div class="text-xs text-muted-color">
-          {{ "welcome.footer" | translate }}
+          {{ "welcome.footer" | translate }} • Last updated:
+          {{ getCurrentTime() }}
         </div>
       </ng-template>
     </p-card>
   </div>
 
-  <!-- Quick Stats Sidebar -->
+  <!-- Enhanced Sidebar -->
   <div class="space-y-4">
     <!-- System Status Card -->
     <p-card>
       <ng-template pTemplate="header">
-        <h2 class="text-lg font-semibold">System Status</h2>
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold">System Status</h2>
+          <div class="flex items-center gap-2">
+            <i
+              [class]="
+                'pi pi-circle-fill text-' +
+                systemHealth().color +
+                '-500 text-xs'
+              "
+            ></i>
+            <span
+              [class]="
+                'text-sm font-medium text-' + systemHealth().color + '-600'
+              "
+            >
+              {{ systemHealth().text }}
+            </span>
+          </div>
+        </div>
       </ng-template>
 
       <div class="space-y-4">
         <div class="flex items-center justify-between">
-          <span class="text-sm">System Health</span>
+          <span class="text-sm">Data Integrity</span>
           <div class="flex items-center gap-2">
-            <i class="pi pi-circle-fill text-green-500 text-xs"></i>
-            <span class="text-sm text-green-600 font-medium">Operational</span>
+            <i class="pi pi-shield text-green-500 text-xs"></i>
+            <span class="text-sm text-green-600 font-medium">Verified</span>
           </div>
         </div>
         <div class="flex items-center justify-between">
-          <span class="text-sm">Data Sync</span>
+          <span class="text-sm">Event Processing</span>
           <div class="flex items-center gap-2">
-            <i class="pi pi-circle-fill text-green-500 text-xs"></i>
-            <span class="text-sm text-green-600 font-medium">Up to date</span>
+            <i class="pi pi-check-circle text-green-500 text-xs"></i>
+            <span class="text-sm text-green-600 font-medium">Active</span>
           </div>
         </div>
         <div class="flex items-center justify-between">
           <span class="text-sm">Temperature Monitoring</span>
           <div class="flex items-center gap-2">
-            <i class="pi pi-circle-fill text-green-500 text-xs"></i>
-            <span class="text-sm text-green-600 font-medium">Normal</span>
+            <i class="pi pi-thermometer text-blue-500 text-xs"></i>
+            <span class="text-sm text-blue-600 font-medium">Normal</span>
           </div>
         </div>
+        @if (stats().criticalEvents > 0) {
+        <div class="flex items-center justify-between">
+          <span class="text-sm">Critical Events</span>
+          <div class="flex items-center gap-2">
+            <i class="pi pi-exclamation-triangle text-red-500 text-xs"></i>
+            <span class="text-sm text-red-600 font-medium">{{
+              stats().criticalEvents
+            }}</span>
+          </div>
+        </div>
+        }
       </div>
     </p-card>
 
-    <!-- Recent Activity Card -->
+    <!-- Recent Activity Card with Real Data -->
     <p-card>
       <ng-template pTemplate="header">
-        <h2 class="text-lg font-semibold">Recent Activity</h2>
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold">Recent Activity</h2>
+          <i class="pi pi-clock text-muted-color text-sm"></i>
+        </div>
       </ng-template>
 
       <div class="space-y-3">
+        @if (loading()) { @for (item of [1,2,3]; track item) {
         <div class="flex items-start gap-3">
-          <i class="pi pi-box text-blue-500 mt-1"></i>
-          <div class="flex-1">
-            <p class="text-sm font-medium">New batch created</p>
-            <p class="text-xs text-muted-color">2 minutes ago</p>
+          <p-skeleton shape="circle" size="1.5rem"></p-skeleton>
+          <div class="flex-1 space-y-1">
+            <p-skeleton height="1rem" width="80%"></p-skeleton>
+            <p-skeleton height="0.75rem" width="50%"></p-skeleton>
           </div>
         </div>
-        <div class="flex items-start gap-3">
-          <i class="pi pi-truck text-orange-500 mt-1"></i>
-          <div class="flex-1">
-            <p class="text-sm font-medium">Shipment in transit</p>
-            <p class="text-xs text-muted-color">1 hour ago</p>
+        } } @else if (error()) {
+        <div class="text-center py-4">
+          <i
+            class="pi pi-exclamation-triangle text-orange-500 text-2xl mb-2"
+          ></i>
+          <p class="text-sm text-muted-color">{{ error() }}</p>
+        </div>
+        } @else if (recentEvents().length === 0) {
+        <div class="text-center py-4">
+          <i class="pi pi-calendar text-muted-color text-2xl mb-2"></i>
+          <p class="text-sm text-muted-color">No recent events</p>
+        </div>
+        } @else { @for (event of recentEvents(); track event.id) {
+        <div
+          class="flex items-start gap-3 p-2 rounded hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors"
+        >
+          <i
+            [class]="
+              'pi ' +
+              getEventIcon(event.event_type) +
+              ' ' +
+              getEventIconColor(event.severity) +
+              ' mt-1 text-sm'
+            "
+          ></i>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate">{{ event.description }}</p>
+            <div class="flex items-center gap-2 mt-1">
+              <span class="text-xs text-muted-color">{{
+                getRelativeTime(event.timestamp)
+              }}</span>
+              @if (event.entity_display_name) {
+              <span class="text-xs text-primary truncate">{{
+                event.entity_display_name
+              }}</span>
+              } @if (event.severity !== 'info') {
+              <p-tag
+                [value]="event.severity_display"
+                [severity]="
+                  event.severity === 'critical'
+                    ? 'danger'
+                    : event.severity === 'high'
+                    ? 'warning'
+                    : 'info'
+                "
+                styleClass="text-xs"
+              ></p-tag>
+              }
+            </div>
           </div>
         </div>
-        <div class="flex items-start gap-3">
-          <i class="pi pi-check-circle text-green-500 mt-1"></i>
-          <div class="flex-1">
-            <p class="text-sm font-medium">Quality check passed</p>
-            <p class="text-xs text-muted-color">3 hours ago</p>
-          </div>
-        </div>
+        } }
       </div>
 
       <ng-template pTemplate="footer">
@@ -188,50 +329,8 @@
           routerLink="/events"
           label="View All Events"
           class="p-button-text p-button-sm w-full"
+          icon="pi pi-external-link"
         ></a>
       </ng-template>
     </p-card>
-
-    <!-- Quick Navigation Card -->
-    <p-card>
-      <ng-template pTemplate="header">
-        <h2 class="text-lg font-semibold">Navigation</h2>
-      </ng-template>
-
-      <div class="space-y-2">
-        <a
-          pButton
-          pRipple
-          routerLink="/products"
-          label="Products"
-          icon="pi pi-box"
-          class="p-button-text w-full justify-start"
-        ></a>
-        <a
-          pButton
-          pRipple
-          routerLink="/batches"
-          label="Batches"
-          icon="pi pi-inbox"
-          class="p-button-text w-full justify-start"
-        ></a>
-        <a
-          pButton
-          pRipple
-          routerLink="/packs"
-          label="Packs"
-          icon="pi pi-shopping-bag"
-          class="p-button-text w-full justify-start"
-        ></a>
-        <a
-          pButton
-          pRipple
-          routerLink="/shipments"
-          label="Shipments"
-          icon="pi pi-truck"
-          class="p-button-text w-full justify-start"
-        ></a>
-      </div>
-    </p-card>
-  </div>
 </div>
