@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
+from model_utils import FieldTracker
 
 from .base import BaseModel
 from .batch import Batch
@@ -106,6 +107,9 @@ class Pack(BaseModel):
     tracking_number = models.CharField(
         max_length=100, blank=True, help_text="Shipping tracking number"
     )
+
+    # Field tracker for automated event generation
+    _field_tracker = FieldTracker()
 
     class Meta:
         ordering = ["-created_at", "serial_number"]

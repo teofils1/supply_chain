@@ -35,9 +35,9 @@
     }
   },
   "welcome": {
-    "headline": "Urmărirea lanțului de aprovizionare",
-    "intro": "Bine ai venit! Această aplicație folosește Angular 20, PrimeNG și Tailwind CSS.",
-    "viewDemo": "Vezi demo butoane",
+    "headline": "Sistem de urmărire a lanțului de aprovizionare",
+    "intro": "Gestionarea comprehensivă a lanțului de aprovizionare farmaceutic cu trasabilitate completă, asigurarea calității și conformitatea reglementărilor.",
+    "viewDemo": "Vezi demo",
     "angularDocs": "Documentație Angular",
     "footer": "Angular 20 • PrimeNG 20 • Tailwind CSS 4"
   },

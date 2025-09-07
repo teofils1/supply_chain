@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
+from model_utils import FieldTracker
 
 from .base import BaseModel
 from .pack import Pack
@@ -173,6 +174,9 @@ class Shipment(BaseModel):
     external_tracking_url = models.URLField(
         blank=True, help_text="External tracking URL from carrier"
     )
+
+    # Field tracker for automated event generation
+    _field_tracker = FieldTracker()
 
     class Meta:
         ordering = ["-created_at", "tracking_number"]

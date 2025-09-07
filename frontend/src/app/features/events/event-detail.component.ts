@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -13,10 +13,15 @@ import { TableModule } from 'primeng/table';
 import { PanelModule } from 'primeng/panel';
 import { BadgeModule } from 'primeng/badge';
 import { DividerModule } from 'primeng/divider';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 // Services
 import { TranslateModule } from '@ngx-translate/core';
-import { EventService, Event, EventListItem } from '../../core/services/event.service';
+import {
+  EventService,
+  Event,
+  EventListItem,
+} from '../../core/services/event.service';
 import { MessageService } from 'primeng/api';
 
 @Component({
@@ -34,6 +39,7 @@ import { MessageService } from 'primeng/api';
     PanelModule,
     BadgeModule,
     DividerModule,
+    ProgressSpinnerModule,
     TranslateModule,
   ],
   providers: [MessageService],
@@ -50,7 +56,14 @@ export class EventDetailComponent implements OnInit {
   relatedEvents = signal<EventListItem[]>([]);
   loading = signal(false);
   loadingRelated = signal(false);
-  
+
+  // Blockchain state
+  anchoringInProgress = signal(false);
+  verifyingBlockchain = signal(false);
+  verifyingIntegrity = signal(false);
+  verificationResult = signal<any>(null);
+  integrityResult = signal<any>(null);
+
   // Event ID from route
   eventId = signal<number | null>(null);
 
@@ -61,7 +74,7 @@ export class EventDetailComponent implements OnInit {
       this.eventId.set(parseInt(id, 10));
       this.loadEvent();
     } else {
-      // Handle new event creation (would be implemented later)
+      // If trying to access /events/new, redirect to events list
       this.router.navigate(['/events']);
     }
   }
@@ -69,7 +82,7 @@ export class EventDetailComponent implements OnInit {
   loadEvent() {
     const id = this.eventId();
     if (!id) return;
-    
+
     this.loading.set(true);
     this.eventService.getById(id).subscribe({
       next: (event) => {
@@ -94,32 +107,34 @@ export class EventDetailComponent implements OnInit {
     if (!event) return;
 
     this.loadingRelated.set(true);
-    
+
     // Load events for the same entity
-    this.eventService.load({
-      entity_type: event.entity_type,
-      entity_id: event.entity_id,
-    }).subscribe({
-      next: (events) => {
-        // Filter out the current event and limit to recent related events
-        const related = events
-          .filter(e => e.id !== event.id)
-          .slice(0, 10); // Show last 10 related events
-        this.relatedEvents.set(related);
-        this.loadingRelated.set(false);
-      },
-      error: (error) => {
-        console.error('Error loading related events:', error);
-        this.loadingRelated.set(false);
-      },
-    });
+    this.eventService
+      .load({
+        entity_type: event.entity_type,
+        entity_id: event.entity_id,
+      })
+      .subscribe({
+        next: (events) => {
+          // Filter out the current event and limit to recent related events
+          const related = events.filter((e) => e.id !== event.id).slice(0, 10); // Show last 10 related events
+          this.relatedEvents.set(related);
+          this.loadingRelated.set(false);
+        },
+        error: (error) => {
+          console.error('Error loading related events:', error);
+          this.loadingRelated.set(false);
+        },
+      });
   }
 
   goBack() {
     this.router.navigate(['/events']);
   }
 
-  getSeverityColor(severity: string): 'success' | 'warning' | 'danger' | 'info' | 'secondary' {
+  getSeverityColor(
+    severity: string
+  ): 'success' | 'warning' | 'danger' | 'info' | 'secondary' {
     switch (severity) {
       case 'critical':
         return 'danger';
@@ -175,10 +190,10 @@ export class EventDetailComponent implements OnInit {
     if (!event || !event.metadata || typeof event.metadata !== 'object') {
       return [];
     }
-    
+
     return Object.entries(event.metadata).map(([key, value]) => ({
       key,
-      value: typeof value === 'object' ? JSON.stringify(value, null, 2) : value
+      value: typeof value === 'object' ? JSON.stringify(value, null, 2) : value,
     }));
   }
 
@@ -187,10 +202,10 @@ export class EventDetailComponent implements OnInit {
     if (!event || !event.system_info || typeof event.system_info !== 'object') {
       return [];
     }
-    
+
     return Object.entries(event.system_info).map(([key, value]) => ({
       key,
-      value: typeof value === 'object' ? JSON.stringify(value, null, 2) : value
+      value: typeof value === 'object' ? JSON.stringify(value, null, 2) : value,
     }));
   }
 
@@ -227,29 +242,153 @@ export class EventDetailComponent implements OnInit {
 
   // Timeline event customization for related events
   getTimelineEvents() {
-    return this.relatedEvents().map(event => ({
+    return this.relatedEvents().map((event) => ({
       ...event,
       icon: this.getEventTypeIcon(event.event_type),
       color: this.getSeverityColor(event.severity),
       relativeTime: this.getRelativeTime(event.timestamp),
       entityDisplay: this.getEntityDisplayInfo(event),
-      isRecent: this.isRecent(event.timestamp)
+      isRecent: this.isRecent(event.timestamp),
     }));
   }
 
   copyToClipboard(text: string) {
-    navigator.clipboard.writeText(text).then(() => {
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Copied',
-        detail: 'Text copied to clipboard',
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Copied',
+          detail: 'Text copied to clipboard',
+        });
+      })
+      .catch(() => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to copy to clipboard',
+        });
       });
-    }).catch(() => {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'Failed to copy to clipboard',
-      });
+  }
+
+  // Blockchain integrity methods
+
+  anchorToBlockchain() {
+    const eventId = this.eventId();
+    if (!eventId) return;
+
+    this.anchoringInProgress.set(true);
+    this.eventService.anchorEvent(eventId).subscribe({
+      next: (result) => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Anchored Successfully',
+          detail: `Event anchored to blockchain. TX: ${result.tx_hash.substring(
+            0,
+            16
+          )}...`,
+        });
+        this.anchoringInProgress.set(false);
+        // Reload event to get updated blockchain data
+        this.loadEvent();
+      },
+      error: (error) => {
+        console.error('Error anchoring event:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Anchoring Failed',
+          detail:
+            error.error?.details || 'Failed to anchor event to blockchain',
+        });
+        this.anchoringInProgress.set(false);
+      },
     });
+  }
+
+  verifyBlockchainAnchoring() {
+    const eventId = this.eventId();
+    if (!eventId) return;
+
+    this.verifyingBlockchain.set(true);
+    this.eventService.verifyBlockchainAnchoring(eventId).subscribe({
+      next: (result) => {
+        this.verificationResult.set(result);
+        this.verifyingBlockchain.set(false);
+
+        const message =
+          result.verified && result.integrity_verified
+            ? 'Event successfully verified on blockchain'
+            : result.verified
+            ? 'Blockchain verified, but data integrity compromised'
+            : 'Blockchain verification failed';
+
+        this.messageService.add({
+          severity:
+            result.verified && result.integrity_verified ? 'success' : 'warn',
+          summary: 'Verification Complete',
+          detail: message,
+        });
+      },
+      error: (error) => {
+        console.error('Error verifying blockchain:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Verification Failed',
+          detail: 'Failed to verify blockchain anchoring',
+        });
+        this.verifyingBlockchain.set(false);
+      },
+    });
+  }
+
+  verifyDataIntegrity() {
+    const eventId = this.eventId();
+    if (!eventId) return;
+
+    this.verifyingIntegrity.set(true);
+    this.eventService.verifyIntegrity(eventId).subscribe({
+      next: (result) => {
+        this.integrityResult.set(result);
+        this.verifyingIntegrity.set(false);
+
+        this.messageService.add({
+          severity: result.integrity_verified ? 'success' : 'warn',
+          summary: 'Integrity Check Complete',
+          detail: result.integrity_verified
+            ? 'Event data integrity verified'
+            : 'Event data may have been tampered with',
+        });
+      },
+      error: (error) => {
+        console.error('Error verifying integrity:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Verification Failed',
+          detail: 'Failed to verify data integrity',
+        });
+        this.verifyingIntegrity.set(false);
+      },
+    });
+  }
+
+  openBlockchainExplorer() {
+    const url = this.event()?.blockchain_explorer_url;
+    if (url) {
+      window.open(url, '_blank');
+    }
+  }
+
+  getIntegrityStatusColor(
+    status: string
+  ): 'success' | 'warning' | 'danger' | 'info' {
+    return this.eventService.getIntegrityStatusColor(status as any);
+  }
+
+  getIntegrityStatusIcon(status: string): string {
+    return this.eventService.getIntegrityStatusIcon(status as any);
+  }
+
+  getIntegrityStatusText(status: string): string {
+    return this.eventService.getIntegrityStatusText(status as any);
   }
 }

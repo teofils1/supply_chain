@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from .base import BaseModel
+import hashlib
+import json
 
 User = get_user_model()
 
@@ -137,6 +139,40 @@ class Event(BaseModel):
         default=dict, blank=True, help_text="System information when the event occurred"
     )
 
+    # Blockchain integrity fields
+    blockchain_tx_hash = models.CharField(
+        max_length=66,  # For Ethereum tx hash (0x + 64 hex chars)
+        blank=True,
+        null=True,
+        help_text="Blockchain transaction hash for anchored event"
+    )
+    
+    blockchain_block_number = models.PositiveBigIntegerField(
+        blank=True,
+        null=True,
+        help_text="Block number where the event was anchored"
+    )
+    
+    integrity_status = models.CharField(
+        max_length=20,
+        choices=[
+            ("pending", "Pending"),
+            ("anchored", "Anchored"),
+            ("failed", "Failed"),
+        ],
+        default="pending",
+        help_text="Status of blockchain anchoring",
+        db_index=True,
+    )
+    
+    event_hash = models.CharField(
+        max_length=64,  # SHA-256 hash (64 hex chars)
+        blank=True,
+        null=True,
+        help_text="SHA-256 hash of canonical event data",
+        db_index=True,
+    )
+
     class Meta:
         db_table = "supplychain_event"
         ordering = ["-timestamp", "-id"]
@@ -263,3 +299,68 @@ class Event(BaseModel):
             user_agent=user_agent,
             system_info=system_info or {},
         )
+
+    def compute_event_hash(self):
+        """
+        Compute SHA-256 hash of canonical JSON representation of event data.
+        This hash is used for blockchain anchoring and integrity verification.
+        """
+        # Create canonical representation of event data
+        canonical_data = {
+            "id": self.id,
+            "event_type": self.event_type,
+            "entity_type": self.entity_type,
+            "entity_id": self.entity_id,
+            "description": self.description,
+            "timestamp": self.timestamp.isoformat(),
+            "severity": self.severity,
+            "location": self.location,
+            "metadata": self.metadata,
+            "user_id": self.user_id if self.user else None,
+        }
+        
+        # Sort keys to ensure consistent ordering
+        canonical_json = json.dumps(canonical_data, sort_keys=True, separators=(',', ':'))
+        
+        # Compute SHA-256 hash
+        hash_obj = hashlib.sha256(canonical_json.encode('utf-8'))
+        return hash_obj.hexdigest()
+
+    def update_event_hash(self):
+        """Update the event_hash field with computed hash."""
+        self.event_hash = self.compute_event_hash()
+        self.save(update_fields=['event_hash'])
+
+    def verify_integrity(self):
+        """
+        Verify event integrity by comparing stored hash with computed hash.
+        Returns True if integrity is verified, False otherwise.
+        """
+        if not self.event_hash:
+            return False
+        return self.event_hash == self.compute_event_hash()
+
+    @property
+    def is_blockchain_anchored(self):
+        """Check if this event is anchored on blockchain."""
+        return self.integrity_status == "anchored" and self.blockchain_tx_hash
+
+    @property
+    def blockchain_explorer_url(self):
+        """Get blockchain explorer URL for this event's transaction."""
+        if not self.blockchain_tx_hash:
+            return None
+        # Default to Ethereum mainnet explorer (can be configured)
+        return f"https://etherscan.io/tx/{self.blockchain_tx_hash}"
+
+    def mark_blockchain_anchored(self, tx_hash, block_number):
+        """Mark event as successfully anchored on blockchain."""
+        self.blockchain_tx_hash = tx_hash
+        self.blockchain_block_number = block_number
+        self.integrity_status = "anchored"
+        self.save(update_fields=['blockchain_tx_hash', 'blockchain_block_number', 'integrity_status'])
+
+    def mark_blockchain_failed(self):
+        """Mark event blockchain anchoring as failed."""
+        self.integrity_status = "failed"
+        self.save(update_fields=['integrity_status'])

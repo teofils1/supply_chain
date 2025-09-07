@@ -1,46 +1,237 @@
-<p-card>
-  <p-card class="max-w-xl w-full shadow-sm">
-    <ng-template pTemplate="header">
-      <div class="flex items-center gap-3">
-        <img
-          src="assets/logo.svg"
-          alt="Logo"
-          class="h-8 w-8"
-          onerror="this.style.display='none'"
-        />
-        <h1 class="text-2xl font-semibold">
-          {{ "welcome.headline" | translate }}
-        </h1>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Main Welcome Card -->
+  <div class="lg:col-span-2">
+    <p-card class="h-full">
+      <ng-template pTemplate="header">
+        <div class="flex items-center gap-3">
+          <img
+            src="assets/logo.svg"
+            alt="Logo"
+            class="h-10 w-10"
+            onerror="this.style.display='none'"
+          />
+          <div>
+            <h1 class="text-3xl font-bold text-primary">
+              {{ "welcome.headline" | translate }}
+            </h1>
+            <p class="text-muted-color">
+              End-to-end pharmaceutical supply chain visibility
+            </p>
+          </div>
+        </div>
+      </ng-template>
+
+      <div class="space-y-6">
+        <div class="prose dark:prose-invert max-w-none">
+          <p class="text-lg">{{ "welcome.intro" | translate }}</p>
+          <p class="text-muted-color">
+            Track products from manufacturing to delivery with complete chain of
+            custody, quality control, and regulatory compliance.
+          </p>
+        </div>
+
+        <!-- Key Features -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div
+            class="flex items-start gap-3 p-3 border border-surface rounded-lg"
+          >
+            <i class="pi pi-box text-primary text-xl mt-1"></i>
+            <div>
+              <h3 class="font-semibold">Product Management</h3>
+              <p class="text-sm text-muted-color">
+                Manage products, batches, and packaging with full traceability
+              </p>
+            </div>
+          </div>
+          <div
+            class="flex items-start gap-3 p-3 border border-surface rounded-lg"
+          >
+            <i class="pi pi-truck text-primary text-xl mt-1"></i>
+            <div>
+              <h3 class="font-semibold">Shipment Tracking</h3>
+              <p class="text-sm text-muted-color">
+                Real-time tracking with temperature monitoring and alerts
+              </p>
+            </div>
+          </div>
+          <div
+            class="flex items-start gap-3 p-3 border border-surface rounded-lg"
+          >
+            <i class="pi pi-calendar text-primary text-xl mt-1"></i>
+            <div>
+              <h3 class="font-semibold">Event Timeline</h3>
+              <p class="text-sm text-muted-color">
+                Complete audit trail of all supply chain events
+              </p>
+            </div>
+          </div>
+          <div
+            class="flex items-start gap-3 p-3 border border-surface rounded-lg"
+          >
+            <i class="pi pi-search text-primary text-xl mt-1"></i>
+            <div>
+              <h3 class="font-semibold">Product Tracing</h3>
+              <p class="text-sm text-muted-color">
+                Trace any product through its entire supply chain journey
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="space-y-3">
+          <h3 class="font-semibold">Quick Actions</h3>
+          <div class="flex flex-wrap gap-2">
+            <a
+              pButton
+              pRipple
+              routerLink="/products"
+              label="View Products"
+              icon="pi pi-box"
+              class="p-button-outlined"
+            ></a>
+            <a
+              pButton
+              pRipple
+              routerLink="/shipments"
+              label="Track Shipments"
+              icon="pi pi-truck"
+              class="p-button-outlined"
+            ></a>
+            <a
+              pButton
+              pRipple
+              routerLink="/events"
+              label="View Events"
+              icon="pi pi-calendar"
+              class="p-button-outlined"
+            ></a>
+          </div>
+        </div>
       </div>
-    </ng-template>
 
-    <div class="prose dark:prose-invert max-w-none">
-      <p class="mt-2 text-muted-color">{{ "welcome.intro" | translate }}</p>
-    </div>
+      <ng-template pTemplate="footer">
+        <div class="text-xs text-muted-color">
+          {{ "welcome.footer" | translate }}
+        </div>
+      </ng-template>
+    </p-card>
+  </div>
 
-    <div class="mt-6 flex gap-3">
-      <a
-        pButton
-        pRipple
-        routerLink="/demo"
-        [label]="'welcome.viewDemo' | translate"
-        class="p-button-rounded"
-      ></a>
-      <a
-        pButton
-        pRipple
-        href="https://angular.dev"
-        target="_blank"
-        rel="noreferrer"
-        [label]="'welcome.angularDocs' | translate"
-        class="p-button-outlined"
-      ></a>
-    </div>
+  <!-- Quick Stats Sidebar -->
+  <div class="space-y-4">
+    <!-- System Status Card -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h2 class="text-lg font-semibold">System Status</h2>
+      </ng-template>
 
-    <ng-template pTemplate="footer">
-      <div class="text-xs text-muted-color">
-        {{ "welcome.footer" | translate }}
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <span class="text-sm">System Health</span>
+          <div class="flex items-center gap-2">
+            <i class="pi pi-circle-fill text-green-500 text-xs"></i>
+            <span class="text-sm text-green-600 font-medium">Operational</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-sm">Data Sync</span>
+          <div class="flex items-center gap-2">
+            <i class="pi pi-circle-fill text-green-500 text-xs"></i>
+            <span class="text-sm text-green-600 font-medium">Up to date</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-sm">Temperature Monitoring</span>
+          <div class="flex items-center gap-2">
+            <i class="pi pi-circle-fill text-green-500 text-xs"></i>
+            <span class="text-sm text-green-600 font-medium">Normal</span>
+          </div>
+        </div>
       </div>
-    </ng-template>
-  </p-card>
-</p-card>
+    </p-card>
+
+    <!-- Recent Activity Card -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h2 class="text-lg font-semibold">Recent Activity</h2>
+      </ng-template>
+
+      <div class="space-y-3">
+        <div class="flex items-start gap-3">
+          <i class="pi pi-box text-blue-500 mt-1"></i>
+          <div class="flex-1">
+            <p class="text-sm font-medium">New batch created</p>
+            <p class="text-xs text-muted-color">2 minutes ago</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <i class="pi pi-truck text-orange-500 mt-1"></i>
+          <div class="flex-1">
+            <p class="text-sm font-medium">Shipment in transit</p>
+            <p class="text-xs text-muted-color">1 hour ago</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <i class="pi pi-check-circle text-green-500 mt-1"></i>
+          <div class="flex-1">
+            <p class="text-sm font-medium">Quality check passed</p>
+            <p class="text-xs text-muted-color">3 hours ago</p>
+          </div>
+        </div>
+      </div>
+
+      <ng-template pTemplate="footer">
+        <a
+          pButton
+          pRipple
+          routerLink="/events"
+          label="View All Events"
+          class="p-button-text p-button-sm w-full"
+        ></a>
+      </ng-template>
+    </p-card>
+
+    <!-- Quick Navigation Card -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <h2 class="text-lg font-semibold">Navigation</h2>
+      </ng-template>
+
+      <div class="space-y-2">
+        <a
+          pButton
+          pRipple
+          routerLink="/products"
+          label="Products"
+          icon="pi pi-box"
+          class="p-button-text w-full justify-start"
+        ></a>
+        <a
+          pButton
+          pRipple
+          routerLink="/batches"
+          label="Batches"
+          icon="pi pi-inbox"
+          class="p-button-text w-full justify-start"
+        ></a>
+        <a
+          pButton
+          pRipple
+          routerLink="/packs"
+          label="Packs"
+          icon="pi pi-shopping-bag"
+          class="p-button-text w-full justify-start"
+        ></a>
+        <a
+          pButton
+          pRipple
+          routerLink="/shipments"
+          label="Shipments"
+          icon="pi pi-truck"
+          class="p-button-text w-full justify-start"
+        ></a>
+      </div>
+    </p-card>
+  </div>
+</div>

@@ -35,9 +35,9 @@
     }
   },
   "welcome": {
-    "headline": "Supply Chain Tracking",
-    "intro": "Welcome! This app uses Angular 20, PrimeNG, and Tailwind CSS.",
-    "viewDemo": "View Button Demo",
+    "headline": "Supply Chain Tracking System",
+    "intro": "Comprehensive pharmaceutical supply chain management with end-to-end traceability, quality assurance, and regulatory compliance.",
+    "viewDemo": "View Demo",
     "angularDocs": "Angular Docs",
     "footer": "Angular 20 • PrimeNG 20 • Tailwind CSS 4"
   },

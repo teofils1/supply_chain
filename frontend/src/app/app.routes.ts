@@ -90,11 +90,6 @@ export const routes: Routes = [
   },
   { path: 'events', component: EventsComponent, canActivate: [authGuard] },
   {
-    path: 'events/new',
-    component: EventDetailComponent,
-    canActivate: [authGuard],
-  },
-  {
     path: 'events/:id',
     component: EventDetailComponent,
     canActivate: [authGuard],

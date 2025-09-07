@@ -253,10 +253,6 @@ export class EventsComponent implements OnInit {
     this.router.navigate(['/events', event.id]);
   }
 
-  createEvent() {
-    this.router.navigate(['/events', 'new']);
-  }
-
   toggleView() {
     this.viewMode.update((mode) =>
       mode === 'timeline' ? 'table' : 'timeline'

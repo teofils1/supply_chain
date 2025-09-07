@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
+from model_utils import FieldTracker
 
 from .base import BaseModel
 from .product import Product
@@ -88,6 +89,9 @@ class Batch(BaseModel):
     certificate_of_analysis = models.CharField(
         max_length=255, blank=True, help_text="Certificate of Analysis reference"
     )
+
+    # Field tracker for automated event generation
+    _field_tracker = FieldTracker()
 
     class Meta:
         ordering = ["-manufacturing_date", "lot_number"]

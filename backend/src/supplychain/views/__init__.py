@@ -28,6 +28,9 @@ from .event import (
     EventDeleteView,
     EventDetailUpdateView,
     EventListCreateView,
+    EventBlockchainAnchorView,
+    EventBlockchainVerifyView,
+    EventIntegrityVerifyView,
 )
 
 __all__ = [
@@ -50,4 +53,7 @@ __all__ = [
     "EventListCreateView",
     "EventDetailUpdateView",
     "EventDeleteView",
+    "EventBlockchainAnchorView",
+    "EventBlockchainVerifyView", 
+    "EventIntegrityVerifyView",
 ]

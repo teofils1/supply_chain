@@ -16,10 +16,10 @@
 
   <!-- Loading State -->
   <div *ngIf="loading()" class="flex justify-center py-8">
-    <i class="pi pi-spinner pi-spin text-2xl"></i>
+    <p-progressSpinner></p-progressSpinner>
   </div>
 
-  <!-- Event Details -->
+  <!-- Event Details (View Mode) -->
   <div
     *ngIf="!loading() && event()"
     class="grid grid-cols-1 lg:grid-cols-3 gap-4"
@@ -367,6 +367,250 @@
                     "
                     pTooltip="Copy Entity ID"
                   ></p-button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </p-card>
+
+      <!-- Blockchain Integrity -->
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="flex justify-between items-center">
+            <h3 class="text-lg font-medium">Blockchain Integrity</h3>
+            <p-tag
+              [value]="
+                getIntegrityStatusText(event()?.integrity_status || 'pending')
+              "
+              [severity]="
+                getIntegrityStatusColor(event()?.integrity_status || 'pending')
+              "
+              [icon]="
+                getIntegrityStatusIcon(event()?.integrity_status || 'pending')
+              "
+            ></p-tag>
+          </div>
+        </ng-template>
+
+        <div class="flex flex-col gap-4">
+          <!-- Anchoring Status -->
+          <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+            <div class="flex items-center gap-2 mb-3">
+              <i
+                [class]="
+                  'pi ' +
+                  getIntegrityStatusIcon(event()?.integrity_status || 'pending')
+                "
+                [ngClass]="{
+                  'text-green-600': event()?.integrity_status === 'anchored',
+                  'text-orange-600': event()?.integrity_status === 'pending',
+                  'text-red-600': event()?.integrity_status === 'failed'
+                }"
+              ></i>
+              <span class="font-medium">
+                {{
+                  getIntegrityStatusText(event()?.integrity_status || "pending")
+                }}
+              </span>
+            </div>
+
+            <!-- Event Hash -->
+            <div class="mb-3" *ngIf="event()?.event_hash">
+              <span class="text-sm font-medium text-gray-600">Event Hash:</span>
+              <div class="flex items-center gap-2 mt-1">
+                <code
+                  class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono break-all"
+                >
+                  {{ event()?.event_hash }}
+                </code>
+                <p-button
+                  icon="pi pi-copy"
+                  class="p-button-text p-button-sm"
+                  (onClick)="copyToClipboard(event()?.event_hash || '')"
+                  pTooltip="Copy Hash"
+                ></p-button>
+              </div>
+            </div>
+
+            <!-- Blockchain Transaction -->
+            <div class="mb-3" *ngIf="event()?.blockchain_tx_hash">
+              <span class="text-sm font-medium text-gray-600"
+                >Transaction Hash:</span
+              >
+              <div class="flex items-center gap-2 mt-1">
+                <code
+                  class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono break-all"
+                >
+                  {{ event()?.blockchain_tx_hash }}
+                </code>
+                <p-button
+                  icon="pi pi-copy"
+                  class="p-button-text p-button-sm"
+                  (onClick)="copyToClipboard(event()?.blockchain_tx_hash || '')"
+                  pTooltip="Copy Transaction Hash"
+                ></p-button>
+                <p-button
+                  *ngIf="event()?.blockchain_explorer_url"
+                  icon="pi pi-external-link"
+                  class="p-button-text p-button-sm"
+                  (onClick)="openBlockchainExplorer()"
+                  pTooltip="View on Blockchain Explorer"
+                ></p-button>
+              </div>
+            </div>
+
+            <!-- Block Number -->
+            <div class="mb-3" *ngIf="event()?.blockchain_block_number">
+              <span class="text-sm font-medium text-gray-600"
+                >Block Number:</span
+              >
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-sm">{{
+                  event()?.blockchain_block_number
+                }}</span>
+                <p-button
+                  icon="pi pi-copy"
+                  class="p-button-text p-button-sm"
+                  (onClick)="
+                    copyToClipboard(
+                      event()?.blockchain_block_number?.toString() || ''
+                    )
+                  "
+                  pTooltip="Copy Block Number"
+                ></p-button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Verification Actions -->
+          <div class="flex flex-col gap-2">
+            <!-- Anchor to Blockchain -->
+            <p-button
+              *ngIf="!event()?.is_blockchain_anchored"
+              label="Anchor to Blockchain"
+              icon="pi pi-shield"
+              class="p-button-outlined"
+              [loading]="anchoringInProgress()"
+              (onClick)="anchorToBlockchain()"
+              pTooltip="Anchor this event to blockchain for tamper-proof verification"
+            ></p-button>
+
+            <!-- Verify Blockchain Anchoring -->
+            <p-button
+              *ngIf="event()?.is_blockchain_anchored"
+              label="Verify Blockchain"
+              icon="pi pi-verified"
+              class="p-button-outlined"
+              [loading]="verifyingBlockchain()"
+              (onClick)="verifyBlockchainAnchoring()"
+              pTooltip="Verify event integrity on blockchain"
+            ></p-button>
+
+            <!-- Verify Data Integrity -->
+            <p-button
+              label="Verify Data Integrity"
+              icon="pi pi-check-circle"
+              class="p-button-outlined"
+              [loading]="verifyingIntegrity()"
+              (onClick)="verifyDataIntegrity()"
+              pTooltip="Verify event data has not been tampered with"
+            ></p-button>
+          </div>
+
+          <!-- Verification Results -->
+          <div
+            *ngIf="verificationResult()"
+            class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg"
+          >
+            <h4 class="font-medium mb-2 text-blue-800 dark:text-blue-200">
+              <i class="pi pi-info-circle mr-2"></i>
+              Verification Results
+            </h4>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span>Blockchain Verified:</span>
+                <span
+                  [ngClass]="
+                    verificationResult()?.verified
+                      ? 'text-green-600'
+                      : 'text-red-600'
+                  "
+                >
+                  {{ verificationResult()?.verified ? "Yes" : "No" }}
+                </span>
+              </div>
+              <div class="flex justify-between">
+                <span>Data Integrity:</span>
+                <span
+                  [ngClass]="
+                    verificationResult()?.integrity_verified
+                      ? 'text-green-600'
+                      : 'text-red-600'
+                  "
+                >
+                  {{
+                    verificationResult()?.integrity_verified
+                      ? "Verified"
+                      : "Compromised"
+                  }}
+                </span>
+              </div>
+              <div
+                *ngIf="verificationResult()?.network"
+                class="flex justify-between"
+              >
+                <span>Network:</span>
+                <span>{{ verificationResult()?.network }}</span>
+              </div>
+              <div *ngIf="verificationResult()?.error" class="text-red-600">
+                <span class="font-medium">Error:</span>
+                {{ verificationResult()?.error }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Integrity Verification Results -->
+          <div
+            *ngIf="integrityResult()"
+            class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg"
+          >
+            <h4 class="font-medium mb-2 text-green-800 dark:text-green-200">
+              <i class="pi pi-check-circle mr-2"></i>
+              Integrity Check Results
+            </h4>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span>Data Integrity:</span>
+                <span
+                  [ngClass]="
+                    integrityResult()?.integrity_verified
+                      ? 'text-green-600'
+                      : 'text-red-600'
+                  "
+                >
+                  {{
+                    integrityResult()?.integrity_verified
+                      ? "Verified"
+                      : "Compromised"
+                  }}
+                </span>
+              </div>
+              <div
+                *ngIf="!integrityResult()?.integrity_verified"
+                class="text-xs text-gray-600"
+              >
+                <div>
+                  <span class="font-medium">Stored Hash:</span>
+                  <code class="ml-2 break-all">{{
+                    integrityResult()?.stored_hash
+                  }}</code>
+                </div>
+                <div class="mt-1">
+                  <span class="font-medium">Computed Hash:</span>
+                  <code class="ml-2 break-all">{{
+                    integrityResult()?.computed_hash
+                  }}</code>
                 </div>
               </div>
             </div>

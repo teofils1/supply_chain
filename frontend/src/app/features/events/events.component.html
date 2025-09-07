@@ -1,5 +1,5 @@
 <div class="flex flex-col gap-4">
-  <!-- Header with Create Button and View Toggle -->
+  <!-- Header with View Toggle -->
   <div class="flex justify-between items-center">
     <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">
       {{ "pages.events.title" | translate }}
@@ -18,12 +18,6 @@
           class="p-button-sm"
         ></p-togglebutton>
       </div>
-      <p-button
-        label="Create Event"
-        icon="pi pi-plus"
-        (onClick)="createEvent()"
-        class="p-button-primary"
-      ></p-button>
     </div>
   </div>
 
@@ -287,9 +281,7 @@
       </ng-template>
 
       <ng-template pTemplate="opposite" let-event let-index="index">
-        <div
-          class="p-2 w-full"
-        >
+        <div class="p-2 w-full">
           <!-- Timestamp and relative time -->
           <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">
             <div [title]="formatTimestamp(event.timestamp)">
@@ -341,6 +333,34 @@
             <span *ngIf="event.isRecent" class="text-blue-600 text-xs font-bold"
               >NEW</span
             >
+            <!-- Blockchain Integrity Badge -->
+            <p-tag
+              *ngIf="event.is_blockchain_anchored"
+              [value]="'Verified'"
+              [severity]="'success'"
+              [icon]="'pi pi-shield'"
+              class="text-xs"
+              pTooltip="Blockchain Verified"
+            ></p-tag>
+            <p-tag
+              *ngIf="
+                !event.is_blockchain_anchored &&
+                event.integrity_status === 'pending'
+              "
+              [value]="'Pending'"
+              [severity]="'warning'"
+              [icon]="'pi pi-clock'"
+              class="text-xs"
+              pTooltip="Blockchain Verification Pending"
+            ></p-tag>
+            <p-tag
+              *ngIf="event.integrity_status === 'failed'"
+              [value]="'Failed'"
+              [severity]="'danger'"
+              [icon]="'pi pi-times-circle'"
+              class="text-xs"
+              pTooltip="Blockchain Verification Failed"
+            ></p-tag>
           </div>
 
           <!-- Event Description -->
@@ -349,7 +369,9 @@
           </p>
 
           <!-- Entity Information -->
-          <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+          <div
+            class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400"
+          >
             <div class="flex items-center gap-2 min-w-0">
               <i class="pi pi-link text-xs"></i>
               <span class="truncate">{{ event.entityDisplay }}</span>
@@ -362,7 +384,9 @@
 
             <div class="flex items-center gap-2 min-w-0">
               <i class="pi pi-user text-xs"></i>
-              <span class="truncate">{{ event.user_full_name || event.user_username || 'System' }}</span>
+              <span class="truncate">{{
+                event.user_full_name || event.user_username || "System"
+              }}</span>
             </div>
           </div>
         </div>
@@ -402,6 +426,7 @@
               Severity
               <p-sortIcon field="severity"></p-sortIcon>
             </th>
+            <th>Integrity</th>
             <th pSortableColumn="timestamp">
               Timestamp
               <p-sortIcon field="timestamp"></p-sortIcon>
@@ -454,6 +479,34 @@
                       class="text-blue-600 text-xs font-bold"
                       >NEW</span
                     >
+                    <!-- Blockchain Integrity Badge -->
+                    <p-tag
+                      *ngIf="event.is_blockchain_anchored"
+                      [value]="'Verified'"
+                      [severity]="'success'"
+                      [icon]="'pi pi-shield'"
+                      class="text-xs"
+                      pTooltip="Blockchain Verified"
+                    ></p-tag>
+                    <p-tag
+                      *ngIf="
+                        !event.is_blockchain_anchored &&
+                        event.integrity_status === 'pending'
+                      "
+                      [value]="'Pending'"
+                      [severity]="'warning'"
+                      [icon]="'pi pi-clock'"
+                      class="text-xs"
+                      pTooltip="Blockchain Verification Pending"
+                    ></p-tag>
+                    <p-tag
+                      *ngIf="event.integrity_status === 'failed'"
+                      [value]="'Failed'"
+                      [severity]="'danger'"
+                      [icon]="'pi pi-times-circle'"
+                      class="text-xs"
+                      pTooltip="Blockchain Verification Failed"
+                    ></p-tag>
                   </div>
                 </div>
               </div>
@@ -476,6 +529,34 @@
               <p-tag
                 [value]="event.severity_display"
                 [severity]="getSeverityColor(event.severity)"
+                class="text-xs"
+              ></p-tag>
+            </td>
+
+            <!-- Blockchain Integrity -->
+            <td>
+              <p-tag
+                *ngIf="event.is_blockchain_anchored"
+                [value]="'Verified'"
+                [severity]="'success'"
+                [icon]="'pi pi-shield'"
+                class="text-xs"
+              ></p-tag>
+              <p-tag
+                *ngIf="
+                  !event.is_blockchain_anchored &&
+                  event.integrity_status === 'pending'
+                "
+                [value]="'Pending'"
+                [severity]="'warning'"
+                [icon]="'pi pi-clock'"
+                class="text-xs"
+              ></p-tag>
+              <p-tag
+                *ngIf="event.integrity_status === 'failed'"
+                [value]="'Failed'"
+                [severity]="'danger'"
+                [icon]="'pi pi-times-circle'"
                 class="text-xs"
               ></p-tag>
             </td>
@@ -563,15 +644,10 @@
         <div>
           <p class="text-lg font-medium text-gray-600">No events found</p>
           <p class="text-sm text-gray-500">
-            Try adjusting your search criteria or create a new event.
+            Events are automatically generated when supply chain entities are
+            modified.
           </p>
         </div>
-        <p-button
-          label="Create First Event"
-          icon="pi pi-plus"
-          (onClick)="createEvent()"
-          class="p-button-primary"
-        ></p-button>
       </div>
     </div>
   </p-card>

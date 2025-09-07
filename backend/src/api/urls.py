@@ -109,4 +109,20 @@ urlpatterns = [
         views.EventDeleteView.as_view(),
         name="event-delete",
     ),
+    # Blockchain integrity endpoints
+    path(
+        "api/events/<int:pk>/anchor/",
+        views.EventBlockchainAnchorView.as_view(),
+        name="event-blockchain-anchor",
+    ),
+    path(
+        "api/events/<int:pk>/verify/",
+        views.EventBlockchainVerifyView.as_view(),
+        name="event-blockchain-verify",
+    ),
+    path(
+        "api/events/<int:pk>/integrity/",
+        views.EventIntegrityVerifyView.as_view(),
+        name="event-integrity-verify",
+    ),
 ]

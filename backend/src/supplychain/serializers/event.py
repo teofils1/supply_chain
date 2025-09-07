@@ -35,6 +35,10 @@ class EventListSerializer(serializers.ModelSerializer):
     is_critical = serializers.ReadOnlyField()
     is_alert = serializers.ReadOnlyField()
 
+    # Blockchain integrity fields
+    is_blockchain_anchored = serializers.ReadOnlyField()
+    blockchain_explorer_url = serializers.ReadOnlyField()
+
     class Meta:
         model = m.Event
         fields = [
@@ -56,6 +60,12 @@ class EventListSerializer(serializers.ModelSerializer):
             "user_full_name",
             "is_critical",
             "is_alert",
+            "blockchain_tx_hash",
+            "blockchain_block_number", 
+            "integrity_status",
+            "event_hash",
+            "is_blockchain_anchored",
+            "blockchain_explorer_url",
             "created_at",
             "updated_at",
             "is_deleted",
@@ -111,6 +121,10 @@ class EventDetailSerializer(serializers.ModelSerializer):
     is_critical = serializers.ReadOnlyField()
     is_alert = serializers.ReadOnlyField()
 
+    # Blockchain integrity fields
+    is_blockchain_anchored = serializers.ReadOnlyField()
+    blockchain_explorer_url = serializers.ReadOnlyField()
+
     # Related entity details (when available)
     related_product = serializers.SerializerMethodField()
     related_batch = serializers.SerializerMethodField()
@@ -143,6 +157,12 @@ class EventDetailSerializer(serializers.ModelSerializer):
             "system_info",
             "is_critical",
             "is_alert",
+            "blockchain_tx_hash",
+            "blockchain_block_number",
+            "integrity_status", 
+            "event_hash",
+            "is_blockchain_anchored",
+            "blockchain_explorer_url",
             "related_product",
             "related_batch",
             "related_pack",

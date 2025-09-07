@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from model_utils import FieldTracker
 
 from .base import BaseModel
 
@@ -93,6 +94,9 @@ class Product(BaseModel):
     approval_number = models.CharField(
         max_length=100, blank=True, help_text="Regulatory approval number"
     )
+
+    # Field tracker for automated event generation
+    _field_tracker = FieldTracker()
 
     class Meta:
         ordering = ["name", "gtin"]

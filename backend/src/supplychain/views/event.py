@@ -5,10 +5,13 @@ from django.db.models import Q, Prefetch
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.decorators import action
+from rest_framework.views import APIView
 
 from .. import models as m
 from .. import permissions as p
 from .. import serializers as s
+from ..services.blockchain import blockchain_service
 
 
 class EventListCreateView(generics.ListCreateAPIView):
@@ -232,7 +235,12 @@ class EventListCreateView(generics.ListCreateAPIView):
             ):
                 extra_data["user"] = self.request.user
 
-        serializer.save(**extra_data)
+        event = serializer.save(**extra_data)
+        
+        # Compute and store event hash for blockchain anchoring
+        event.update_event_hash()
+        
+        return event
 
     def get_client_ip(self):
         """Get the client IP address from the request."""
@@ -296,4 +304,127 @@ class EventDeleteView(generics.DestroyAPIView):
         self.perform_destroy(instance)
         return Response(
             {"message": "Event deleted successfully"}, status=status.HTTP_200_OK
+        )
+
+
+class EventBlockchainAnchorView(APIView):
+    """Manually anchor an event to blockchain."""
+    
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        """Anchor specific event to blockchain."""
+        try:
+            event = m.Event.objects.get(pk=pk)
+        except m.Event.DoesNotExist:
+            return Response(
+                {"error": "Event not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Check if already anchored
+        if event.integrity_status == "anchored":
+            return Response(
+                {
+                    "message": "Event already anchored",
+                    "tx_hash": event.blockchain_tx_hash,
+                    "block_number": event.blockchain_block_number
+                },
+                status=status.HTTP_200_OK
+            )
+
+        # Anchor to blockchain
+        result = blockchain_service.anchor_event(event)
+
+        if result['success']:
+            event.mark_blockchain_anchored(
+                result['tx_hash'],
+                result['block_number']
+            )
+            return Response(
+                {
+                    "message": "Event successfully anchored",
+                    "tx_hash": result['tx_hash'],
+                    "block_number": result['block_number'],
+                    "explorer_url": event.blockchain_explorer_url
+                },
+                status=status.HTTP_200_OK
+            )
+        else:
+            event.mark_blockchain_failed()
+            return Response(
+                {
+                    "error": "Failed to anchor event",
+                    "details": result.get('error', 'Unknown error')
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class EventBlockchainVerifyView(APIView):
+    """Verify blockchain-anchored event integrity."""
+    
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        """Verify specific event's blockchain anchoring."""
+        try:
+            event = m.Event.objects.get(pk=pk)
+        except m.Event.DoesNotExist:
+            return Response(
+                {"error": "Event not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not event.is_blockchain_anchored:
+            return Response(
+                {
+                    "verified": False,
+                    "error": "Event is not anchored on blockchain",
+                    "integrity_status": event.integrity_status
+                },
+                status=status.HTTP_200_OK
+            )
+
+        # Verify on blockchain
+        verification = blockchain_service.verify_anchored_event(event)
+        
+        # Add local integrity check
+        verification['local_integrity_verified'] = event.verify_integrity()
+
+        return Response(verification, status=status.HTTP_200_OK)
+
+
+class EventIntegrityVerifyView(APIView):
+    """Verify event data integrity without blockchain check."""
+    
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        """Verify specific event's data integrity."""
+        try:
+            event = m.Event.objects.get(pk=pk)
+        except m.Event.DoesNotExist:
+            return Response(
+                {"error": "Event not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not event.event_hash:
+            # Generate hash if missing
+            event.update_event_hash()
+
+        current_hash = event.compute_event_hash()
+        integrity_verified = event.event_hash == current_hash
+
+        return Response(
+            {
+                "integrity_verified": integrity_verified,
+                "stored_hash": event.event_hash,
+                "computed_hash": current_hash,
+                "event_id": event.id,
+                "blockchain_anchored": event.is_blockchain_anchored,
+                "integrity_status": event.integrity_status
+            },
+            status=status.HTTP_200_OK
         )

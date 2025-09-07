@@ -2,14 +2,43 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 
-export type EventType = 'created' | 'updated' | 'deleted' | 'status_changed' | 'location_changed' | 
-  'quality_check' | 'temperature_alert' | 'shipped' | 'delivered' | 'returned' | 'damaged' | 
-  'expired' | 'recalled' | 'inventory_count' | 'maintenance' | 'calibration' | 'user_action' | 
-  'system_action' | 'alert' | 'warning' | 'error' | 'other';
+export type EventType =
+  | 'created'
+  | 'updated'
+  | 'deleted'
+  | 'status_changed'
+  | 'location_changed'
+  | 'quality_check'
+  | 'temperature_alert'
+  | 'shipped'
+  | 'delivered'
+  | 'returned'
+  | 'damaged'
+  | 'expired'
+  | 'recalled'
+  | 'inventory_count'
+  | 'maintenance'
+  | 'calibration'
+  | 'user_action'
+  | 'system_action'
+  | 'alert'
+  | 'warning'
+  | 'error'
+  | 'other';
 
-export type EntityType = 'product' | 'batch' | 'pack' | 'shipment' | 'user' | 'device' | 'location' | 'system';
+export type EntityType =
+  | 'product'
+  | 'batch'
+  | 'pack'
+  | 'shipment'
+  | 'user'
+  | 'device'
+  | 'location'
+  | 'system';
 
 export type SeverityLevel = 'info' | 'low' | 'medium' | 'high' | 'critical';
+
+export type IntegrityStatus = 'pending' | 'anchored' | 'failed';
 
 export interface EntityInfo {
   type: string;
@@ -82,6 +111,13 @@ export interface Event {
   system_info: any;
   is_critical: boolean;
   is_alert: boolean;
+  // Blockchain integrity fields
+  blockchain_tx_hash: string | null;
+  blockchain_block_number: number | null;
+  integrity_status: IntegrityStatus;
+  event_hash: string | null;
+  is_blockchain_anchored: boolean;
+  blockchain_explorer_url: string | null;
   related_product: RelatedProduct | null;
   related_batch: RelatedBatch | null;
   related_pack: RelatedPack | null;
@@ -110,6 +146,13 @@ export interface EventListItem {
   user_full_name: string | null;
   is_critical: boolean;
   is_alert: boolean;
+  // Blockchain integrity fields
+  blockchain_tx_hash: string | null;
+  blockchain_block_number: number | null;
+  integrity_status: IntegrityStatus;
+  event_hash: string | null;
+  is_blockchain_anchored: boolean;
+  blockchain_explorer_url: string | null;
   created_at: string;
   updated_at?: string;
   is_deleted: boolean;
@@ -155,7 +198,7 @@ export class EventService {
   private http = inject(HttpClient);
   private _events = signal<EventListItem[]>([]);
   private _loading = signal(false);
-  
+
   readonly events = computed(() => this._events());
   readonly loading = computed(() => this._loading());
 
@@ -164,7 +207,7 @@ export class EventService {
    */
   load(filters?: EventFilters): Observable<EventListItem[]> {
     this._loading.set(true);
-    
+
     let params = new HttpParams();
     if (filters?.search) {
       params = params.set('search', filters.search);
@@ -221,14 +264,12 @@ export class EventService {
       params = params.set('recent_days', filters.recent_days.toString());
     }
 
-    return this.http
-      .get<EventListItem[]>('/api/events/', { params })
-      .pipe(
-        tap((events) => {
-          this._events.set(events);
-          this._loading.set(false);
-        })
-      );
+    return this.http.get<EventListItem[]>('/api/events/', { params }).pipe(
+      tap((events) => {
+        this._events.set(events);
+        this._loading.set(false);
+      })
+    );
   }
 
   /**
@@ -242,76 +283,84 @@ export class EventService {
    * Create a new event
    */
   create(data: CreateEventData): Observable<Event> {
-    return this.http
-      .post<Event>('/api/events/', data)
-      .pipe(
-        tap((event) => {
-          // Add the new event to the list (convert to list item format)
-          const listItem: EventListItem = {
-            id: event.id,
-            event_type: event.event_type,
-            event_type_display: event.event_type_display,
-            entity_type: event.entity_type,
-            entity_type_display: event.entity_type_display,
-            entity_id: event.entity_id,
-            entity_display_name: event.entity_display_name,
-            entity_info: event.entity_info,
-            timestamp: event.timestamp,
-            description: event.description,
-            severity: event.severity,
-            severity_display: event.severity_display,
-            location: event.location,
-            user: event.user,
-            user_username: event.user_username,
-            user_full_name: event.user_full_name,
-            is_critical: event.is_critical,
-            is_alert: event.is_alert,
-            created_at: event.created_at,
-            updated_at: event.updated_at,
-            is_deleted: event.is_deleted,
-          };
-          this._events.update((list) => [listItem, ...list]);
-        })
-      );
+    return this.http.post<Event>('/api/events/', data).pipe(
+      tap((event) => {
+        // Add the new event to the list (convert to list item format)
+        const listItem: EventListItem = {
+          id: event.id,
+          event_type: event.event_type,
+          event_type_display: event.event_type_display,
+          entity_type: event.entity_type,
+          entity_type_display: event.entity_type_display,
+          entity_id: event.entity_id,
+          entity_display_name: event.entity_display_name,
+          entity_info: event.entity_info,
+          timestamp: event.timestamp,
+          description: event.description,
+          severity: event.severity,
+          severity_display: event.severity_display,
+          location: event.location,
+          user: event.user,
+          user_username: event.user_username,
+          user_full_name: event.user_full_name,
+          is_critical: event.is_critical,
+          is_alert: event.is_alert,
+          blockchain_tx_hash: event.blockchain_tx_hash,
+          blockchain_block_number: event.blockchain_block_number,
+          integrity_status: event.integrity_status,
+          event_hash: event.event_hash,
+          is_blockchain_anchored: event.is_blockchain_anchored,
+          blockchain_explorer_url: event.blockchain_explorer_url,
+          created_at: event.created_at,
+          updated_at: event.updated_at,
+          is_deleted: event.is_deleted,
+        };
+        this._events.update((list) => [listItem, ...list]);
+      })
+    );
   }
 
   /**
    * Update an existing event
    */
   update(id: number, data: Partial<CreateEventData>): Observable<Event> {
-    return this.http
-      .patch<Event>(`/api/events/${id}/`, data)
-      .pipe(
-        tap((event) => {
-          // Update the event in the list
-          const listItem: EventListItem = {
-            id: event.id,
-            event_type: event.event_type,
-            event_type_display: event.event_type_display,
-            entity_type: event.entity_type,
-            entity_type_display: event.entity_type_display,
-            entity_id: event.entity_id,
-            entity_display_name: event.entity_display_name,
-            entity_info: event.entity_info,
-            timestamp: event.timestamp,
-            description: event.description,
-            severity: event.severity,
-            severity_display: event.severity_display,
-            location: event.location,
-            user: event.user,
-            user_username: event.user_username,
-            user_full_name: event.user_full_name,
-            is_critical: event.is_critical,
-            is_alert: event.is_alert,
-            created_at: event.created_at,
-            updated_at: event.updated_at,
-            is_deleted: event.is_deleted,
-          };
-          this._events.update((list) =>
-            list.map((e) => (e.id === id ? listItem : e))
-          );
-        })
-      );
+    return this.http.patch<Event>(`/api/events/${id}/`, data).pipe(
+      tap((event) => {
+        // Update the event in the list
+        const listItem: EventListItem = {
+          id: event.id,
+          event_type: event.event_type,
+          event_type_display: event.event_type_display,
+          entity_type: event.entity_type,
+          entity_type_display: event.entity_type_display,
+          entity_id: event.entity_id,
+          entity_display_name: event.entity_display_name,
+          entity_info: event.entity_info,
+          timestamp: event.timestamp,
+          description: event.description,
+          severity: event.severity,
+          severity_display: event.severity_display,
+          location: event.location,
+          user: event.user,
+          user_username: event.user_username,
+          user_full_name: event.user_full_name,
+          is_critical: event.is_critical,
+          is_alert: event.is_alert,
+          blockchain_tx_hash: event.blockchain_tx_hash,
+          blockchain_block_number: event.blockchain_block_number,
+          integrity_status: event.integrity_status,
+          event_hash: event.event_hash,
+          is_blockchain_anchored: event.is_blockchain_anchored,
+          blockchain_explorer_url: event.blockchain_explorer_url,
+          created_at: event.created_at,
+          updated_at: event.updated_at,
+          is_deleted: event.is_deleted,
+        };
+        this._events.update((list) =>
+          list.map((e) => (e.id === id ? listItem : e))
+        );
+      })
+    );
   }
 
   /**
@@ -516,5 +565,119 @@ export class EventService {
     const diffMs = now.getTime() - eventTime.getTime();
     const diffHours = diffMs / (1000 * 60 * 60);
     return diffHours <= 24;
+  }
+
+  // Blockchain integrity methods
+
+  /**
+   * Anchor an event to blockchain
+   */
+  anchorEvent(id: number): Observable<{
+    message: string;
+    tx_hash: string;
+    block_number: number;
+    explorer_url: string;
+  }> {
+    return this.http.post<{
+      message: string;
+      tx_hash: string;
+      block_number: number;
+      explorer_url: string;
+    }>(`/api/events/${id}/anchor/`, {});
+  }
+
+  /**
+   * Verify blockchain anchoring for an event
+   */
+  verifyBlockchainAnchoring(id: number): Observable<{
+    verified: boolean;
+    integrity_verified: boolean;
+    tx_hash: string;
+    block_number: number;
+    stored_hash: string;
+    computed_hash: string;
+    network: string;
+    timestamp: string;
+    error?: string;
+  }> {
+    return this.http.get<{
+      verified: boolean;
+      integrity_verified: boolean;
+      tx_hash: string;
+      block_number: number;
+      stored_hash: string;
+      computed_hash: string;
+      network: string;
+      timestamp: string;
+      error?: string;
+    }>(`/api/events/${id}/verify/`);
+  }
+
+  /**
+   * Verify event data integrity (without blockchain check)
+   */
+  verifyIntegrity(id: number): Observable<{
+    integrity_verified: boolean;
+    stored_hash: string;
+    computed_hash: string;
+    event_id: number;
+    blockchain_anchored: boolean;
+    integrity_status: IntegrityStatus;
+  }> {
+    return this.http.get<{
+      integrity_verified: boolean;
+      stored_hash: string;
+      computed_hash: string;
+      event_id: number;
+      blockchain_anchored: boolean;
+      integrity_status: IntegrityStatus;
+    }>(`/api/events/${id}/integrity/`);
+  }
+
+  /**
+   * Get integrity status color for UI display
+   */
+  getIntegrityStatusColor(
+    status: IntegrityStatus
+  ): 'success' | 'warning' | 'danger' | 'info' {
+    switch (status) {
+      case 'anchored':
+        return 'success';
+      case 'failed':
+        return 'danger';
+      case 'pending':
+      default:
+        return 'warning';
+    }
+  }
+
+  /**
+   * Get integrity status icon
+   */
+  getIntegrityStatusIcon(status: IntegrityStatus): string {
+    switch (status) {
+      case 'anchored':
+        return 'pi-shield';
+      case 'failed':
+        return 'pi-times-circle';
+      case 'pending':
+      default:
+        return 'pi-clock';
+    }
+  }
+
+  /**
+   * Get integrity status display text
+   */
+  getIntegrityStatusText(status: IntegrityStatus): string {
+    switch (status) {
+      case 'anchored':
+        return 'Blockchain Verified';
+      case 'failed':
+        return 'Verification Failed';
+      case 'pending':
+      default:
+        return 'Verification Pending';
+    }
   }
 }
