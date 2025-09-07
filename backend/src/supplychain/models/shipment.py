@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from decimal import Decimal
+
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.utils import timezone
 from model_utils import FieldTracker
 
 from .base import BaseModel
@@ -248,21 +248,19 @@ class Shipment(BaseModel):
         from django.core.exceptions import ValidationError
 
         # Validate dates
-        if self.shipped_date and self.estimated_delivery_date:
-            if self.estimated_delivery_date < self.shipped_date:
-                raise ValidationError(
-                    {
-                        "estimated_delivery_date": "Estimated delivery date must be after shipped date."
-                    }
-                )
+        if self.shipped_date and self.estimated_delivery_date and self.estimated_delivery_date < self.shipped_date:
+            raise ValidationError(
+                {
+                    "estimated_delivery_date": "Estimated delivery date must be after shipped date."
+                }
+            )
 
-        if self.shipped_date and self.actual_delivery_date:
-            if self.actual_delivery_date < self.shipped_date:
-                raise ValidationError(
-                    {
-                        "actual_delivery_date": "Actual delivery date must be after shipped date."
-                    }
-                )
+        if self.shipped_date and self.actual_delivery_date and self.actual_delivery_date < self.shipped_date:
+            raise ValidationError(
+                {
+                    "actual_delivery_date": "Actual delivery date must be after shipped date."
+                }
+            )
 
         # Auto-update status based on delivery date
         if self.actual_delivery_date and self.status not in ["delivered", "returned"]:

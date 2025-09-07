@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import contextlib
 from datetime import datetime
-from django.db.models import Q, Prefetch
+
+from django.db.models import Q
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.decorators import action
 from rest_framework.views import APIView
 
 from .. import models as m
@@ -54,10 +55,8 @@ class EventListCreateView(generics.ListCreateAPIView):
         # Filter by entity ID
         entity_id = self.request.query_params.get("entity_id", None)
         if entity_id:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 queryset = queryset.filter(entity_id=int(entity_id))
-            except (ValueError, TypeError):
-                pass
 
         # Filter by severity
         severity = self.request.query_params.get("severity", None)
@@ -67,10 +66,8 @@ class EventListCreateView(generics.ListCreateAPIView):
         # Filter by user
         user_id = self.request.query_params.get("user", None)
         if user_id:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 queryset = queryset.filter(user_id=int(user_id))
-            except (ValueError, TypeError):
-                pass
 
         # Filter by location
         location = self.request.query_params.get("location", None)
@@ -168,10 +165,8 @@ class EventListCreateView(generics.ListCreateAPIView):
         # Filter by specific pack
         pack_id = self.request.query_params.get("pack", None)
         if pack_id:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 queryset = queryset.filter(entity_type="pack", entity_id=int(pack_id))
-            except (ValueError, TypeError):
-                pass
 
         # Filter by specific shipment
         shipment_id = self.request.query_params.get("shipment", None)
@@ -210,6 +205,7 @@ class EventListCreateView(generics.ListCreateAPIView):
             try:
                 days = int(recent_days)
                 from datetime import timedelta
+
                 from django.utils import timezone
 
                 cutoff_date = timezone.now() - timedelta(days=days)
@@ -236,10 +232,10 @@ class EventListCreateView(generics.ListCreateAPIView):
                 extra_data["user"] = self.request.user
 
         event = serializer.save(**extra_data)
-        
+
         # Compute and store event hash for blockchain anchoring
         event.update_event_hash()
-        
+
         return event
 
     def get_client_ip(self):
@@ -309,7 +305,7 @@ class EventDeleteView(generics.DestroyAPIView):
 
 class EventBlockchainAnchorView(APIView):
     """Manually anchor an event to blockchain."""
-    
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
@@ -318,8 +314,7 @@ class EventBlockchainAnchorView(APIView):
             event = m.Event.objects.get(pk=pk)
         except m.Event.DoesNotExist:
             return Response(
-                {"error": "Event not found"}, 
-                status=status.HTTP_404_NOT_FOUND
+                {"error": "Event not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
         # Check if already anchored
@@ -328,42 +323,39 @@ class EventBlockchainAnchorView(APIView):
                 {
                     "message": "Event already anchored",
                     "tx_hash": event.blockchain_tx_hash,
-                    "block_number": event.blockchain_block_number
+                    "block_number": event.blockchain_block_number,
                 },
-                status=status.HTTP_200_OK
+                status=status.HTTP_200_OK,
             )
 
         # Anchor to blockchain
         result = blockchain_service.anchor_event(event)
 
-        if result['success']:
-            event.mark_blockchain_anchored(
-                result['tx_hash'],
-                result['block_number']
-            )
+        if result["success"]:
+            event.mark_blockchain_anchored(result["tx_hash"], result["block_number"])
             return Response(
                 {
                     "message": "Event successfully anchored",
-                    "tx_hash": result['tx_hash'],
-                    "block_number": result['block_number'],
-                    "explorer_url": event.blockchain_explorer_url
+                    "tx_hash": result["tx_hash"],
+                    "block_number": result["block_number"],
+                    "explorer_url": event.blockchain_explorer_url,
                 },
-                status=status.HTTP_200_OK
+                status=status.HTTP_200_OK,
             )
         else:
             event.mark_blockchain_failed()
             return Response(
                 {
                     "error": "Failed to anchor event",
-                    "details": result.get('error', 'Unknown error')
+                    "details": result.get("error", "Unknown error"),
                 },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
 class EventBlockchainVerifyView(APIView):
     """Verify blockchain-anchored event integrity."""
-    
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
@@ -372,8 +364,7 @@ class EventBlockchainVerifyView(APIView):
             event = m.Event.objects.get(pk=pk)
         except m.Event.DoesNotExist:
             return Response(
-                {"error": "Event not found"}, 
-                status=status.HTTP_404_NOT_FOUND
+                {"error": "Event not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
         if not event.is_blockchain_anchored:
@@ -381,23 +372,23 @@ class EventBlockchainVerifyView(APIView):
                 {
                     "verified": False,
                     "error": "Event is not anchored on blockchain",
-                    "integrity_status": event.integrity_status
+                    "integrity_status": event.integrity_status,
                 },
-                status=status.HTTP_200_OK
+                status=status.HTTP_200_OK,
             )
 
         # Verify on blockchain
         verification = blockchain_service.verify_anchored_event(event)
-        
+
         # Add local integrity check
-        verification['local_integrity_verified'] = event.verify_integrity()
+        verification["local_integrity_verified"] = event.verify_integrity()
 
         return Response(verification, status=status.HTTP_200_OK)
 
 
 class EventIntegrityVerifyView(APIView):
     """Verify event data integrity without blockchain check."""
-    
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
@@ -406,8 +397,7 @@ class EventIntegrityVerifyView(APIView):
             event = m.Event.objects.get(pk=pk)
         except m.Event.DoesNotExist:
             return Response(
-                {"error": "Event not found"}, 
-                status=status.HTTP_404_NOT_FOUND
+                {"error": "Event not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
         if not event.event_hash:
@@ -424,7 +414,7 @@ class EventIntegrityVerifyView(APIView):
                 "computed_hash": current_hash,
                 "event_id": event.id,
                 "blockchain_anchored": event.is_blockchain_anchored,
-                "integrity_status": event.integrity_status
+                "integrity_status": event.integrity_status,
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )

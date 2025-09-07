@@ -1,36 +1,36 @@
 from .auth import MeView
-from .user import (
-    UserDeleteView,
-    UserDetailUpdateView,
-    UserListCreateView,
-)
-from .product import (
-    ProductDeleteView,
-    ProductDetailUpdateView,
-    ProductListCreateView,
-)
 from .batch import (
     BatchDeleteView,
     BatchDetailUpdateView,
     BatchListCreateView,
+)
+from .event import (
+    EventBlockchainAnchorView,
+    EventBlockchainVerifyView,
+    EventDeleteView,
+    EventDetailUpdateView,
+    EventIntegrityVerifyView,
+    EventListCreateView,
 )
 from .pack import (
     PackDeleteView,
     PackDetailUpdateView,
     PackListCreateView,
 )
+from .product import (
+    ProductDeleteView,
+    ProductDetailUpdateView,
+    ProductListCreateView,
+)
 from .shipment import (
     ShipmentDeleteView,
     ShipmentDetailUpdateView,
     ShipmentListCreateView,
 )
-from .event import (
-    EventDeleteView,
-    EventDetailUpdateView,
-    EventListCreateView,
-    EventBlockchainAnchorView,
-    EventBlockchainVerifyView,
-    EventIntegrityVerifyView,
+from .user import (
+    UserDeleteView,
+    UserDetailUpdateView,
+    UserListCreateView,
 )
 
 __all__ = [
@@ -54,6 +54,6 @@ __all__ = [
     "EventDetailUpdateView",
     "EventDeleteView",
     "EventBlockchainAnchorView",
-    "EventBlockchainVerifyView", 
+    "EventBlockchainVerifyView",
     "EventIntegrityVerifyView",
 ]

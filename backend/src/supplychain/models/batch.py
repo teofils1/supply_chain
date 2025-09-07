@@ -145,11 +145,10 @@ class Batch(BaseModel):
         from django.core.exceptions import ValidationError
 
         # Validate that expiry date is after manufacturing date
-        if self.manufacturing_date and self.expiry_date:
-            if self.expiry_date <= self.manufacturing_date:
-                raise ValidationError(
-                    {"expiry_date": "Expiry date must be after manufacturing date."}
-                )
+        if self.manufacturing_date and self.expiry_date and self.expiry_date <= self.manufacturing_date:
+            raise ValidationError(
+                {"expiry_date": "Expiry date must be after manufacturing date."}
+            )
 
         # Auto-update status based on expiry
         if self.expiry_date and self.is_expired and self.status == "active":

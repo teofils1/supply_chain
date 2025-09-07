@@ -1,10 +1,12 @@
-from django.db import models
-from django.contrib.auth import get_user_model
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericForeignKey
-from .base import BaseModel
 import hashlib
 import json
+
+from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.db import models
+
+from .base import BaseModel
 
 User = get_user_model()
 
@@ -144,15 +146,13 @@ class Event(BaseModel):
         max_length=66,  # For Ethereum tx hash (0x + 64 hex chars)
         blank=True,
         null=True,
-        help_text="Blockchain transaction hash for anchored event"
+        help_text="Blockchain transaction hash for anchored event",
     )
-    
+
     blockchain_block_number = models.PositiveBigIntegerField(
-        blank=True,
-        null=True,
-        help_text="Block number where the event was anchored"
+        blank=True, null=True, help_text="Block number where the event was anchored"
     )
-    
+
     integrity_status = models.CharField(
         max_length=20,
         choices=[
@@ -164,7 +164,7 @@ class Event(BaseModel):
         help_text="Status of blockchain anchoring",
         db_index=True,
     )
-    
+
     event_hash = models.CharField(
         max_length=64,  # SHA-256 hash (64 hex chars)
         blank=True,
@@ -318,18 +318,20 @@ class Event(BaseModel):
             "metadata": self.metadata,
             "user_id": self.user_id if self.user else None,
         }
-        
+
         # Sort keys to ensure consistent ordering
-        canonical_json = json.dumps(canonical_data, sort_keys=True, separators=(',', ':'))
-        
+        canonical_json = json.dumps(
+            canonical_data, sort_keys=True, separators=(",", ":")
+        )
+
         # Compute SHA-256 hash
-        hash_obj = hashlib.sha256(canonical_json.encode('utf-8'))
+        hash_obj = hashlib.sha256(canonical_json.encode("utf-8"))
         return hash_obj.hexdigest()
 
     def update_event_hash(self):
         """Update the event_hash field with computed hash."""
         self.event_hash = self.compute_event_hash()
-        self.save(update_fields=['event_hash'])
+        self.save(update_fields=["event_hash"])
 
     def verify_integrity(self):
         """
@@ -358,9 +360,15 @@ class Event(BaseModel):
         self.blockchain_tx_hash = tx_hash
         self.blockchain_block_number = block_number
         self.integrity_status = "anchored"
-        self.save(update_fields=['blockchain_tx_hash', 'blockchain_block_number', 'integrity_status'])
+        self.save(
+            update_fields=[
+                "blockchain_tx_hash",
+                "blockchain_block_number",
+                "integrity_status",
+            ]
+        )
 
     def mark_blockchain_failed(self):
         """Mark event blockchain anchoring as failed."""
         self.integrity_status = "failed"
-        self.save(update_fields=['integrity_status'])
+        self.save(update_fields=["integrity_status"])

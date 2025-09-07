@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import contextlib
 from datetime import date, timedelta
+
 from django.db.models import Q
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
@@ -44,18 +46,14 @@ class PackListCreateView(generics.ListCreateAPIView):
         # Filter by batch
         batch_id = self.request.query_params.get("batch", None)
         if batch_id:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 queryset = queryset.filter(batch_id=int(batch_id))
-            except (ValueError, TypeError):
-                pass
 
         # Filter by product (through batch relationship)
         product_id = self.request.query_params.get("product", None)
         if product_id:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 queryset = queryset.filter(batch__product_id=int(product_id))
-            except (ValueError, TypeError):
-                pass
 
         # Filter by status
         status_filter = self.request.query_params.get("status", None)

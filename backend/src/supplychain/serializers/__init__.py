@@ -1,22 +1,22 @@
-from .user import (
-    UserCreateSerializer,
-    UserDetailSerializer,
-    UserListSerializer,
-)
-from .product import (
-    ProductCreateSerializer,
-    ProductDetailSerializer,
-    ProductListSerializer,
-)
 from .batch import (
     BatchCreateSerializer,
     BatchDetailSerializer,
     BatchListSerializer,
 )
+from .event import (
+    EventCreateSerializer,
+    EventDetailSerializer,
+    EventListSerializer,
+)
 from .pack import (
     PackCreateSerializer,
     PackDetailSerializer,
     PackListSerializer,
+)
+from .product import (
+    ProductCreateSerializer,
+    ProductDetailSerializer,
+    ProductListSerializer,
 )
 from .shipment import (
     ShipmentCreateSerializer,
@@ -24,10 +24,10 @@ from .shipment import (
     ShipmentListSerializer,
     ShipmentPackSerializer,
 )
-from .event import (
-    EventCreateSerializer,
-    EventDetailSerializer,
-    EventListSerializer,
+from .user import (
+    UserCreateSerializer,
+    UserDetailSerializer,
+    UserListSerializer,
 )
 
 __all__ = [

@@ -29,11 +29,17 @@ class UserProfile(BaseModel):
     @property
     def roles(self) -> list[str]:
         # Only return active (non-soft-deleted) role assignments
-        return list(self.user.role_assignments.filter(deleted_at__isnull=True).values_list("role", flat=True))
+        return list(
+            self.user.role_assignments.filter(deleted_at__isnull=True).values_list(
+                "role", flat=True
+            )
+        )
 
     def has_role(self, role: str) -> bool:
         # Only check active (non-soft-deleted) role assignments
-        return self.user.role_assignments.filter(role=role, deleted_at__isnull=True).exists()
+        return self.user.role_assignments.filter(
+            role=role, deleted_at__isnull=True
+        ).exists()
 
 
 class RoleAssignment(BaseModel):

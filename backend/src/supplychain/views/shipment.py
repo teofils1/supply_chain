@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
-from django.db.models import Q, Prefetch
+import contextlib
+from datetime import date
+
+from django.db.models import Prefetch, Q
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -148,26 +150,20 @@ class ShipmentListCreateView(generics.ListCreateAPIView):
         # Filter by pack
         pack_id = self.request.query_params.get("pack", None)
         if pack_id:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 queryset = queryset.filter(packs__id=int(pack_id))
-            except (ValueError, TypeError):
-                pass
 
         # Filter by batch (through pack relationship)
         batch_id = self.request.query_params.get("batch", None)
         if batch_id:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 queryset = queryset.filter(packs__batch__id=int(batch_id))
-            except (ValueError, TypeError):
-                pass
 
         # Filter by product (through pack->batch relationship)
         product_id = self.request.query_params.get("product", None)
         if product_id:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 queryset = queryset.filter(packs__batch__product__id=int(product_id))
-            except (ValueError, TypeError):
-                pass
 
         # Filter by delivery status
         delivery_status = self.request.query_params.get("delivery_status", None)

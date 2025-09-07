@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import contextlib
+
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils.crypto import get_random_string
@@ -34,7 +36,11 @@ class UserListSerializer(serializers.ModelSerializer):
         if hasattr(obj, "profile"):
             return obj.profile.roles
         # Only return active (non-soft-deleted) role assignments
-        return list(obj.role_assignments.filter(deleted_at__isnull=True).values_list("role", flat=True))
+        return list(
+            obj.role_assignments.filter(deleted_at__isnull=True).values_list(
+                "role", flat=True
+            )
+        )
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
@@ -71,7 +77,11 @@ class UserDetailSerializer(serializers.ModelSerializer):
         if hasattr(obj, "profile"):
             return obj.profile.roles
         # Only return active (non-soft-deleted) role assignments
-        return list(obj.role_assignments.filter(deleted_at__isnull=True).values_list("role", flat=True))
+        return list(
+            obj.role_assignments.filter(deleted_at__isnull=True).values_list(
+                "role", flat=True
+            )
+        )
 
     def validate(self, attrs):
         roles = attrs.get("roles_input")  # Changed from "roles" to "roles_input"
@@ -88,7 +98,9 @@ class UserDetailSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def update(self, instance, validated_data):
         profile_data = validated_data.pop("profile", {})
-        roles = validated_data.pop("roles_input", None)  # Changed from "roles" to "roles_input"
+        roles = validated_data.pop(
+            "roles_input", None
+        )  # Changed from "roles" to "roles_input"
         password = validated_data.pop("password", None)
 
         # Update user fields first
@@ -112,14 +124,19 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
             # Get all role assignments including soft-deleted ones
             all_role_assignments = instance.role_assignments.all_with_deleted()
-            deleted_role_assignments = {ra.role: ra for ra in all_role_assignments.filter(deleted_at__isnull=False)}
+            deleted_role_assignments = {
+                ra.role: ra
+                for ra in all_role_assignments.filter(deleted_at__isnull=False)
+            }
 
             new_roles = set(roles)
 
             # Remove roles that are no longer needed (soft delete them)
             for role_assignment in current_role_assignments:
-                if (role_assignment.role not in new_roles and
-                    role_assignment.role != profile.active_role):
+                if (
+                    role_assignment.role not in new_roles
+                    and role_assignment.role != profile.active_role
+                ):
                     role_assignment.delete()  # This is a soft delete
 
             # Add new roles (restore if previously deleted, create if never existed)
@@ -135,7 +152,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
                             m.RoleAssignment.objects.create(user=instance, role=role)
                         except Exception:
                             # Role assignment already exists, ignore
-                            pass
+                            contextlib.suppress(Exception)
 
         # Set password if provided
         if password:

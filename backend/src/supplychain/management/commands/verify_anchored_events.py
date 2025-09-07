@@ -2,48 +2,46 @@
 Management command to verify blockchain-anchored events.
 """
 
+import logging
+from datetime import timedelta
+
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from datetime import timedelta
+
 from supplychain.models import Event
 from supplychain.services.blockchain import blockchain_service
-import logging
 
 logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = 'Verify blockchain-anchored events for integrity'
+    help = "Verify blockchain-anchored events for integrity"
 
     def add_arguments(self, parser):
+        parser.add_argument("--event-id", type=int, help="Verify specific event by ID")
         parser.add_argument(
-            '--event-id',
-            type=int,
-            help='Verify specific event by ID'
-        )
-        parser.add_argument(
-            '--batch-size',
+            "--batch-size",
             type=int,
             default=50,
-            help='Number of events to verify in each batch'
+            help="Number of events to verify in each batch",
         )
         parser.add_argument(
-            '--days-back',
+            "--days-back",
             type=int,
             default=7,
-            help='How many days back to verify events'
+            help="How many days back to verify events",
         )
         parser.add_argument(
-            '--fix-status',
-            action='store_true',
-            help='Fix integrity_status based on verification results'
+            "--fix-status",
+            action="store_true",
+            help="Fix integrity_status based on verification results",
         )
 
     def handle(self, *args, **options):
-        event_id = options.get('event_id')
-        batch_size = options['batch_size']
-        days_back = options['days_back']
-        fix_status = options['fix_status']
+        event_id = options.get("event_id")
+        batch_size = options["batch_size"]
+        days_back = options["days_back"]
+        fix_status = options["fix_status"]
 
         self.stdout.write("Starting event verification process...")
 
@@ -58,16 +56,18 @@ class Command(BaseCommand):
         else:
             # Verify batch of events
             cutoff_date = timezone.now() - timedelta(days=days_back)
-            
+
             anchored_events = Event.objects.filter(
-                integrity_status='anchored',
+                integrity_status="anchored",
                 blockchain_tx_hash__isnull=False,
                 created_at__gte=cutoff_date,
-                deleted_at__isnull=True
-            ).order_by('-created_at')[:batch_size]
+                deleted_at__isnull=True,
+            ).order_by("-created_at")[:batch_size]
 
             if not anchored_events:
-                self.stdout.write(self.style.SUCCESS("No anchored events found to verify"))
+                self.stdout.write(
+                    self.style.SUCCESS("No anchored events found to verify")
+                )
                 return
 
             self.stdout.write(f"Verifying {len(anchored_events)} anchored events...")
@@ -78,10 +78,10 @@ class Command(BaseCommand):
 
             for event in anchored_events:
                 result = self.verify_single_event(event, fix_status, verbose=False)
-                
-                if result['verified']:
+
+                if result["verified"]:
                     verified_count += 1
-                    if not result['integrity_verified']:
+                    if not result["integrity_verified"]:
                         integrity_issues += 1
                 else:
                     failed_count += 1
@@ -104,34 +104,44 @@ class Command(BaseCommand):
 
             # Verify blockchain anchoring
             verification = blockchain_service.verify_anchored_event(event)
-            
+
             # Check data integrity
             integrity_verified = event.verify_integrity()
-            verification['integrity_verified'] = integrity_verified
+            verification["integrity_verified"] = integrity_verified
 
-            if verification['verified']:
+            if verification["verified"]:
                 if integrity_verified:
                     if verbose:
                         self.stdout.write(
-                            self.style.SUCCESS(f"✓ Event {event.id} - Blockchain verified, integrity intact")
+                            self.style.SUCCESS(
+                                f"✓ Event {event.id} - Blockchain verified, integrity intact"
+                            )
                         )
                 else:
                     if verbose:
                         self.stdout.write(
-                            self.style.WARNING(f"⚠ Event {event.id} - Blockchain verified, but data integrity compromised")
+                            self.style.WARNING(
+                                f"⚠ Event {event.id} - Blockchain verified, but data integrity compromised"
+                            )
                         )
-                        self.stdout.write(f"  Stored hash: {verification['stored_hash']}")
-                        self.stdout.write(f"  Computed hash: {verification['computed_hash']}")
+                        self.stdout.write(
+                            f"  Stored hash: {verification['stored_hash']}"
+                        )
+                        self.stdout.write(
+                            f"  Computed hash: {verification['computed_hash']}"
+                        )
             else:
                 if verbose:
                     self.stdout.write(
-                        self.style.ERROR(f"✗ Event {event.id} - Blockchain verification failed: {verification.get('error', 'Unknown error')}")
+                        self.style.ERROR(
+                            f"✗ Event {event.id} - Blockchain verification failed: {verification.get('error', 'Unknown error')}"
+                        )
                     )
-                
+
                 if fix_status:
                     event.mark_blockchain_failed()
                     if verbose:
-                        self.stdout.write(f"  Status updated to 'failed'")
+                        self.stdout.write("  Status updated to 'failed'")
 
             return verification
 
@@ -141,4 +151,4 @@ class Command(BaseCommand):
                     self.style.ERROR(f"✗ Error verifying event {event.id}: {str(e)}")
                 )
             logger.error(f"Error verifying event {event.id}: {str(e)}")
-            return {'verified': False, 'error': str(e), 'integrity_verified': False}
+            return {"verified": False, "error": str(e), "integrity_verified": False}

@@ -6,13 +6,12 @@ create events when supply chain entities are modified. This provides a complete
 audit trail without requiring manual event creation.
 """
 
-import json
-from django.db.models.signals import post_save, post_delete, m2m_changed
-from django.dispatch import receiver
 from django.contrib.auth import get_user_model
-from django.contrib.contenttypes.models import ContentType
+from django.db.models.signals import m2m_changed, post_delete, post_save
+from django.dispatch import receiver
 
 import supplychain.models as m
+
 from .middleware import get_current_user
 
 User = get_user_model()
@@ -30,57 +29,49 @@ def get_field_changes(instance, created=False):
             value = getattr(instance, field.name, None)
             if value is not None:
                 # Convert to string representation for JSON serialization
-                if hasattr(value, 'isoformat'):  # datetime/date fields
+                if hasattr(value, "isoformat"):  # datetime/date fields
                     changes[field.name] = {"new": value.isoformat()}
                 else:
                     changes[field.name] = {"new": str(value)}
         return changes
-    
+
     # For existing instances, try to use model_utils tracker if available
     changes = {}
-    
+
     # Check if the model has a FieldTracker (from django-model-utils)
-    if hasattr(instance, '_field_tracker'):
+    if hasattr(instance, "_field_tracker"):
         tracker = instance._field_tracker
         for field_name in tracker.fields:
             if tracker.has_changed(field_name):
                 old_value = tracker.previous(field_name)
                 new_value = getattr(instance, field_name, None)
-                
+
                 # Convert values to string representation for JSON serialization
-                if hasattr(old_value, 'isoformat'):
+                if hasattr(old_value, "isoformat"):
                     old_value = old_value.isoformat()
                 elif old_value is not None:
                     old_value = str(old_value)
-                
-                if hasattr(new_value, 'isoformat'):
+
+                if hasattr(new_value, "isoformat"):
                     new_value = new_value.isoformat()
                 elif new_value is not None:
                     new_value = str(new_value)
-                
-                changes[field_name] = {
-                    "old": old_value,
-                    "new": new_value
-                }
-    
+
+                changes[field_name] = {"old": old_value, "new": new_value}
+
     # If no tracker or no changes detected, return a generic update indicator
     if not changes:
         changes = {"updated": "Changes detected but not tracked"}
-    
+
     return changes
 
 
 def create_automated_event(
-    event_type, 
-    instance, 
-    description, 
-    severity="info", 
-    metadata=None, 
-    user=None
+    event_type, instance, description, severity="info", metadata=None, user=None
 ):
     """
     Create an automated event for a model instance.
-    
+
     Args:
         event_type: Type of event (created, updated, deleted, etc.)
         instance: The model instance that triggered the event
@@ -92,29 +83,29 @@ def create_automated_event(
     # Determine entity type based on model
     entity_type_map = {
         m.Product: "product",
-        m.Batch: "batch", 
+        m.Batch: "batch",
         m.Pack: "pack",
         m.Shipment: "shipment",
     }
-    
+
     entity_type = entity_type_map.get(type(instance))
     if not entity_type:
         return  # Skip if not a tracked entity type
-    
+
     # Get user from request context
     if user is None:
         user = get_current_user()
-    
+
     # Combine default metadata with provided metadata
     default_metadata = {
         "automated": True,
         "trigger": "django_signal",
         "model": instance.__class__.__name__,
     }
-    
+
     if metadata:
         default_metadata.update(metadata)
-    
+
     # Create the event
     try:
         m.Event.create_event(
@@ -145,7 +136,7 @@ def product_post_save(sender, instance, created, **kwargs):
                 "gtin": instance.gtin,
                 "form": instance.form,
                 "status": instance.status,
-            }
+            },
         )
     else:
         # Get field changes (simplified for now)
@@ -158,7 +149,7 @@ def product_post_save(sender, instance, created, **kwargs):
                 "product_name": instance.name,
                 "gtin": instance.gtin,
                 "changes": changes,
-            }
+            },
         )
 
 
@@ -178,8 +169,8 @@ def product_post_delete(sender, instance, **kwargs):
                 "gtin": instance.gtin,
                 "form": instance.form,
                 "status": instance.status,
-            }
-        }
+            },
+        },
     )
 
 
@@ -200,19 +191,21 @@ def batch_post_save(sender, instance, created, **kwargs):
                 "expiry_date": instance.expiry_date.isoformat(),
                 "quantity_produced": instance.quantity_produced,
                 "status": instance.status,
-            }
+            },
         )
     else:
         changes = get_field_changes(instance, created=False)
-        
+
         # Check if status changed specifically
-        if 'status' in changes and changes['status'].get('old') != changes['status'].get('new'):
-            old_status = changes['status']['old']
-            new_status = changes['status']['new']
-            
+        if "status" in changes and changes["status"].get("old") != changes[
+            "status"
+        ].get("new"):
+            old_status = changes["status"]["old"]
+            new_status = changes["status"]["new"]
+
             # Create specific status change event
             create_status_change_event(instance, old_status, new_status)
-        
+
         create_automated_event(
             event_type="updated",
             instance=instance,
@@ -221,7 +214,7 @@ def batch_post_save(sender, instance, created, **kwargs):
                 "lot_number": instance.lot_number,
                 "product_name": instance.product.name,
                 "changes": changes,
-            }
+            },
         )
 
 
@@ -243,8 +236,8 @@ def batch_post_delete(sender, instance, **kwargs):
                 "expiry_date": instance.expiry_date.isoformat(),
                 "quantity_produced": instance.quantity_produced,
                 "status": instance.status,
-            }
-        }
+            },
+        },
     )
 
 
@@ -265,19 +258,21 @@ def pack_post_save(sender, instance, created, **kwargs):
                 "pack_type": instance.pack_type,
                 "status": instance.status,
                 "location": instance.location,
-            }
+            },
         )
     else:
         changes = get_field_changes(instance, created=False)
-        
+
         # Check if status changed specifically
-        if 'status' in changes and changes['status'].get('old') != changes['status'].get('new'):
-            old_status = changes['status']['old']
-            new_status = changes['status']['new']
-            
+        if "status" in changes and changes["status"].get("old") != changes[
+            "status"
+        ].get("new"):
+            old_status = changes["status"]["old"]
+            new_status = changes["status"]["new"]
+
             # Create specific status change event
             create_status_change_event(instance, old_status, new_status)
-        
+
         create_automated_event(
             event_type="updated",
             instance=instance,
@@ -287,7 +282,7 @@ def pack_post_save(sender, instance, created, **kwargs):
                 "batch_lot_number": instance.batch.lot_number,
                 "product_name": instance.batch.product.name,
                 "changes": changes,
-            }
+            },
         )
 
 
@@ -309,8 +304,8 @@ def pack_post_delete(sender, instance, **kwargs):
                 "pack_type": instance.pack_type,
                 "status": instance.status,
                 "location": instance.location,
-            }
-        }
+            },
+        },
     )
 
 
@@ -330,20 +325,22 @@ def shipment_post_save(sender, instance, created, **kwargs):
                 "status": instance.status,
                 "origin_name": instance.origin_name,
                 "destination_name": instance.destination_name,
-            }
+            },
         )
     else:
         # Get field changes and check specifically for status changes
         changes = get_field_changes(instance, created=False)
-        
+
         # Check if status changed specifically
-        if 'status' in changes and changes['status'].get('old') != changes['status'].get('new'):
-            old_status = changes['status']['old']
-            new_status = changes['status']['new']
-            
+        if "status" in changes and changes["status"].get("old") != changes[
+            "status"
+        ].get("new"):
+            old_status = changes["status"]["old"]
+            new_status = changes["status"]["new"]
+
             # Create specific status change event
             create_status_change_event(instance, old_status, new_status)
-        
+
         # Create general update event
         create_automated_event(
             event_type="updated",
@@ -354,7 +351,7 @@ def shipment_post_save(sender, instance, created, **kwargs):
                 "carrier": instance.carrier,
                 "status": instance.status,
                 "changes": changes,
-            }
+            },
         )
 
 
@@ -376,8 +373,8 @@ def shipment_post_delete(sender, instance, **kwargs):
                 "status": instance.status,
                 "origin_name": instance.origin_name,
                 "destination_name": instance.destination_name,
-            }
-        }
+            },
+        },
     )
 
 
@@ -393,7 +390,7 @@ def shipment_packs_changed(sender, instance, action, pk_set, **kwargs):
                 pack_serials.append(pack.serial_number)
             except m.Pack.DoesNotExist:
                 continue
-        
+
         if pack_serials:
             create_automated_event(
                 event_type="updated",
@@ -404,9 +401,9 @@ def shipment_packs_changed(sender, instance, action, pk_set, **kwargs):
                     "action": "packs_added",
                     "pack_serials": pack_serials,
                     "pack_count": len(pack_serials),
-                }
+                },
             )
-    
+
     elif action == "post_remove" and pk_set:
         pack_serials = []
         for pack_id in pk_set:
@@ -415,7 +412,7 @@ def shipment_packs_changed(sender, instance, action, pk_set, **kwargs):
                 pack_serials.append(pack.serial_number)
             except m.Pack.DoesNotExist:
                 continue
-        
+
         if pack_serials:
             create_automated_event(
                 event_type="updated",
@@ -426,7 +423,7 @@ def shipment_packs_changed(sender, instance, action, pk_set, **kwargs):
                     "action": "packs_removed",
                     "pack_serials": pack_serials,
                     "pack_count": len(pack_serials),
-                }
+                },
             )
 
 
@@ -434,7 +431,7 @@ def shipment_packs_changed(sender, instance, action, pk_set, **kwargs):
 def create_status_change_event(instance, old_status, new_status):
     """Create a status_changed event for entities that support status tracking."""
     severity = "info"
-    
+
     # Determine severity based on status change
     if new_status in ["recalled", "damaged", "lost", "destroyed"]:
         severity = "high"
@@ -442,30 +439,30 @@ def create_status_change_event(instance, old_status, new_status):
         severity = "medium"
     elif new_status in ["delivered", "shipped", "released"]:
         severity = "info"
-    
+
     entity_type_map = {
         m.Product: "product",
         m.Batch: "batch",
-        m.Pack: "pack", 
+        m.Pack: "pack",
         m.Shipment: "shipment",
     }
-    
+
     entity_type = entity_type_map.get(type(instance))
     if not entity_type:
         return
-    
+
     # Get display name based on entity type
-    if hasattr(instance, 'name'):
+    if hasattr(instance, "name"):
         entity_name = instance.name
-    elif hasattr(instance, 'tracking_number'):
+    elif hasattr(instance, "tracking_number"):
         entity_name = instance.tracking_number
-    elif hasattr(instance, 'serial_number'):
+    elif hasattr(instance, "serial_number"):
         entity_name = instance.serial_number
-    elif hasattr(instance, 'lot_number'):
+    elif hasattr(instance, "lot_number"):
         entity_name = instance.lot_number
     else:
         entity_name = f"{entity_type}#{instance.id}"
-    
+
     create_automated_event(
         event_type="status_changed",
         instance=instance,
@@ -476,7 +473,7 @@ def create_status_change_event(instance, old_status, new_status):
             "old_status": old_status,
             "new_status": new_status,
             "status_change": True,
-        }
+        },
     )
 
 
@@ -496,8 +493,7 @@ def event_post_save(sender, instance, created, **kwargs):
     else:
         # Recompute hash if event data was modified (except blockchain fields)
         # This helps detect tampering with event data
-        excluded_fields = {'blockchain_tx_hash', 'blockchain_block_number', 'integrity_status', 'event_hash', 'updated_at'}
-        
+
         # Check if any non-blockchain fields were updated
         # For now, we'll always recompute the hash when an event is updated
         current_hash = instance.compute_event_hash()
@@ -505,4 +501,4 @@ def event_post_save(sender, instance, created, **kwargs):
             # This could indicate tampering or legitimate update
             # For now, just update the hash (in production, you might want to log this)
             instance.event_hash = current_hash
-            instance.save(update_fields=['event_hash'])
+            instance.save(update_fields=["event_hash"])

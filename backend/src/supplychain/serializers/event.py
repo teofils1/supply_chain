@@ -1,6 +1,6 @@
-from rest_framework import serializers
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
+from rest_framework import serializers
 
 from .. import models as m
 
@@ -61,7 +61,7 @@ class EventListSerializer(serializers.ModelSerializer):
             "is_critical",
             "is_alert",
             "blockchain_tx_hash",
-            "blockchain_block_number", 
+            "blockchain_block_number",
             "integrity_status",
             "event_hash",
             "is_blockchain_anchored",
@@ -159,7 +159,7 @@ class EventDetailSerializer(serializers.ModelSerializer):
             "is_alert",
             "blockchain_tx_hash",
             "blockchain_block_number",
-            "integrity_status", 
+            "integrity_status",
             "event_hash",
             "is_blockchain_anchored",
             "blockchain_explorer_url",

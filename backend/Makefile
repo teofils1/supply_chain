@@ -39,6 +39,15 @@ shell: ## Open Django shell
 collectstatic: ## Collect static files
 	uv run python src/manage.py collectstatic --noinput
 
+seed-products: ## Seed database with sample products
+	uv run python src/manage.py seed_products
+
+seed-products-clear: ## Clear and seed products
+	uv run python src/manage.py seed_products --clear
+
+reset: ## Reset app data (delete all data)
+	uv run python src/reset_app.py
+
 test-email: ## Test email configuration (requires --to argument)
 	@if [ -z "$(to)" ]; then echo "Usage: make test-email to=your@email.com"; exit 1; fi
 	uv run python src/manage.py test_email --to $(to)
