@@ -816,6 +816,13 @@
       </div>
     </div>
   </form>
+
+  <!-- Documents Section -->
+  <app-entity-documents
+    *ngIf="isViewMode() && shipment()"
+    [entityType]="'shipment'"
+    [entityId]="shipment()!.id"
+  ></app-entity-documents>
 </div>
 
 <!-- Toast for notifications -->

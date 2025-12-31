@@ -456,6 +456,13 @@
         </div>
       </div>
     </p-card>
+
+    <!-- Documents Section -->
+    <app-entity-documents
+      *ngIf="batch() && !isNewBatch()"
+      [entityType]="'batch'"
+      [entityId]="batch()!.id"
+    ></app-entity-documents>
   </form>
 </div>
 

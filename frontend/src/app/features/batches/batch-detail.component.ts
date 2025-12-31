@@ -32,6 +32,7 @@ import {
 } from '../../core/services/batch.service';
 import { ProductService } from '../../core/services/product.service';
 import { MessageService } from 'primeng/api';
+import { EntityDocumentsComponent } from '../documents/entity-documents.component';
 
 @Component({
   selector: 'app-batch-detail',
@@ -53,6 +54,7 @@ import { MessageService } from 'primeng/api';
     CheckboxModule,
     TagModule,
     TranslateModule,
+    EntityDocumentsComponent,
   ],
   providers: [MessageService],
   templateUrl: './batch-detail.component.html',

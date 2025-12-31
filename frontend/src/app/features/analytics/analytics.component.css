@@ -1,0 +1,187 @@
+.analytics-dashboard {
+  min-height: calc(100vh - 100px);
+}
+
+/* Tab styling */
+:host ::ng-deep .analytics-tabs .p-tabview-panels {
+  padding: 0;
+  background: transparent;
+}
+
+:host ::ng-deep .analytics-tabs .p-tabview-nav {
+  background: transparent;
+  border-bottom: 2px solid var(--surface-border);
+}
+
+:host ::ng-deep .analytics-tabs .p-tabview-nav li .p-tabview-nav-link {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  padding: 1rem 1.5rem;
+  font-weight: 500;
+  color: var(--text-color-secondary);
+  transition: all 0.2s;
+}
+
+:host
+  ::ng-deep
+  .analytics-tabs
+  .p-tabview-nav
+  li
+  .p-tabview-nav-link:not(.p-disabled):focus {
+  box-shadow: none;
+}
+
+:host
+  ::ng-deep
+  .analytics-tabs
+  .p-tabview-nav
+  li.p-highlight
+  .p-tabview-nav-link {
+  background: transparent;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+:host ::ng-deep .analytics-tabs .p-tabview-nav li .p-tabview-nav-link:hover {
+  background: var(--surface-hover);
+  border-color: var(--surface-border);
+}
+
+/* Card styling */
+:host ::ng-deep .p-card .p-card-body {
+  padding: 1.25rem;
+}
+
+:host ::ng-deep .p-card .p-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 0.75rem;
+}
+
+/* Chart container */
+:host ::ng-deep .p-chart {
+  width: 100%;
+  height: 100%;
+}
+
+/* Table styling */
+:host ::ng-deep .p-datatable .p-datatable-thead > tr > th {
+  background: var(--surface-ground);
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+:host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+}
+
+:host ::ng-deep .p-datatable-sm .p-datatable-thead > tr > th {
+  padding: 0.5rem 0.75rem;
+}
+
+:host ::ng-deep .p-datatable-sm .p-datatable-tbody > tr > td {
+  padding: 0.5rem 0.75rem;
+}
+
+/* Tag sizing */
+:host ::ng-deep .p-tag {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Skeleton animations */
+:host ::ng-deep .p-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-ground) 25%,
+    var(--surface-hover) 50%,
+    var(--surface-ground) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Dropdown styling */
+:host ::ng-deep .p-dropdown {
+  border-radius: 0.5rem;
+}
+
+/* Progress bar */
+:host ::ng-deep .p-progressbar {
+  height: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .analytics-dashboard {
+    padding: 0.5rem;
+  }
+
+  :host ::ng-deep .analytics-tabs .p-tabview-nav li .p-tabview-nav-link {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  :host ::ng-deep .p-card .p-card-body {
+    padding: 1rem;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .analytics-dashboard {
+    color: var(--text-color);
+  }
+}
+
+/* Custom metric card styling */
+.metric-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Truncate text */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Custom scrollbar for tables */
+:host ::ng-deep .p-datatable-wrapper::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+:host ::ng-deep .p-datatable-wrapper::-webkit-scrollbar-track {
+  background: var(--surface-ground);
+  border-radius: 3px;
+}
+
+:host ::ng-deep .p-datatable-wrapper::-webkit-scrollbar-thumb {
+  background: var(--surface-border);
+  border-radius: 3px;
+}
+
+:host ::ng-deep .p-datatable-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--text-color-secondary);
+}

@@ -1,5 +1,6 @@
 from .base import BaseModel
 from .batch import Batch
+from .document import Document
 from .event import Event
 from .pack import Pack
 from .product import Product
@@ -16,4 +17,5 @@ __all__ = [
     "Shipment",
     "ShipmentPack",
     "Event",
+    "Document",
 ]

@@ -29,6 +29,12 @@ from .user import (
     UserDetailSerializer,
     UserListSerializer,
 )
+from .document import (
+    DocumentDetailSerializer,
+    DocumentListSerializer,
+    DocumentUploadSerializer,
+    DocumentVersionSerializer,
+)
 
 __all__ = [
     "UserListSerializer",
@@ -50,4 +56,8 @@ __all__ = [
     "EventListSerializer",
     "EventCreateSerializer",
     "EventDetailSerializer",
+    "DocumentListSerializer",
+    "DocumentDetailSerializer",
+    "DocumentUploadSerializer",
+    "DocumentVersionSerializer",
 ]

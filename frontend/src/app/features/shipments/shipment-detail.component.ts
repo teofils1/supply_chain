@@ -31,6 +31,7 @@ import {
 } from '../../core/services/shipment.service';
 import { PackService, PackListItem } from '../../core/services/pack.service';
 import { MessageService } from 'primeng/api';
+import { EntityDocumentsComponent } from '../documents/entity-documents.component';
 
 // Interface for displayed pack information
 interface DisplayedPack {
@@ -62,6 +63,7 @@ interface DisplayedPack {
     MultiSelectModule,
     StepperModule,
     TranslateModule,
+    EntityDocumentsComponent,
   ],
   providers: [MessageService],
   templateUrl: './shipment-detail.component.html',

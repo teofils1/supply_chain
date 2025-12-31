@@ -138,4 +138,82 @@ urlpatterns = [
         views.EventIntegrityVerifyView.as_view(),
         name="event-integrity-verify",
     ),
+    # Analytics endpoints
+    path(
+        "api/analytics/summary/",
+        views.AnalyticsSummaryView.as_view(),
+        name="analytics-summary",
+    ),
+    path(
+        "api/analytics/kpis/",
+        views.SupplyChainKPIsView.as_view(),
+        name="analytics-kpis",
+    ),
+    path(
+        "api/analytics/batch-yield/",
+        views.BatchYieldAnalysisView.as_view(),
+        name="analytics-batch-yield",
+    ),
+    path(
+        "api/analytics/carrier-performance/",
+        views.CarrierPerformanceView.as_view(),
+        name="analytics-carrier-performance",
+    ),
+    path(
+        "api/analytics/temperature-excursions/",
+        views.TemperatureExcursionTrendsView.as_view(),
+        name="analytics-temperature-excursions",
+    ),
+    path(
+        "api/analytics/demand-forecast/",
+        views.DemandForecastingView.as_view(),
+        name="analytics-demand-forecast",
+    ),
+    # Document management
+    path(
+        "api/documents/",
+        views.DocumentListCreateView.as_view(),
+        name="document-list-create",
+    ),
+    path(
+        "api/documents/<int:pk>/",
+        views.DocumentDetailView.as_view(),
+        name="document-detail",
+    ),
+    path(
+        "api/documents/<int:pk>/delete/",
+        views.DocumentDeleteView.as_view(),
+        name="document-delete",
+    ),
+    path(
+        "api/documents/<int:pk>/download/",
+        views.DocumentDownloadView.as_view(),
+        name="document-download",
+    ),
+    path(
+        "api/documents/<int:pk>/new-version/",
+        views.DocumentNewVersionView.as_view(),
+        name="document-new-version",
+    ),
+    path(
+        "api/<str:entity_type>/<int:entity_id>/documents/",
+        views.EntityDocumentsView.as_view(),
+        name="entity-documents",
+    ),
+    # PDF generation endpoints
+    path(
+        "api/shipments/<int:pk>/generate-label/",
+        views.ShipmentGenerateLabelView.as_view(),
+        name="shipment-generate-label",
+    ),
+    path(
+        "api/shipments/<int:pk>/generate-packing-list/",
+        views.ShipmentGeneratePackingListView.as_view(),
+        name="shipment-generate-packing-list",
+    ),
+    path(
+        "api/batches/<int:pk>/generate-coa/",
+        views.BatchGenerateCoaView.as_view(),
+        name="batch-generate-coa",
+    ),
 ]

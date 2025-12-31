@@ -11,10 +11,10 @@ import { ShipmentsComponent } from './features/shipments/shipments.component';
 import { ShipmentDetailComponent } from './features/shipments/shipment-detail.component';
 import { EventsComponent } from './features/events/events.component';
 import { EventDetailComponent } from './features/events/event-detail.component';
-import { TraceComponent } from './features/trace/trace.component';
-import { DevicesComponent } from './features/devices/devices.component';
-import { ExcursionsComponent } from './features/excursions/excursions.component';
 import { UsersComponent } from './features/users/users.component';
+import { AnalyticsComponent } from './features/analytics/analytics.component';
+import { DocumentsComponent } from './features/documents/documents.component';
+import { DocumentDetailComponent } from './features/documents/document-detail.component';
 import { authGuard } from './shared/auth.guard';
 import { adminGuard } from './shared/admin.guard';
 import { operatorOrAdminGuard } from './shared/operator-or-admin.guard';
@@ -101,14 +101,18 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
-    path: 'trace/:serial',
-    component: TraceComponent,
+    path: 'analytics',
+    component: AnalyticsComponent,
     canActivate: [authGuard],
   },
-  { path: 'devices', component: DevicesComponent, canActivate: [authGuard] },
   {
-    path: 'excursions',
-    component: ExcursionsComponent,
+    path: 'documents',
+    component: DocumentsComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'documents/:id',
+    component: DocumentDetailComponent,
     canActivate: [authGuard],
   },
   { path: 'login', component: LoginComponent },

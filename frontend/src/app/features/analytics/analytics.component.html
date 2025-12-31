@@ -1,0 +1,890 @@
+<div class="analytics-dashboard p-4">
+  <!-- Header -->
+  <div
+    class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6"
+  >
+    <div>
+      <h1
+        class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2"
+      >
+        <i class="pi pi-chart-line text-primary"></i>
+        {{ "analytics.title" | translate }}
+      </h1>
+      <p class="text-gray-600 dark:text-gray-400 mt-1">
+        {{ "analytics.subtitle" | translate }}
+      </p>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <p-select
+        [options]="periodOptions"
+        [(ngModel)]="selectedPeriod"
+        (onChange)="onPeriodChange($event)"
+        optionLabel="label"
+        optionValue="value"
+        class="w-48"
+      ></p-select>
+
+      <p-button
+        icon="pi pi-refresh"
+        [loading]="loading()"
+        (onClick)="refreshData()"
+        styleClass="p-button-outlined"
+        pTooltip="Refresh Data"
+      ></p-button>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  @if (error()) {
+  <p-message
+    severity="error"
+    [text]="error()!"
+    styleClass="mb-4 w-full"
+  ></p-message>
+  }
+
+  <!-- Loading Skeleton -->
+  @if (loading()) {
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    @for (i of [1, 2, 3, 4]; track i) {
+    <p-card styleClass="shadow-sm">
+      <p-skeleton width="60%" height="1.5rem" styleClass="mb-2"></p-skeleton>
+      <p-skeleton width="40%" height="2rem"></p-skeleton>
+    </p-card>
+    }
+  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    @for (i of [1, 2]; track i) {
+    <p-card styleClass="shadow-sm">
+      <p-skeleton width="100%" height="300px"></p-skeleton>
+    </p-card>
+    }
+  </div>
+  }
+
+  <!-- Main Content -->
+  @if (!loading()) {
+  <!-- KPI Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <!-- On-Time Delivery Rate -->
+    <p-card styleClass="shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">
+            On-Time Delivery
+          </p>
+          <p class="text-2xl font-bold text-green-600">
+            {{ formatPercent(kpis()?.on_time_delivery_rate) }}
+          </p>
+        </div>
+        <div
+          class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center"
+        >
+          <i class="pi pi-check-circle text-2xl text-green-600"></i>
+        </div>
+      </div>
+      <div class="mt-3 flex items-center gap-2 text-sm text-gray-500">
+        <span>{{ formatNumber(kpis()?.delivered_count) }} delivered</span>
+        <span class="text-gray-300">|</span>
+        <span>{{ formatNumber(kpis()?.total_shipments) }} total</span>
+      </div>
+    </p-card>
+
+    <!-- Damage Rate -->
+    <p-card styleClass="shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">
+            Damage Rate
+          </p>
+          <p
+            class="text-2xl font-bold"
+            [ngClass]="
+              (kpis()?.damage_rate || 0) > 5 ? 'text-red-600' : 'text-green-600'
+            "
+          >
+            {{ formatPercent(kpis()?.damage_rate) }}
+          </p>
+        </div>
+        <div
+          class="w-12 h-12 rounded-full"
+          [ngClass]="
+            (kpis()?.damage_rate || 0) > 5
+              ? 'bg-red-100 dark:bg-red-900/30'
+              : 'bg-green-100 dark:bg-green-900/30'
+          "
+        >
+          <div class="w-full h-full flex items-center justify-center">
+            <i
+              class="pi pi-exclamation-triangle text-2xl"
+              [ngClass]="
+                (kpis()?.damage_rate || 0) > 5
+                  ? 'text-red-600'
+                  : 'text-green-600'
+              "
+            ></i>
+          </div>
+        </div>
+      </div>
+      <div class="mt-3 flex items-center gap-2 text-sm text-gray-500">
+        <span>Loss: {{ formatPercent(kpis()?.loss_rate) }}</span>
+        <span class="text-gray-300">|</span>
+        <span>Returns: {{ formatPercent(kpis()?.return_rate) }}</span>
+      </div>
+    </p-card>
+
+    <!-- QC Pass Rate -->
+    <p-card styleClass="shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">
+            QC Pass Rate
+          </p>
+          <p class="text-2xl font-bold text-blue-600">
+            {{ formatPercent(batchYield()?.qc_pass_rate) }}
+          </p>
+        </div>
+        <div
+          class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center"
+        >
+          <i class="pi pi-verified text-2xl text-blue-600"></i>
+        </div>
+      </div>
+      <div class="mt-3 flex items-center gap-2 text-sm text-gray-500">
+        <span>{{ formatNumber(batchYield()?.total_batches) }} batches</span>
+        <span class="text-gray-300">|</span>
+        <span>{{ formatNumber(batchYield()?.active_batches) }} active</span>
+      </div>
+    </p-card>
+
+    <!-- Temperature Excursions -->
+    <p-card styleClass="shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">
+            Temp Excursions
+          </p>
+          <p
+            class="text-2xl font-bold"
+            [ngClass]="
+              (temperatureExcursions()?.total_excursions || 0) > 10
+                ? 'text-orange-600'
+                : 'text-green-600'
+            "
+          >
+            {{ formatNumber(temperatureExcursions()?.total_excursions) }}
+          </p>
+        </div>
+        <div
+          class="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center"
+        >
+          <i class="pi pi-thermometer text-2xl text-orange-600"></i>
+        </div>
+      </div>
+      <div class="mt-3 flex items-center gap-2 text-sm text-gray-500">
+        <span
+          >{{
+            formatPercent(temperatureExcursions()?.excursion_rate)
+          }}
+          rate</span
+        >
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Tab View for Detailed Analytics -->
+  <p-tabs [value]="0" class="analytics-tabs">
+    <p-tablist>
+      <p-tab [value]="0">Supply Chain KPIs</p-tab>
+      <p-tab [value]="1">Batch Yield Analysis</p-tab>
+      <p-tab [value]="2">Carrier Performance</p-tab>
+      <p-tab [value]="3">Temperature Excursions</p-tab>
+      <p-tab [value]="4">Demand Forecasting</p-tab>
+    </p-tablist>
+    <p-tabpanels>
+      <!-- Supply Chain KPIs Tab -->
+      <p-tabpanel [value]="0">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+          <!-- Daily Shipments Chart -->
+          <p-card header="Daily Shipment Volume" styleClass="shadow-sm">
+            <div class="h-80">
+              @if (dailyShipmentsChartData()) {
+              <p-chart
+                type="line"
+                [data]="dailyShipmentsChartData()!"
+                [options]="lineChartOptions"
+                styleClass="h-full"
+              ></p-chart>
+              } @else {
+              <div
+                class="h-full flex items-center justify-center text-gray-500"
+              >
+                <p>No shipment data available</p>
+              </div>
+              }
+            </div>
+          </p-card>
+
+          <!-- Shipment Status Distribution -->
+          <p-card header="Delivery Performance" styleClass="shadow-sm">
+            <div class="h-80">
+              @if (kpiChartData()) {
+              <p-chart
+                type="doughnut"
+                [data]="kpiChartData()!"
+                [options]="chartOptions"
+                styleClass="h-full"
+              ></p-chart>
+              } @else {
+              <div
+                class="h-full flex items-center justify-center text-gray-500"
+              >
+                <p>No performance data available</p>
+              </div>
+              }
+            </div>
+          </p-card>
+
+          <!-- KPI Details Table -->
+          <p-card
+            header="Detailed Metrics"
+            styleClass="shadow-sm lg:col-span-2"
+          >
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div
+                class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              >
+                <p class="text-sm text-gray-500 mb-1">Avg. Delivery Time</p>
+                <p class="text-xl font-semibold">
+                  {{ kpis()?.average_delivery_days || 0 }} days
+                </p>
+              </div>
+              <div
+                class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              >
+                <p class="text-sm text-gray-500 mb-1">In Transit</p>
+                <p class="text-xl font-semibold">
+                  {{ formatNumber(kpis()?.in_transit_count) }}
+                </p>
+              </div>
+              <div
+                class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              >
+                <p class="text-sm text-gray-500 mb-1">Pending</p>
+                <p class="text-xl font-semibold">
+                  {{ formatNumber(kpis()?.pending_count) }}
+                </p>
+              </div>
+              <div
+                class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              >
+                <p class="text-sm text-gray-500 mb-1">Temp Controlled</p>
+                <p class="text-xl font-semibold">
+                  {{ formatPercent(kpis()?.temp_controlled_rate) }}
+                </p>
+              </div>
+            </div>
+          </p-card>
+        </div>
+      </p-tabpanel>
+
+      <!-- Batch Yield Analysis Tab -->
+      <p-tabpanel [value]="1">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+          <!-- Batch Status Distribution -->
+          <p-card header="Batch Status Distribution" styleClass="shadow-sm">
+            <div class="h-80">
+              @if (batchStatusChartData()) {
+              <p-chart
+                type="pie"
+                [data]="batchStatusChartData()!"
+                [options]="chartOptions"
+                styleClass="h-full"
+              ></p-chart>
+              } @else {
+              <div
+                class="h-full flex items-center justify-center text-gray-500"
+              >
+                <p>No batch data available</p>
+              </div>
+              }
+            </div>
+          </p-card>
+
+          <!-- Weekly Production Trend -->
+          <p-card header="Weekly Production Trend" styleClass="shadow-sm">
+            <div class="h-80">
+              @if (weeklyProductionChartData()) {
+              <p-chart
+                type="line"
+                [data]="weeklyProductionChartData()!"
+                [options]="dualAxisChartOptions"
+                styleClass="h-full"
+              ></p-chart>
+              } @else {
+              <div
+                class="h-full flex items-center justify-center text-gray-500"
+              >
+                <p>No production data available</p>
+              </div>
+              }
+            </div>
+          </p-card>
+
+          <!-- Batch Metrics -->
+          <p-card header="Yield Metrics" styleClass="shadow-sm">
+            <div class="grid grid-cols-2 gap-4">
+              <div
+                class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              >
+                <p class="text-sm text-gray-500 mb-1">Total Produced</p>
+                <p class="text-xl font-semibold">
+                  {{ formatNumber(batchYield()?.total_produced) }}
+                </p>
+              </div>
+              <div
+                class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              >
+                <p class="text-sm text-gray-500 mb-1">Available</p>
+                <p class="text-xl font-semibold">
+                  {{ formatNumber(batchYield()?.total_available) }}
+                </p>
+              </div>
+              <div
+                class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              >
+                <p class="text-sm text-gray-500 mb-1">Utilization Rate</p>
+                <p class="text-xl font-semibold">
+                  {{ formatPercent(batchYield()?.utilization_rate) }}
+                </p>
+              </div>
+              <div
+                class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              >
+                <p class="text-sm text-gray-500 mb-1">Avg. Shelf Life</p>
+                <p class="text-xl font-semibold">
+                  {{ batchYield()?.average_shelf_life_days || 0 }} days
+                </p>
+              </div>
+            </div>
+
+            <p-divider></p-divider>
+
+            <div class="grid grid-cols-3 gap-4">
+              <div class="text-center">
+                <p class="text-sm text-gray-500 mb-1">Expiry Rate</p>
+                <p-tag
+                  [severity]="
+                    (batchYield()?.expiry_rate || 0) > 5 ? 'warn' : 'success'
+                  "
+                  [value]="formatPercent(batchYield()?.expiry_rate)"
+                ></p-tag>
+              </div>
+              <div class="text-center">
+                <p class="text-sm text-gray-500 mb-1">Recall Rate</p>
+                <p-tag
+                  [severity]="
+                    (batchYield()?.recall_rate || 0) > 2 ? 'danger' : 'success'
+                  "
+                  [value]="formatPercent(batchYield()?.recall_rate)"
+                ></p-tag>
+              </div>
+              <div class="text-center">
+                <p class="text-sm text-gray-500 mb-1">Quarantined</p>
+                <p-tag
+                  severity="warn"
+                  [value]="formatNumber(batchYield()?.quarantined_count)"
+                ></p-tag>
+              </div>
+            </div>
+          </p-card>
+
+          <!-- Expiring Soon Table -->
+          <p-card header="Batches Expiring Soon" styleClass="shadow-sm">
+            @if (batchYield()?.expiring_soon?.length) {
+            <p-table
+              [value]="batchYield()!.expiring_soon"
+              [scrollable]="true"
+              scrollHeight="250px"
+              styleClass="p-datatable-sm"
+            >
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Product</th>
+                  <th>Lot #</th>
+                  <th>Expiry Date</th>
+                  <th>Qty</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-batch>
+                <tr>
+                  <td>{{ batch.product__name }}</td>
+                  <td>
+                    <code class="text-xs">{{ batch.lot_number }}</code>
+                  </td>
+                  <td>{{ batch.expiry_date | date : "mediumDate" }}</td>
+                  <td>{{ formatNumber(batch.available_quantity) }}</td>
+                </tr>
+              </ng-template>
+            </p-table>
+            } @else {
+            <div class="text-center py-8 text-gray-500">
+              <i class="pi pi-check-circle text-4xl text-green-500 mb-2"></i>
+              <p>No batches expiring in the next 30 days</p>
+            </div>
+            }
+          </p-card>
+        </div>
+      </p-tabpanel>
+
+      <!-- Carrier Performance Tab -->
+      <p-tabpanel [value]="2">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+          <!-- Carrier Comparison Chart -->
+          <p-card
+            header="Carrier Comparison"
+            styleClass="shadow-sm lg:col-span-2"
+          >
+            <div class="h-80">
+              @if (carrierChartData()) {
+              <p-chart
+                type="bar"
+                [data]="carrierChartData()!"
+                [options]="barChartOptions"
+                styleClass="h-full"
+              ></p-chart>
+              } @else {
+              <div
+                class="h-full flex items-center justify-center text-gray-500"
+              >
+                <p>No carrier data available</p>
+              </div>
+              }
+            </div>
+          </p-card>
+
+          <!-- Carrier Details Table -->
+          <p-card header="Carrier Details" styleClass="shadow-sm lg:col-span-2">
+            @if (carrierPerformance()?.carrier_performance?.length) {
+            <p-table
+              [value]="carrierPerformance()!.carrier_performance"
+              [scrollable]="true"
+              styleClass="p-datatable-sm p-datatable-striped"
+            >
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Carrier</th>
+                  <th class="text-right">Shipments</th>
+                  <th class="text-right">Delivered</th>
+                  <th class="text-right">On-Time Rate</th>
+                  <th class="text-right">Damage Rate</th>
+                  <th class="text-right">Avg. Days</th>
+                  <th class="text-right">Total Cost</th>
+                  <th class="text-right">Avg. Cost</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-carrier>
+                <tr>
+                  <td class="font-medium">{{ carrier.carrier_name }}</td>
+                  <td class="text-right">
+                    {{ formatNumber(carrier.total_shipments) }}
+                  </td>
+                  <td class="text-right">
+                    {{ formatNumber(carrier.delivered_count) }}
+                  </td>
+                  <td class="text-right">
+                    <p-tag
+                      [severity]="
+                        carrier.on_time_rate >= 90
+                          ? 'success'
+                          : carrier.on_time_rate >= 75
+                          ? 'warn'
+                          : 'danger'
+                      "
+                      [value]="formatPercent(carrier.on_time_rate)"
+                    ></p-tag>
+                  </td>
+                  <td class="text-right">
+                    <p-tag
+                      [severity]="
+                        carrier.damage_rate <= 2
+                          ? 'success'
+                          : carrier.damage_rate <= 5
+                          ? 'warn'
+                          : 'danger'
+                      "
+                      [value]="formatPercent(carrier.damage_rate)"
+                    ></p-tag>
+                  </td>
+                  <td class="text-right">
+                    {{ carrier.avg_delivery_days ?? "-" }}
+                  </td>
+                  <td class="text-right">
+                    {{ formatCurrency(carrier.total_cost) }}
+                  </td>
+                  <td class="text-right">
+                    {{ formatCurrency(carrier.avg_cost) }}
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+            } @else {
+            <div class="text-center py-8 text-gray-500">
+              <p>No carrier performance data available</p>
+            </div>
+            }
+          </p-card>
+
+          <!-- Service Type Stats -->
+          <p-card
+            header="Service Type Performance"
+            styleClass="shadow-sm lg:col-span-2"
+          >
+            @if (carrierPerformance()?.service_type_stats?.length) {
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              @for (service of carrierPerformance()!.service_type_stats; track
+              service.service_type) {
+              <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <p class="text-sm text-gray-500 mb-1">
+                  {{ formatStatus(service.service_type) }}
+                </p>
+                <p class="text-lg font-semibold">
+                  {{ formatNumber(service.count) }} shipments
+                </p>
+                <p class="text-sm text-green-600">
+                  {{ formatPercent(service.on_time_rate) }} on-time
+                </p>
+                <p class="text-xs text-gray-500">
+                  Avg: {{ formatCurrency(service.avg_cost) }}
+                </p>
+              </div>
+              }
+            </div>
+            } @else {
+            <div class="text-center py-8 text-gray-500">
+              <p>No service type data available</p>
+            </div>
+            }
+          </p-card>
+        </div>
+      </p-tabpanel>
+
+      <!-- Temperature Excursions Tab -->
+      <p-tabpanel [value]="3">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+          <!-- Excursion Trend Chart -->
+          <p-card
+            header="Weekly Excursion Trend"
+            styleClass="shadow-sm lg:col-span-2"
+          >
+            <div class="h-80">
+              @if (temperatureTrendChartData()) {
+              <p-chart
+                type="line"
+                [data]="temperatureTrendChartData()!"
+                [options]="lineChartOptions"
+                styleClass="h-full"
+              ></p-chart>
+              } @else {
+              <div
+                class="h-full flex items-center justify-center text-gray-500"
+              >
+                <p>No temperature excursion data available</p>
+              </div>
+              }
+            </div>
+          </p-card>
+
+          <!-- By Severity -->
+          <p-card header="By Severity" styleClass="shadow-sm">
+            @if (temperatureExcursions()?.by_severity?.length) {
+            <div class="space-y-3">
+              @for (item of temperatureExcursions()!.by_severity; track
+              item.severity) {
+              <div
+                class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              >
+                <div class="flex items-center gap-2">
+                  <p-tag
+                    [severity]="getSeverityColor(item.severity)"
+                    [value]="formatStatus(item.severity)"
+                  ></p-tag>
+                </div>
+                <span class="font-semibold">{{
+                  formatNumber(item.count)
+                }}</span>
+              </div>
+              }
+            </div>
+            } @else {
+            <div class="text-center py-8 text-gray-500">
+              <i class="pi pi-check-circle text-4xl text-green-500 mb-2"></i>
+              <p>No temperature excursions recorded</p>
+            </div>
+            }
+          </p-card>
+
+          <!-- By Temperature Requirement -->
+          <p-card header="By Temperature Requirement" styleClass="shadow-sm">
+            @if (temperatureExcursions()?.by_temperature_requirement?.length) {
+            <div class="space-y-3">
+              @for (item of temperatureExcursions()!.by_temperature_requirement;
+              track item.temperature_requirement) {
+              <div
+                class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              >
+                <span class="text-sm">{{
+                  formatStatus(item.temperature_requirement)
+                }}</span>
+                <span class="font-semibold">{{
+                  formatNumber(item.count)
+                }}</span>
+              </div>
+              }
+            </div>
+            } @else {
+            <div class="text-center py-8 text-gray-500">
+              <p>No data available</p>
+            </div>
+            }
+          </p-card>
+
+          <!-- Recent Excursions -->
+          <p-card
+            header="Recent Excursions"
+            styleClass="shadow-sm lg:col-span-2"
+          >
+            @if (temperatureExcursions()?.recent_excursions?.length) {
+            <p-table
+              [value]="temperatureExcursions()!.recent_excursions"
+              [scrollable]="true"
+              styleClass="p-datatable-sm"
+            >
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Time</th>
+                  <th>Entity</th>
+                  <th>Severity</th>
+                  <th>Location</th>
+                  <th>Description</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-excursion>
+                <tr>
+                  <td>{{ excursion.timestamp | date : "short" }}</td>
+                  <td>
+                    {{ formatStatus(excursion.entity_type) }} #{{
+                      excursion.entity_id
+                    }}
+                  </td>
+                  <td>
+                    <p-tag
+                      [severity]="getSeverityColor(excursion.severity)"
+                      [value]="formatStatus(excursion.severity)"
+                    ></p-tag>
+                  </td>
+                  <td>{{ excursion.location || "-" }}</td>
+                  <td
+                    class="max-w-xs truncate"
+                    [pTooltip]="excursion.description"
+                  >
+                    {{ excursion.description }}
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+            } @else {
+            <div class="text-center py-8 text-gray-500">
+              <i class="pi pi-check-circle text-4xl text-green-500 mb-2"></i>
+              <p>No recent temperature excursions</p>
+            </div>
+            }
+          </p-card>
+        </div>
+      </p-tabpanel>
+
+      <!-- Demand Forecasting Tab -->
+      <p-tabpanel [value]="4">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+          <!-- Forecast Chart -->
+          <p-card
+            header="Demand Forecast (Top Product)"
+            styleClass="shadow-sm lg:col-span-2"
+          >
+            <div class="h-80">
+              @if (demandForecastChartData()) {
+              <p-chart
+                type="line"
+                [data]="demandForecastChartData()!"
+                [options]="lineChartOptions"
+                styleClass="h-full"
+              ></p-chart>
+              } @else {
+              <div
+                class="h-full flex items-center justify-center text-gray-500"
+              >
+                <p>Insufficient historical data for forecasting</p>
+              </div>
+              }
+            </div>
+          </p-card>
+
+          <!-- Summary Stats -->
+          <p-card header="Forecast Summary" styleClass="shadow-sm">
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div
+                  class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                >
+                  <p class="text-sm text-gray-500 mb-1">Products Analyzed</p>
+                  <p class="text-xl font-semibold">
+                    {{
+                      formatNumber(demandForecast()?.total_products_analyzed)
+                    }}
+                  </p>
+                </div>
+                <div
+                  class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                >
+                  <p class="text-sm text-gray-500 mb-1">Avg. Weekly Demand</p>
+                  <p class="text-xl font-semibold">
+                    {{ formatNumber(demandForecast()?.avg_weekly_demand) }}
+                  </p>
+                </div>
+              </div>
+              <div
+                class="text-center p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg"
+              >
+                <p class="text-sm text-gray-500 mb-1">
+                  Total Historical Demand
+                </p>
+                <p class="text-2xl font-bold text-blue-600">
+                  {{ formatNumber(demandForecast()?.total_historical_demand) }}
+                </p>
+              </div>
+            </div>
+          </p-card>
+
+          <!-- Inventory Recommendations -->
+          <p-card header="Inventory Recommendations" styleClass="shadow-sm">
+            @if (demandForecast()?.inventory_recommendations?.length) {
+            <div class="space-y-3">
+              @for (rec of demandForecast()!.inventory_recommendations; track
+              rec.product) {
+              <div
+                class="p-3 border rounded-lg"
+                [ngClass]="
+                  rec.recommendation === 'increase_stock'
+                    ? 'border-green-200 bg-green-50 dark:bg-green-900/20'
+                    : 'border-orange-200 bg-orange-50 dark:bg-orange-900/20'
+                "
+              >
+                <div class="flex items-center gap-2 mb-1">
+                  <i
+                    [class]="getRecommendationIcon(rec.recommendation)"
+                    [ngClass]="getRecommendationColor(rec.recommendation)"
+                  ></i>
+                  <span class="font-medium">{{ rec.product }}</span>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  {{ rec.reason }}
+                </p>
+                @if (rec.suggested_increase_pct) {
+                <p class="text-xs text-green-600 mt-1">
+                  Suggested increase: {{ rec.suggested_increase_pct }}%
+                </p>
+                } @if (rec.suggested_reduction_pct) {
+                <p class="text-xs text-orange-600 mt-1">
+                  Suggested reduction: {{ rec.suggested_reduction_pct }}%
+                </p>
+                }
+              </div>
+              }
+            </div>
+            } @else {
+            <div class="text-center py-8 text-gray-500">
+              <i class="pi pi-check-circle text-4xl text-green-500 mb-2"></i>
+              <p>No immediate inventory adjustments needed</p>
+            </div>
+            }
+          </p-card>
+
+          <!-- Product Forecasts Table -->
+          <p-card
+            header="Product Demand Forecasts"
+            styleClass="shadow-sm lg:col-span-2"
+          >
+            @if (demandForecast()?.product_forecasts?.length) {
+            <p-table
+              [value]="demandForecast()!.product_forecasts"
+              [scrollable]="true"
+              styleClass="p-datatable-sm p-datatable-striped"
+            >
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Product</th>
+                  <th class="text-right">Historical Avg</th>
+                  <th class="text-right">Forecast Avg</th>
+                  <th class="text-center">Trend</th>
+                  <th class="text-right">Change</th>
+                  <th class="text-right">Total Forecast</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-product>
+                <tr>
+                  <td>
+                    <span class="font-medium">{{ product.product_name }}</span>
+                    <br />
+                    <code class="text-xs text-gray-500">{{
+                      product.product_gtin
+                    }}</code>
+                  </td>
+                  <td class="text-right">
+                    {{ formatNumber(product.historical_weekly_avg) }}
+                  </td>
+                  <td class="text-right font-medium">
+                    {{ formatNumber(product.avg_weekly_forecast) }}
+                  </td>
+                  <td class="text-center">
+                    <i
+                      [class]="getTrendIcon(product.demand_trend)"
+                      [ngClass]="getTrendColor(product.demand_trend)"
+                    ></i>
+                    <span
+                      class="ml-1 text-sm"
+                      [ngClass]="getTrendColor(product.demand_trend)"
+                    >
+                      {{ formatStatus(product.demand_trend) }}
+                    </span>
+                  </td>
+                  <td class="text-right">
+                    <span
+                      [ngClass]="
+                        product.demand_change_pct >= 0
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                      "
+                    >
+                      {{ product.demand_change_pct >= 0 ? "+" : ""
+                      }}{{ formatPercent(product.demand_change_pct) }}
+                    </span>
+                  </td>
+                  <td class="text-right font-semibold">
+                    {{ formatNumber(product.total_forecast) }}
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+            } @else {
+            <div class="text-center py-8 text-gray-500">
+              <p>Insufficient data for product forecasts</p>
+            </div>
+            }
+          </p-card>
+        </div>
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
+  }
+</div>

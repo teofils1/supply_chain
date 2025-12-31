@@ -1,3 +1,11 @@
+from .analytics import (
+    AnalyticsSummaryView,
+    BatchYieldAnalysisView,
+    CarrierPerformanceView,
+    DemandForecastingView,
+    SupplyChainKPIsView,
+    TemperatureExcursionTrendsView,
+)
 from .auth import MeView
 from .batch import (
     BatchDeleteView,
@@ -32,6 +40,17 @@ from .user import (
     UserDetailUpdateView,
     UserListCreateView,
 )
+from .document import (
+    BatchGenerateCoaView,
+    DocumentDeleteView,
+    DocumentDetailView,
+    DocumentDownloadView,
+    DocumentListCreateView,
+    DocumentNewVersionView,
+    EntityDocumentsView,
+    ShipmentGenerateLabelView,
+    ShipmentGeneratePackingListView,
+)
 
 __all__ = [
     "MeView",
@@ -56,4 +75,19 @@ __all__ = [
     "EventBlockchainAnchorView",
     "EventBlockchainVerifyView",
     "EventIntegrityVerifyView",
+    "AnalyticsSummaryView",
+    "BatchYieldAnalysisView",
+    "CarrierPerformanceView",
+    "DemandForecastingView",
+    "SupplyChainKPIsView",
+    "TemperatureExcursionTrendsView",
+    "DocumentListCreateView",
+    "DocumentDetailView",
+    "DocumentDeleteView",
+    "DocumentDownloadView",
+    "DocumentNewVersionView",
+    "EntityDocumentsView",
+    "ShipmentGenerateLabelView",
+    "ShipmentGeneratePackingListView",
+    "BatchGenerateCoaView",
 ]

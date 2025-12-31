@@ -1,0 +1,303 @@
+<div class="flex flex-col gap-4">
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
+  <!-- Header -->
+  <div class="flex justify-between items-center">
+    <div class="flex items-center gap-4">
+      <p-button
+        icon="pi pi-arrow-left"
+        [text]="true"
+        (onClick)="goBack()"
+        pTooltip="Back to Documents"
+      ></p-button>
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">
+        {{ "pages.documents.view" | translate }}
+      </h2>
+    </div>
+
+    <div class="flex gap-2" *ngIf="!loading() && document()">
+      <p-button
+        label="Download"
+        icon="pi pi-download"
+        (onClick)="downloadDocument()"
+      ></p-button>
+      <p-button
+        label="New Version"
+        icon="pi pi-upload"
+        severity="secondary"
+        (onClick)="openVersionDialog()"
+      ></p-button>
+      <p-button
+        label="Delete"
+        icon="pi pi-trash"
+        severity="danger"
+        (onClick)="confirmDelete()"
+      ></p-button>
+    </div>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="loading()" class="flex justify-center py-8">
+    <p-progressSpinner></p-progressSpinner>
+  </div>
+
+  <!-- Document Details -->
+  <div
+    *ngIf="!loading() && document()"
+    class="grid grid-cols-1 lg:grid-cols-3 gap-4"
+  >
+    <!-- Main Info -->
+    <div class="lg:col-span-2">
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="flex items-center gap-4 p-4">
+            <i
+              [class]="getFileIcon(document()!.file_type)"
+              class="text-4xl text-blue-500 dark:text-blue-400"
+            ></i>
+            <div>
+              <h3 class="text-xl font-semibold">{{ document()!.title }}</h3>
+              <p class="text-gray-500 dark:text-gray-400">
+                {{ document()!.file_name }}
+              </p>
+            </div>
+          </div>
+        </ng-template>
+
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Category -->
+          <div>
+            <label class="text-sm font-medium text-gray-500 dark:text-gray-400"
+              >Category</label
+            >
+            <div class="mt-1">
+              <p-tag
+                [value]="getCategoryLabel(document()!.category)"
+                [severity]="getCategorySeverity(document()!.category)"
+              ></p-tag>
+            </div>
+          </div>
+
+          <!-- File Size -->
+          <div>
+            <label class="text-sm font-medium text-gray-500 dark:text-gray-400"
+              >File Size</label
+            >
+            <p class="mt-1 font-medium">
+              {{ formatFileSize(document()!.file_size) }}
+            </p>
+          </div>
+
+          <!-- File Type -->
+          <div>
+            <label class="text-sm font-medium text-gray-500 dark:text-gray-400"
+              >File Type</label
+            >
+            <p class="mt-1">{{ document()!.file_type }}</p>
+          </div>
+
+          <!-- Version -->
+          <div>
+            <label class="text-sm font-medium text-gray-500 dark:text-gray-400"
+              >Version</label
+            >
+            <p class="mt-1">
+              <span class="font-mono font-medium"
+                >v{{ document()!.version_number }}</span
+              >
+              <span
+                *ngIf="document()!.is_latest"
+                class="ml-2 text-green-600 dark:text-green-400"
+              >
+                <i class="pi pi-check-circle"></i> Latest
+              </span>
+            </p>
+          </div>
+
+          <!-- Uploaded By -->
+          <div>
+            <label class="text-sm font-medium text-gray-500 dark:text-gray-400"
+              >Uploaded By</label
+            >
+            <p class="mt-1">{{ document()!.uploaded_by_name || "System" }}</p>
+          </div>
+
+          <!-- Uploaded At -->
+          <div>
+            <label class="text-sm font-medium text-gray-500 dark:text-gray-400"
+              >Uploaded At</label
+            >
+            <p class="mt-1">{{ document()!.created_at | date : "medium" }}</p>
+          </div>
+
+          <!-- Associated Entity -->
+          <div class="col-span-2">
+            <label class="text-sm font-medium text-gray-500 dark:text-gray-400"
+              >Associated Entity</label
+            >
+            <p class="mt-1">
+              <a
+                (click)="navigateToEntity()"
+                class="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+              >
+                {{ document()!.entity_type | titlecase }} #{{
+                  document()!.object_id
+                }}
+              </a>
+            </p>
+          </div>
+
+          <!-- Description -->
+          <div *ngIf="document()!.description" class="col-span-2">
+            <label class="text-sm font-medium text-gray-500 dark:text-gray-400"
+              >Description</label
+            >
+            <p class="mt-1">{{ document()!.description }}</p>
+          </div>
+
+          <!-- File Hash -->
+          <div *ngIf="document()!.file_hash" class="col-span-2">
+            <label class="text-sm font-medium text-gray-500 dark:text-gray-400"
+              >File Hash (SHA-256)</label
+            >
+            <p
+              class="mt-1 font-mono text-xs break-all text-gray-600 dark:text-gray-300"
+            >
+              {{ document()!.file_hash }}
+            </p>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- Version History -->
+    <div>
+      <p-card>
+        <ng-template pTemplate="header">
+          <h4 class="p-4 font-semibold">Version History</h4>
+        </ng-template>
+
+        <p-table
+          [value]="document()!.versions"
+          styleClass="p-datatable-sm"
+          [scrollable]="true"
+          scrollHeight="300px"
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Version</th>
+              <th>Date</th>
+              <th style="width: 5rem"></th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-version>
+            <tr
+              [class]="
+                version.id === document()!.id
+                  ? 'bg-blue-50 dark:bg-blue-900/20'
+                  : ''
+              "
+            >
+              <td>
+                <span class="font-mono">v{{ version.version_number }}</span>
+                <i
+                  *ngIf="version.is_latest"
+                  class="pi pi-check-circle text-green-500 dark:text-green-400 ml-2"
+                  pTooltip="Latest"
+                ></i>
+                <span
+                  *ngIf="version.id === document()!.id"
+                  class="ml-2 text-blue-600 dark:text-blue-400 text-xs"
+                >
+                  (current)
+                </span>
+              </td>
+              <td>{{ version.created_at | date : "short" }}</td>
+              <td>
+                <div class="flex gap-1">
+                  <p-button
+                    icon="pi pi-download"
+                    [rounded]="true"
+                    [text]="true"
+                    size="small"
+                    (onClick)="downloadVersion(version.id)"
+                    pTooltip="Download"
+                  ></p-button>
+                  <p-button
+                    *ngIf="version.id !== document()!.id"
+                    icon="pi pi-eye"
+                    [rounded]="true"
+                    [text]="true"
+                    size="small"
+                    (onClick)="viewVersion(version.id)"
+                    pTooltip="View"
+                  ></p-button>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td
+                colspan="3"
+                class="text-center text-gray-500 dark:text-gray-400 py-4"
+              >
+                No version history
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+  </div>
+
+  <!-- New Version Dialog -->
+  <p-dialog
+    header="Upload New Version"
+    [(visible)]="showVersionDialog"
+    [modal]="true"
+    [style]="{ width: '400px' }"
+    [draggable]="false"
+  >
+    <div class="flex flex-col gap-4">
+      <p class="text-gray-600 dark:text-gray-300">
+        Upload a new version of this document. The current version will be
+        preserved in the version history.
+      </p>
+
+      <div class="flex flex-col">
+        <label class="text-sm font-medium mb-2">
+          Select File <span class="text-red-500">*</span>
+        </label>
+        <p-fileUpload
+          mode="basic"
+          [auto]="false"
+          chooseLabel="Choose File"
+          (onSelect)="onVersionFileSelect($event)"
+          [maxFileSize]="52428800"
+          accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx,.csv,.txt"
+        ></p-fileUpload>
+        <small *ngIf="newVersionFile()" class="text-green-600 mt-1">
+          <i class="pi pi-check mr-1"></i>{{ newVersionFile()?.name }}
+        </small>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <p-button
+        label="Cancel"
+        icon="pi pi-times"
+        severity="secondary"
+        (onClick)="showVersionDialog.set(false)"
+      ></p-button>
+      <p-button
+        label="Upload"
+        icon="pi pi-upload"
+        (onClick)="uploadNewVersion()"
+        [loading]="uploading()"
+        [disabled]="!newVersionFile()"
+      ></p-button>
+    </ng-template>
+  </p-dialog>
+</div>

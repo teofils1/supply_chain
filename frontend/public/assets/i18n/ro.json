@@ -11,9 +11,8 @@
     "packs": "Pachete",
     "shipments": "Expedieri",
     "events": "Evenimente",
-    "trace": "Trasabilitate",
-    "devices": "Dispozitive",
-    "excursions": "Excursii de temperatură",
+    "analytics": "Analiză",
+    "documents": "Documente",
     "dashboard": "Panou utilizator",
     "users": "Utilizatori"
   },
@@ -73,17 +72,9 @@
       "title": "Evenimente",
       "empty": "Cronologie și filtre în curând."
     },
-    "trace": {
-      "title": "Trasabilitate",
-      "empty": "Lanț de custodie și suprapuneri telemetrie în curând."
-    },
-    "devices": {
-      "title": "Dispozitive",
-      "empty": "Înregistrare dispozitive și status în P2."
-    },
-    "excursions": {
-      "title": "Excursii de temperatură",
-      "empty": "Tablou de triere în P2."
+    "analytics": {
+      "title": "Panou de analiză",
+      "subtitle": "Metrici de performanță și perspective predictive"
     },
     "dashboard": {
       "title": "Panou utilizator",
@@ -92,6 +83,139 @@
     "users": {
       "title": "Administrare utilizatori",
       "empty": "Gestionează utilizatorii și rolurile platformei."
+    },
+    "documents": {
+      "title": "Documente",
+      "subtitle": "Gestionați documente",
+      "upload": "Încărcare",
+      "uploadDocument": "Încărcare document",
+      "search": "Căutare",
+      "searchPlaceholder": "Căutare documente...",
+      "category": "Categorie",
+      "entityType": "Tip entitate",
+      "entityId": "ID entitate",
+      "noResults": "Nu s-au găsit documente",
+      "noResultsMessage": "Încercați să ajustați criteriile de căutare sau încărcați un document nou.",
+      "uploadFirst": "Încărcare prim document",
+      "view": "Detalii document",
+      "delete": "Ștergere",
+      "confirmDelete": "Confirmare ștergere",
+      "confirmDeleteMessage": "Sigur doriți să ștergeți acest document?",
+      "deleteSuccess": "Document șters cu succes",
+      "uploadSuccess": "Document încărcat cu succes",
+      "uploadError": "Eroare la încărcarea documentului",
+      "downloadError": "Eroare la descărcarea documentului",
+      "deleteError": "Eroare la ștergerea documentului",
+      "cancel": "Anulare",
+      "selectFile": "Selectare fișier",
+      "dragDrop": "Trageți și plasați un fișier aici sau faceți clic pentru a selecta",
+      "download": "Descărcare",
+      "viewDetails": "Detalii",
+      "fields": {
+        "title": "Titlu",
+        "description": "Descriere",
+        "category": "Categorie",
+        "file": "Fișier",
+        "fileName": "Nume fișier",
+        "fileSize": "Dimensiune",
+        "fileType": "Tip",
+        "size": "Dimensiune",
+        "version": "Versiune",
+        "uploadedBy": "Încărcat de",
+        "uploadedAt": "Încărcat la",
+        "entity": "Entitate",
+        "entityType": "Tip entitate",
+        "entityId": "ID entitate",
+        "actions": "Acțiuni"
+      },
+      "categories": {
+        "certificate": "Certificat",
+        "invoice": "Factură",
+        "packing_list": "Listă de ambalare",
+        "shipping_label": "Etichetă expediere",
+        "coa": "Certificat de analiză",
+        "msds": "Fișă de securitate",
+        "customs": "Documente vamale",
+        "quality": "Control calitate",
+        "quality_report": "Raport calitate",
+        "photo": "Fotografie",
+        "other": "Altele"
+      },
+      "entityTypes": {
+        "product": "Produs",
+        "batch": "Lot",
+        "pack": "Pachet",
+        "shipment": "Expediere"
+      },
+      "pdf": {
+        "generateLabel": "Generare etichetă expediere",
+        "generatePackingList": "Generare listă ambalare",
+        "generateCoa": "Generare certificat analiză",
+        "generating": "Se generează...",
+        "generated": "PDF generat cu succes"
+      },
+      "generatePdf": {
+        "shippingLabel": "Generare etichetă expediere",
+        "packingList": "Generare listă ambalare",
+        "coa": "Generare certificat analiză",
+        "generating": "Se generează...",
+        "success": "PDF generat cu succes",
+        "error": "Eroare la generarea PDF"
+      },
+      "versions": {
+        "title": "Istoric versiuni",
+        "uploadNew": "Încărcare versiune nouă",
+        "current": "Curent"
+      }
+    }
+  },
+  "analytics": {
+    "title": "Panou de analiză",
+    "subtitle": "Metrici de performanță a lanțului de aprovizionare și perspective predictive",
+    "refresh": "Reîmprospătare date",
+    "period": "Perioada de timp",
+    "kpis": {
+      "title": "KPI-uri lanț de aprovizionare",
+      "onTimeDelivery": "Livrare la timp",
+      "damageRate": "Rata de deteriorare",
+      "lossRate": "Rata de pierdere",
+      "returnRate": "Rata de returnare",
+      "avgDeliveryTime": "Timp mediu de livrare",
+      "inTransit": "În tranzit",
+      "pending": "În așteptare",
+      "tempControlled": "Controlat termic"
+    },
+    "batchYield": {
+      "title": "Analiză randament loturi",
+      "qcPassRate": "Rata de trecere QC",
+      "utilizationRate": "Rata de utilizare",
+      "expiryRate": "Rata de expirare",
+      "recallRate": "Rata de retragere",
+      "totalProduced": "Total produs",
+      "totalAvailable": "Total disponibil",
+      "avgShelfLife": "Durată medie raft",
+      "expiringSoon": "Expiră curând"
+    },
+    "carrier": {
+      "title": "Performanța transportatorilor",
+      "comparison": "Comparație transportatori",
+      "details": "Detalii transportatori",
+      "serviceType": "Performanța tipului de serviciu"
+    },
+    "temperature": {
+      "title": "Excursii de temperatură",
+      "trend": "Tendință excursii",
+      "bySeverity": "După severitate",
+      "byRequirement": "După cerință de temperatură",
+      "recent": "Excursii recente"
+    },
+    "forecast": {
+      "title": "Prognoză cerere",
+      "summary": "Rezumat prognoză",
+      "recommendations": "Recomandări inventar",
+      "productForecasts": "Prognoze cerere produse",
+      "increaseStock": "Creștere stoc",
+      "reduceStock": "Reducere stoc"
     }
   }
 }

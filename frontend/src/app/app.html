@@ -157,44 +157,30 @@
             </div>
           </a>
           <a
-            routerLink="/trace/DEMO123"
+            routerLink="/analytics"
             routerLinkActive="font-semibold"
             class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
           >
             <div class="d-flex">
               <span
-                class="pi pi-link w-5 text-center text-surface-900 dark:text-white"
+                class="pi pi-chart-line w-5 text-center text-surface-900 dark:text-white"
               ></span>
               <span class="truncate ml-3" [class.hidden]="!isExpanded">{{
-                "nav.trace" | translate
+                "nav.analytics" | translate
               }}</span>
             </div>
           </a>
           <a
-            routerLink="/devices"
+            routerLink="/documents"
             routerLinkActive="font-semibold"
             class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
           >
             <div class="d-flex">
               <span
-                class="pi pi-tablet w-5 text-center text-surface-900 dark:text-white"
+                class="pi pi-folder w-5 text-center text-surface-900 dark:text-white"
               ></span>
               <span class="truncate ml-3" [class.hidden]="!isExpanded">{{
-                "nav.devices" | translate
-              }}</span>
-            </div>
-          </a>
-          <a
-            routerLink="/excursions"
-            routerLinkActive="font-semibold"
-            class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
-          >
-            <div class="d-flex">
-              <span
-                class="pi pi-exclamation-triangle w-5 text-center text-surface-900 dark:text-white"
-              ></span>
-              <span class="truncate ml-3" [class.hidden]="!isExpanded">{{
-                "nav.excursions" | translate
+                "nav.documents" | translate
               }}</span>
             </div>
           </a>

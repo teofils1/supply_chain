@@ -335,3 +335,62 @@ if redis_available:
     SESSION_ENGINE = "django.contrib.sessions.backends.cache"
     SESSION_CACHE_ALIAS = "default"
 
+# =============================================================================
+# File Storage Configuration (MinIO/S3)
+# =============================================================================
+#
+# MinIO-based storage for document management. Uses S3-compatible API.
+#
+# Environment variables:
+# - MINIO_ENDPOINT: MinIO server URL (default: http://localhost:9000)
+# - MINIO_ACCESS_KEY: Access key (default: minioadmin)
+# - MINIO_SECRET_KEY: Secret key (default: minioadmin)
+# - MINIO_BUCKET_NAME: Bucket name (default: supplychain-documents)
+# - MINIO_USE_SSL: Use SSL (default: false for local dev)
+
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://localhost:9000")
+MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
+MINIO_BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME", "supplychain-documents")
+MINIO_USE_SSL = os.getenv("MINIO_USE_SSL", "false").lower() in {"1", "true", "yes"}
+
+# django-storages S3 configuration for MinIO
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "OPTIONS": {
+            "access_key": MINIO_ACCESS_KEY,
+            "secret_key": MINIO_SECRET_KEY,
+            "bucket_name": MINIO_BUCKET_NAME,
+            "endpoint_url": MINIO_ENDPOINT,
+            "use_ssl": MINIO_USE_SSL,
+            "file_overwrite": False,
+            "default_acl": None,
+            "querystring_auth": True,  # Generate signed URLs
+            "querystring_expire": 3600,  # URL expires in 1 hour
+        },
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+# File upload settings
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50MB
+MAX_UPLOAD_SIZE = int(os.getenv("MAX_UPLOAD_SIZE", str(50 * 1024 * 1024)))  # 50MB default
+
+# Allowed file types for document uploads
+ALLOWED_DOCUMENT_TYPES = [
+    "application/pdf",
+    "image/png",
+    "image/jpeg",
+    "image/jpg",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/csv",
+    "text/plain",
+]
+
