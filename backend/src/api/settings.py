@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     # Third-party
     "rest_framework",
     "rest_framework_simplejwt",
+    "drf_spectacular",
     "corsheaders",
     "model_utils",  # For field change tracking
     # Local apps
@@ -96,6 +97,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 SIMPLE_JWT = {
@@ -185,3 +187,62 @@ EMAIL_BACKEND = os.getenv(
 
 # Email timeout to prevent hanging
 EMAIL_TIMEOUT = 30
+
+# Blockchain anchoring settings
+BLOCKCHAIN_ANCHORING_ENABLED = (
+    os.getenv("BLOCKCHAIN_ANCHORING_ENABLED", "false").lower()
+    in {"1", "true", "yes"}
+)
+BLOCKCHAIN_PROVIDER_URL = os.getenv(
+    "BLOCKCHAIN_PROVIDER_URL", "http://localhost:8545"
+)
+BLOCKCHAIN_CONTRACT_ADDRESS = os.getenv("BLOCKCHAIN_CONTRACT_ADDRESS", None)
+BLOCKCHAIN_PRIVATE_KEY = os.getenv("BLOCKCHAIN_PRIVATE_KEY", None)
+BLOCKCHAIN_NETWORK_NAME = os.getenv("BLOCKCHAIN_NETWORK_NAME", "ethereum-mainnet")
+
+# API Documentation with drf-spectacular
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Supply Chain Tracking API",
+    "DESCRIPTION": "A comprehensive API for end-to-end supply chain tracking with blockchain anchoring for tamper-evident provenance",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": r"/api/v[0-9]",
+    "CONTACT": {
+        "name": "Supply Chain Team",
+        "email": "support@supplychain.com",
+    },
+    "LICENSE": {
+        "name": "MIT",
+    },
+    # Authentication configuration
+    "SECURITY": [
+        {
+            "jwtAuth": [],
+        }
+    ],
+    "COMPONENTS": {
+        "securitySchemes": {
+            "jwtAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+                "description": "JWT authentication using access tokens. Use the `/api/auth/login/` endpoint to obtain tokens.",
+            }
+        }
+    },
+    # Swagger UI settings
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "persistAuthorization": True,
+        "displayOperationId": True,
+        "filter": True,
+    },
+    # Additional settings
+    "ENUM_NAME_OVERRIDES": {
+        "ValidationErrorEnum": "drf_spectacular.openapi.ValidationErrorEnum.choices",
+    },
+    "POSTPROCESSING_HOOKS": [
+        "drf_spectacular.hooks.postprocess_schema_enums",
+    ],
+}

@@ -3,6 +3,10 @@ from __future__ import annotations
 from rest_framework import serializers
 
 from .. import models as m
+from ..validators import (
+    validate_available_quantity_not_exceeds_produced,
+    validate_expiry_after_manufacturing,
+)
 
 
 class BatchListSerializer(serializers.ModelSerializer):
@@ -110,20 +114,42 @@ class BatchDetailSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         """Validate batch data."""
-        manufacturing_date = attrs.get("manufacturing_date")
-        expiry_date = attrs.get("expiry_date")
+        manufacturing_date = attrs.get("manufacturing_date") or (
+            self.instance.manufacturing_date if self.instance else None
+        )
+        expiry_date = attrs.get("expiry_date") or (
+            self.instance.expiry_date if self.instance else None
+        )
+        quantity_produced = attrs.get("quantity_produced") or (
+            self.instance.quantity_produced if self.instance else None
+        )
+        available_quantity = attrs.get("available_quantity") or (
+            self.instance.available_quantity if self.instance else None
+        )
 
-        # Validate date range
-        if manufacturing_date and expiry_date and expiry_date <= manufacturing_date:
-            raise serializers.ValidationError(
-                {"expiry_date": "Expiry date must be after manufacturing date."}
+        # Validate date range using custom validator
+        try:
+            validate_expiry_after_manufacturing(manufacturing_date, expiry_date)
+        except serializers.ValidationError:
+            raise
+
+        # Validate quantity constraints using custom validator
+        try:
+            validate_available_quantity_not_exceeds_produced(
+                quantity_produced, available_quantity
             )
+        except serializers.ValidationError:
+            raise
 
-        # Validate quantity
-        quantity_produced = attrs.get("quantity_produced")
+        # Validate quantity is positive
         if quantity_produced is not None and quantity_produced <= 0:
             raise serializers.ValidationError(
                 {"quantity_produced": "Quantity produced must be greater than zero."}
+            )
+
+        if available_quantity is not None and available_quantity < 0:
+            raise serializers.ValidationError(
+                {"available_quantity": "Available quantity cannot be negative."}
             )
 
         return attrs
@@ -197,11 +223,11 @@ class BatchCreateSerializer(serializers.ModelSerializer):
         manufacturing_date = attrs.get("manufacturing_date")
         expiry_date = attrs.get("expiry_date")
 
-        # Validate date range
-        if manufacturing_date and expiry_date and expiry_date <= manufacturing_date:
-            raise serializers.ValidationError(
-                {"expiry_date": "Expiry date must be after manufacturing date."}
-            )
+        # Validate date range using custom validator
+        try:
+            validate_expiry_after_manufacturing(manufacturing_date, expiry_date)
+        except serializers.ValidationError:
+            raise
 
         # Validate quantity
         quantity_produced = attrs.get("quantity_produced")

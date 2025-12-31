@@ -3,6 +3,7 @@ from __future__ import annotations
 from rest_framework import serializers
 
 from .. import models as m
+from ..validators import validate_temperature_range
 
 
 class ProductListSerializer(serializers.ModelSerializer):
@@ -82,16 +83,18 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         """Validate temperature and humidity ranges."""
-        # Temperature range validation
-        temp_min = attrs.get("storage_temp_min")
-        temp_max = attrs.get("storage_temp_max")
+        # Temperature range validation using custom validator
+        temp_min = attrs.get("storage_temp_min") or (
+            self.instance.storage_temp_min if self.instance else None
+        )
+        temp_max = attrs.get("storage_temp_max") or (
+            self.instance.storage_temp_max if self.instance else None
+        )
 
-        if temp_min is not None and temp_max is not None and temp_min > temp_max:
-            raise serializers.ValidationError(
-                {
-                    "storage_temp_max": "Maximum temperature must be greater than minimum temperature."
-                }
-            )
+        try:
+            validate_temperature_range(temp_min, temp_max)
+        except serializers.ValidationError:
+            raise
 
         # Humidity range validation
         humidity_min = attrs.get("storage_humidity_min")
@@ -106,6 +109,17 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 {
                     "storage_humidity_max": "Maximum humidity must be greater than minimum humidity."
                 }
+            )
+
+        # Validate humidity bounds
+        if humidity_min is not None and (humidity_min < 0 or humidity_min > 100):
+            raise serializers.ValidationError(
+                {"storage_humidity_min": "Humidity must be between 0% and 100%."}
+            )
+
+        if humidity_max is not None and (humidity_max < 0 or humidity_max > 100):
+            raise serializers.ValidationError(
+                {"storage_humidity_max": "Humidity must be between 0% and 100%."}
             )
 
         return attrs
@@ -157,16 +171,14 @@ class ProductCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         """Validate temperature and humidity ranges."""
-        # Temperature range validation
+        # Temperature range validation using custom validator
         temp_min = attrs.get("storage_temp_min")
         temp_max = attrs.get("storage_temp_max")
 
-        if temp_min is not None and temp_max is not None and temp_min > temp_max:
-            raise serializers.ValidationError(
-                {
-                    "storage_temp_max": "Maximum temperature must be greater than minimum temperature."
-                }
-            )
+        try:
+            validate_temperature_range(temp_min, temp_max)
+        except serializers.ValidationError:
+            raise
 
         # Humidity range validation
         humidity_min = attrs.get("storage_humidity_min")
@@ -181,6 +193,17 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                 {
                     "storage_humidity_max": "Maximum humidity must be greater than minimum humidity."
                 }
+            )
+
+        # Validate humidity bounds
+        if humidity_min is not None and (humidity_min < 0 or humidity_min > 100):
+            raise serializers.ValidationError(
+                {"storage_humidity_min": "Humidity must be between 0% and 100%."}
+            )
+
+        if humidity_max is not None and (humidity_max < 0 or humidity_max > 100):
+            raise serializers.ValidationError(
+                {"storage_humidity_max": "Humidity must be between 0% and 100%."}
             )
 
         return attrs

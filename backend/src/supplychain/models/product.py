@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from model_utils import FieldTracker
 
+from ..validators import validate_gtin_format
 from .base import BaseModel
 
 
@@ -29,7 +31,10 @@ class Product(BaseModel):
 
     # Core product identification
     gtin = models.CharField(
-        max_length=14, unique=True, help_text="Global Trade Item Number (GTIN-14)"
+        max_length=14,
+        unique=True,
+        validators=[validate_gtin_format],
+        help_text="Global Trade Item Number (GTIN-14)",
     )
     name = models.CharField(max_length=255, help_text="Product name")
     description = models.TextField(blank=True, help_text="Product description")
@@ -142,7 +147,7 @@ class Product(BaseModel):
 
     def clean(self):
         """Validate model fields."""
-        from django.core.exceptions import ValidationError
+        errors = {}
 
         # Validate temperature range
         if (
@@ -150,11 +155,9 @@ class Product(BaseModel):
             and self.storage_temp_max is not None
             and self.storage_temp_min > self.storage_temp_max
         ):
-            raise ValidationError(
-                {
-                    "storage_temp_max": "Maximum temperature must be greater than minimum temperature."
-                }
-            )
+            errors[
+                "storage_temp_max"
+            ] = "Maximum temperature must be greater than minimum temperature."
 
         # Validate humidity range
         if (
@@ -162,8 +165,22 @@ class Product(BaseModel):
             and self.storage_humidity_max is not None
             and self.storage_humidity_min > self.storage_humidity_max
         ):
-            raise ValidationError(
-                {
-                    "storage_humidity_max": "Maximum humidity must be greater than minimum humidity."
-                }
-            )
+            errors[
+                "storage_humidity_max"
+            ] = "Maximum humidity must be greater than minimum humidity."
+
+        # Validate temperature values are within reasonable bounds
+        if self.storage_temp_min is not None:
+            if self.storage_temp_min < -100 or self.storage_temp_min > 100:
+                errors[
+                    "storage_temp_min"
+                ] = "Minimum temperature must be between -100°C and 100°C."
+
+        if self.storage_temp_max is not None:
+            if self.storage_temp_max < -100 or self.storage_temp_max > 100:
+                errors[
+                    "storage_temp_max"
+                ] = "Maximum temperature must be between -100°C and 100°C."
+
+        if errors:
+            raise ValidationError(errors)

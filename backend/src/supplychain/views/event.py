@@ -4,6 +4,7 @@ import contextlib
 from datetime import datetime
 
 from django.db.models import Q
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -15,6 +16,74 @@ from .. import serializers as s
 from ..services.blockchain import blockchain_service
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="List all events",
+        description="Retrieve a list of all supply chain events with comprehensive filtering options.",
+        parameters=[
+            OpenApiParameter(
+                name="search",
+                description="Search events by description, location, metadata, or user details",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="event_type",
+                description="Filter by event type (created, updated, shipped, delivered, etc.)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="entity_type",
+                description="Filter by entity type (product, batch, pack, shipment)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="entity_id",
+                description="Filter by specific entity ID",
+                required=False,
+                type=int,
+            ),
+            OpenApiParameter(
+                name="severity",
+                description="Filter by severity level (info, warning, error, critical)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="user",
+                description="Filter by user ID who created the event",
+                required=False,
+                type=int,
+            ),
+            OpenApiParameter(
+                name="location",
+                description="Filter by location (partial match)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="timestamp_from",
+                description="Filter events from this timestamp (ISO 8601 format or YYYY-MM-DD)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="timestamp_to",
+                description="Filter events up to this timestamp (ISO 8601 format or YYYY-MM-DD)",
+                required=False,
+                type=str,
+            ),
+        ],
+        tags=["Events"],
+    ),
+    post=extend_schema(
+        summary="Create a new event",
+        description="Create a new supply chain event. Events are automatically hashed for blockchain anchoring.",
+        tags=["Events"],
+    ),
+)
 class EventListCreateView(generics.ListCreateAPIView):
     """List all events or create a new event."""
 
@@ -303,6 +372,28 @@ class EventDeleteView(generics.DestroyAPIView):
         )
 
 
+@extend_schema(
+    summary="Anchor event to blockchain",
+    description="Manually anchor a specific event to the blockchain for tamper-evident provenance. Requires operator or admin permissions.",
+    tags=["Events", "Blockchain"],
+    responses={
+        200: {
+            "description": "Event successfully anchored or already anchored",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "Event successfully anchored",
+                        "tx_hash": "0x1234...",
+                        "block_number": 12345678,
+                        "explorer_url": "https://etherscan.io/tx/0x1234...",
+                    }
+                }
+            },
+        },
+        404: {"description": "Event not found"},
+        500: {"description": "Failed to anchor event"},
+    },
+)
 class EventBlockchainAnchorView(APIView):
     """Manually anchor an event to blockchain."""
 
@@ -353,6 +444,28 @@ class EventBlockchainAnchorView(APIView):
             )
 
 
+@extend_schema(
+    summary="Verify blockchain-anchored event",
+    description="Verify that an event is properly anchored on the blockchain and check its integrity. Requires auditor, operator, or admin permissions.",
+    tags=["Events", "Blockchain"],
+    responses={
+        200: {
+            "description": "Verification result",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "verified": True,
+                        "tx_hash": "0x1234...",
+                        "block_number": 12345678,
+                        "integrity_status": "anchored",
+                        "message": "Event successfully verified on blockchain",
+                    }
+                }
+            },
+        },
+        404: {"description": "Event not found"},
+    },
+)
 class EventBlockchainVerifyView(APIView):
     """Verify blockchain-anchored event integrity."""
 
@@ -386,6 +499,29 @@ class EventBlockchainVerifyView(APIView):
         return Response(verification, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    summary="Verify event data integrity",
+    description="Verify the integrity of event data by comparing stored hash with computed hash (without blockchain verification). Requires auditor, operator, or admin permissions.",
+    tags=["Events", "Blockchain"],
+    responses={
+        200: {
+            "description": "Integrity verification result",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "integrity_verified": True,
+                        "stored_hash": "abc123...",
+                        "computed_hash": "abc123...",
+                        "event_id": 42,
+                        "blockchain_anchored": True,
+                        "integrity_status": "anchored",
+                    }
+                }
+            },
+        },
+        404: {"description": "Event not found"},
+    },
+)
 class EventIntegrityVerifyView(APIView):
     """Verify event data integrity without blockchain check."""
 

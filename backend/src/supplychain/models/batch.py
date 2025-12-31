@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 from model_utils import FieldTracker
 
+from ..validators import (
+    validate_lot_number_format,
+    validate_positive_quantity,
+)
 from .base import BaseModel
 from .product import Product
 
@@ -29,7 +34,9 @@ class Batch(BaseModel):
         help_text="Product this batch belongs to",
     )
     lot_number = models.CharField(
-        max_length=100, help_text="Unique lot number for this batch"
+        max_length=100,
+        validators=[validate_lot_number_format],
+        help_text="Unique lot number for this batch",
     )
 
     # Production information
@@ -168,7 +175,7 @@ class Batch(BaseModel):
 
     def clean(self):
         """Validate model fields."""
-        from django.core.exceptions import ValidationError
+        errors = {}
 
         # Validate that expiry date is after manufacturing date
         if (
@@ -176,9 +183,27 @@ class Batch(BaseModel):
             and self.expiry_date
             and self.expiry_date <= self.manufacturing_date
         ):
-            raise ValidationError(
-                {"expiry_date": "Expiry date must be after manufacturing date."}
-            )
+            errors["expiry_date"] = "Expiry date must be after manufacturing date."
+
+        # Validate that available quantity doesn't exceed quantity produced
+        if (
+            self.quantity_produced is not None
+            and self.available_quantity is not None
+            and self.available_quantity > self.quantity_produced
+        ):
+            errors[
+                "available_quantity"
+            ] = f"Available quantity ({self.available_quantity}) cannot exceed quantity produced ({self.quantity_produced})."
+
+        # Validate positive quantities
+        if self.quantity_produced is not None and self.quantity_produced <= 0:
+            errors["quantity_produced"] = "Quantity produced must be greater than 0."
+
+        if self.available_quantity is not None and self.available_quantity < 0:
+            errors["available_quantity"] = "Available quantity cannot be negative."
+
+        if errors:
+            raise ValidationError(errors)
 
         # Auto-update status based on expiry
         if self.expiry_date and self.is_expired and self.status == "active":

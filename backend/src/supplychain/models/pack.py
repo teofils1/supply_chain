@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 from model_utils import FieldTracker
 
+from ..validators import validate_serial_number_format
 from .base import BaseModel
 from .batch import Batch
 
@@ -44,7 +46,10 @@ class Pack(BaseModel):
         help_text="Batch this pack belongs to",
     )
     serial_number = models.CharField(
-        max_length=100, unique=True, help_text="Unique serial number for this pack"
+        max_length=100,
+        unique=True,
+        validators=[validate_serial_number_format],
+        help_text="Unique serial number for this pack",
     )
 
     # Pack characteristics
@@ -185,7 +190,7 @@ class Pack(BaseModel):
 
     def clean(self):
         """Validate model fields."""
-        from django.core.exceptions import ValidationError
+        errors = {}
 
         # Validate dates if provided
         if (
@@ -193,9 +198,9 @@ class Pack(BaseModel):
             and self.expiry_date
             and self.expiry_date <= self.manufacturing_date
         ):
-            raise ValidationError(
-                {"expiry_date": "Pack expiry date must be after manufacturing date."}
-            )
+            errors[
+                "expiry_date"
+            ] = "Pack expiry date must be after manufacturing date."
 
         # Validate shipping dates
         if (
@@ -203,9 +208,14 @@ class Pack(BaseModel):
             and self.delivered_date
             and self.delivered_date < self.shipped_date
         ):
-            raise ValidationError(
-                {"delivered_date": "Delivery date must be after shipping date."}
-            )
+            errors["delivered_date"] = "Delivery date must be after shipping date."
+
+        # Validate pack size is positive
+        if self.pack_size is not None and self.pack_size <= 0:
+            errors["pack_size"] = "Pack size must be greater than 0."
+
+        if errors:
+            raise ValidationError(errors)
 
         # Auto-update status based on shipping/delivery dates
         if self.delivered_date and self.status not in ["delivered", "returned"]:

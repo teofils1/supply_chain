@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.db.models import Q
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -10,6 +11,44 @@ from .. import permissions as p
 from .. import serializers as s
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="List all products",
+        description="Retrieve a list of all products in the supply chain. Supports filtering by search term, status, form, and manufacturer.",
+        parameters=[
+            OpenApiParameter(
+                name="search",
+                description="Search products by name, GTIN, manufacturer, or description",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="status",
+                description="Filter products by status (active, discontinued, etc.)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="form",
+                description="Filter products by pharmaceutical form",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="manufacturer",
+                description="Filter products by manufacturer name",
+                required=False,
+                type=str,
+            ),
+        ],
+        tags=["Products"],
+    ),
+    post=extend_schema(
+        summary="Create a new product",
+        description="Create a new product in the supply chain system. Requires operator or admin permissions.",
+        tags=["Products"],
+    ),
+)
 class ProductListCreateView(generics.ListCreateAPIView):
     """List all products or create a new product."""
 
@@ -57,6 +96,23 @@ class ProductListCreateView(generics.ListCreateAPIView):
         serializer.save()
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="Get product details",
+        description="Retrieve detailed information about a specific product by ID.",
+        tags=["Products"],
+    ),
+    put=extend_schema(
+        summary="Update a product",
+        description="Update all fields of a product. Requires operator or admin permissions.",
+        tags=["Products"],
+    ),
+    patch=extend_schema(
+        summary="Partially update a product",
+        description="Update specific fields of a product. Requires operator or admin permissions.",
+        tags=["Products"],
+    ),
+)
 class ProductDetailUpdateView(generics.RetrieveUpdateAPIView):
     """Retrieve or update a specific product."""
 
@@ -69,6 +125,11 @@ class ProductDetailUpdateView(generics.RetrieveUpdateAPIView):
         return m.Product.all_objects.all()
 
 
+@extend_schema(
+    summary="Delete a product",
+    description="Soft delete a product from the system. The product will be marked as deleted but not removed from the database. Requires operator or admin permissions.",
+    tags=["Products"],
+)
 class ProductDeleteView(generics.DestroyAPIView):
     """Soft delete a product."""
 

@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from model_utils import FieldTracker
 
+from ..validators import tracking_number_validator
 from .base import BaseModel
 from .pack import Pack
 
@@ -60,6 +62,7 @@ class Shipment(BaseModel):
     tracking_number = models.CharField(
         max_length=100,
         unique=True,
+        validators=[tracking_number_validator],
         help_text="Unique tracking number for this shipment",
     )
 
@@ -245,7 +248,7 @@ class Shipment(BaseModel):
 
     def clean(self):
         """Validate model fields."""
-        from django.core.exceptions import ValidationError
+        errors = {}
 
         # Validate dates
         if (
@@ -253,22 +256,25 @@ class Shipment(BaseModel):
             and self.estimated_delivery_date
             and self.estimated_delivery_date < self.shipped_date
         ):
-            raise ValidationError(
-                {
-                    "estimated_delivery_date": "Estimated delivery date must be after shipped date."
-                }
-            )
+            errors[
+                "estimated_delivery_date"
+            ] = "Estimated delivery date must be after shipped date."
 
         if (
             self.shipped_date
             and self.actual_delivery_date
             and self.actual_delivery_date < self.shipped_date
         ):
-            raise ValidationError(
-                {
-                    "actual_delivery_date": "Actual delivery date must be after shipped date."
-                }
-            )
+            errors[
+                "actual_delivery_date"
+            ] = "Actual delivery date must be after shipped date."
+
+        # Validate shipping cost is non-negative
+        if self.shipping_cost is not None and self.shipping_cost < 0:
+            errors["shipping_cost"] = "Shipping cost cannot be negative."
+
+        if errors:
+            raise ValidationError(errors)
 
         # Auto-update status based on delivery date
         if self.actual_delivery_date and self.status not in ["delivered", "returned"]:
