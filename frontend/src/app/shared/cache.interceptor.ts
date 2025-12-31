@@ -51,8 +51,11 @@ export const cacheInterceptor: HttpInterceptorFn = (
   // Check for cached response
   const cachedResponse = cacheService.get<HttpResponse<unknown>>(cacheKey);
   if (cachedResponse) {
+    console.log('[Cache HIT]', cacheKey);
     return of(cachedResponse.clone());
   }
+
+  console.log('[Cache MISS]', cacheKey);
 
   // Check for pending request (deduplication)
   const pendingRequest =
