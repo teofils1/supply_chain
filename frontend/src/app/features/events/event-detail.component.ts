@@ -141,9 +141,11 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         entity_id: event.entity_id,
       })
       .subscribe({
-        next: (events) => {
+        next: (response) => {
           // Filter out the current event and limit to recent related events
-          const related = events.filter((e) => e.id !== event.id).slice(0, 10); // Show last 10 related events
+          const related = response.results
+            .filter((e) => e.id !== event.id)
+            .slice(0, 10); // Show last 10 related events
           this.relatedEvents.set(related);
           this.loadingRelated.set(false);
         },

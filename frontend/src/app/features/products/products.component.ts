@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 
 // PrimeNG imports
 import { CardModule } from 'primeng/card';
-import { TableModule } from 'primeng/table';
+import { TableModule, TableLazyLoadEvent } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
@@ -22,6 +22,11 @@ import {
   ProductFilters,
 } from '../../core/services/product.service';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import {
+  lazyLoadToParams,
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
+} from '../../core/models/pagination.model';
 
 @Component({
   selector: 'app-products',
@@ -52,6 +57,7 @@ export class ProductsComponent implements OnInit {
   // Reactive state
   products = this.productService.products;
   loading = this.productService.loading;
+  totalRecords = this.productService.totalRecords;
 
   // Filter state
   filters = signal<ProductFilters>({});
@@ -59,17 +65,50 @@ export class ProductsComponent implements OnInit {
   selectedStatus = signal<string | null>(null);
   selectedForm = signal<string | null>(null);
 
+  // Pagination state
+  first = signal(0);
+  rows = signal(DEFAULT_PAGE_SIZE);
+  rowsPerPageOptions = PAGE_SIZE_OPTIONS;
+
   // Options for dropdowns
   statusOptions = this.productService.getProductStatuses();
   formOptions = this.productService.getProductForms();
 
   ngOnInit() {
-    this.loadProducts();
+    // Initial load will be triggered by the table's onLazyLoad event
+  }
+
+  /**
+   * Handle lazy load event from PrimeNG table for server-side pagination
+   */
+  onLazyLoad(event: TableLazyLoadEvent) {
+    this.first.set(event.first || 0);
+    this.rows.set(event.rows || DEFAULT_PAGE_SIZE);
+
+    const paginationParams = lazyLoadToParams({
+      first: event.first,
+      rows: event.rows,
+    });
+
+    this.productService.load(this.filters(), paginationParams).subscribe({
+      error: (error) => {
+        console.error('Error loading products:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load products',
+        });
+      },
+    });
   }
 
   loadProducts() {
-    const currentFilters = this.filters();
-    this.productService.load(currentFilters).subscribe({
+    const paginationParams = lazyLoadToParams({
+      first: this.first(),
+      rows: this.rows(),
+    });
+
+    this.productService.load(this.filters(), paginationParams).subscribe({
       error: (error) => {
         console.error('Error loading products:', error);
         this.messageService.add({
@@ -86,6 +125,7 @@ export class ProductsComponent implements OnInit {
       ...f,
       search: this.searchTerm() || undefined,
     }));
+    this.first.set(0); // Reset to first page on search
     this.loadProducts();
   }
 
@@ -94,6 +134,7 @@ export class ProductsComponent implements OnInit {
       ...f,
       status: (this.selectedStatus() as any) || undefined,
     }));
+    this.first.set(0); // Reset to first page on filter
     this.loadProducts();
   }
 
@@ -102,6 +143,7 @@ export class ProductsComponent implements OnInit {
       ...f,
       form: (this.selectedForm() as any) || undefined,
     }));
+    this.first.set(0); // Reset to first page on filter
     this.loadProducts();
   }
 
@@ -110,6 +152,7 @@ export class ProductsComponent implements OnInit {
     this.selectedStatus.set(null);
     this.selectedForm.set(null);
     this.filters.set({});
+    this.first.set(0); // Reset to first page
     this.loadProducts();
   }
 

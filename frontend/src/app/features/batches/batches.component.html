@@ -133,17 +133,16 @@
     <p-table
       [value]="batches()"
       [loading]="loading()"
+      [lazy]="true"
       [paginator]="true"
-      [rows]="5"
+      [rows]="rows()"
+      [first]="first()"
+      [totalRecords]="totalRecords()"
       size="small"
-      [rowsPerPageOptions]="[5, 10, 20, 50]"
+      [rowsPerPageOptions]="rowsPerPageOptions"
       [showCurrentPageReport]="true"
       currentPageReportTemplate="Showing {first} to {last} of {totalRecords} batches"
-      [globalFilterFields]="[
-        'lot_number',
-        'product_name',
-        'manufacturing_location'
-      ]"
+      (onLazyLoad)="onLazyLoad($event)"
     >
       <ng-template pTemplate="header">
         <tr>

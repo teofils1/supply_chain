@@ -17,6 +17,8 @@ dependencies = [
     "psycopg[binary]>=3.2.9",
     "pyjwt>=2.10.1",
     "python-dotenv>=1.1.1",
+    "redis>=7.1.0",
+    "structlog>=24.4.0",
     "web3>=7.13.0",
 ]
 

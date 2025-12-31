@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 
 // PrimeNG imports
 import { CardModule } from 'primeng/card';
-import { TableModule } from 'primeng/table';
+import { TableModule, TableLazyLoadEvent } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
@@ -25,6 +25,11 @@ import {
 } from '../../core/services/batch.service';
 import { ProductService } from '../../core/services/product.service';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import {
+  lazyLoadToParams,
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
+} from '../../core/models/pagination.model';
 
 @Component({
   selector: 'app-batches',
@@ -58,6 +63,7 @@ export class BatchesComponent implements OnInit {
   // Reactive state
   batches = this.batchService.batches;
   loading = this.batchService.loading;
+  totalRecords = this.batchService.totalRecords;
 
   // Filter state
   filters = signal<BatchFilters>({});
@@ -67,6 +73,11 @@ export class BatchesComponent implements OnInit {
   selectedExpiryStatus = signal<string | null>(null);
   expiryFromDate = signal<Date | null>(null);
   expiryToDate = signal<Date | null>(null);
+
+  // Pagination state
+  first = signal(0);
+  rows = signal(DEFAULT_PAGE_SIZE);
+  rowsPerPageOptions = PAGE_SIZE_OPTIONS;
 
   // Options for dropdowns
   products = this.productService.products;
@@ -79,12 +90,40 @@ export class BatchesComponent implements OnInit {
   ngOnInit() {
     // Load products for the filter dropdown
     this.productService.load().subscribe();
-    this.loadBatches();
+    // Initial load will be triggered by the table's onLazyLoad event
+  }
+
+  /**
+   * Handle lazy load event from PrimeNG table for server-side pagination
+   */
+  onLazyLoad(event: TableLazyLoadEvent) {
+    this.first.set(event.first || 0);
+    this.rows.set(event.rows || DEFAULT_PAGE_SIZE);
+
+    const paginationParams = lazyLoadToParams({
+      first: event.first,
+      rows: event.rows,
+    });
+
+    this.batchService.load(this.filters(), paginationParams).subscribe({
+      error: (error) => {
+        console.error('Error loading batches:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load batches',
+        });
+      },
+    });
   }
 
   loadBatches() {
-    const currentFilters = this.filters();
-    this.batchService.load(currentFilters).subscribe({
+    const paginationParams = lazyLoadToParams({
+      first: this.first(),
+      rows: this.rows(),
+    });
+
+    this.batchService.load(this.filters(), paginationParams).subscribe({
       error: (error) => {
         console.error('Error loading batches:', error);
         this.messageService.add({
@@ -101,6 +140,7 @@ export class BatchesComponent implements OnInit {
       ...f,
       search: this.searchTerm() || undefined,
     }));
+    this.first.set(0);
     this.loadBatches();
   }
 
@@ -109,6 +149,7 @@ export class BatchesComponent implements OnInit {
       ...f,
       product: this.selectedProduct() || undefined,
     }));
+    this.first.set(0);
     this.loadBatches();
   }
 
@@ -117,6 +158,7 @@ export class BatchesComponent implements OnInit {
       ...f,
       status: (this.selectedStatus() as any) || undefined,
     }));
+    this.first.set(0);
     this.loadBatches();
   }
 
@@ -125,6 +167,7 @@ export class BatchesComponent implements OnInit {
       ...f,
       expiry_status: (this.selectedExpiryStatus() as any) || undefined,
     }));
+    this.first.set(0);
     this.loadBatches();
   }
 
@@ -137,6 +180,7 @@ export class BatchesComponent implements OnInit {
       expiry_from: fromDate ? this.formatDate(fromDate) : undefined,
       expiry_to: toDate ? this.formatDate(toDate) : undefined,
     }));
+    this.first.set(0);
     this.loadBatches();
   }
 
@@ -148,6 +192,7 @@ export class BatchesComponent implements OnInit {
     this.expiryFromDate.set(null);
     this.expiryToDate.set(null);
     this.filters.set({});
+    this.first.set(0);
     this.loadBatches();
   }
 

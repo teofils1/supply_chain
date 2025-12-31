@@ -209,18 +209,16 @@
     <p-table
       [value]="packs()"
       [loading]="loading()"
+      [lazy]="true"
       [paginator]="true"
-      [rows]="5"
+      [rows]="rows()"
+      [first]="first()"
+      [totalRecords]="totalRecords()"
       size="small"
-      [rowsPerPageOptions]="[5, 10, 20, 50]"
+      [rowsPerPageOptions]="rowsPerPageOptions"
       [showCurrentPageReport]="true"
       currentPageReportTemplate="Showing {first} to {last} of {totalRecords} packs"
-      [globalFilterFields]="[
-        'serial_number',
-        'batch_lot_number',
-        'product_name',
-        'location'
-      ]"
+      (onLazyLoad)="onLazyLoad($event)"
     >
       <ng-template pTemplate="header">
         <tr class="text-center">
@@ -230,7 +228,10 @@
           <th pSortableColumn="product_name" class="text-center align-middle">
             Product <p-sortIcon field="product_name"></p-sortIcon>
           </th>
-          <th pSortableColumn="batch_lot_number" class="text-center align-middle">
+          <th
+            pSortableColumn="batch_lot_number"
+            class="text-center align-middle"
+          >
             Batch <p-sortIcon field="batch_lot_number"></p-sortIcon>
           </th>
           <th pSortableColumn="pack_type" class="text-center align-middle">
@@ -239,7 +240,10 @@
           <th pSortableColumn="pack_size" class="text-center align-middle">
             Size <p-sortIcon field="pack_size"></p-sortIcon>
           </th>
-          <th pSortableColumn="effective_expiry_date" class="text-center align-middle">
+          <th
+            pSortableColumn="effective_expiry_date"
+            class="text-center align-middle"
+          >
             Expiry Date <p-sortIcon field="effective_expiry_date"></p-sortIcon>
           </th>
           <th class="text-center align-middle">Expiry Status</th>

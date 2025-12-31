@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 
 // PrimeNG imports
 import { CardModule } from 'primeng/card';
-import { TableModule } from 'primeng/table';
+import { TableModule, TableLazyLoadEvent } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
@@ -27,6 +27,11 @@ import { PackService } from '../../core/services/pack.service';
 import { BatchService } from '../../core/services/batch.service';
 import { ProductService } from '../../core/services/product.service';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import {
+  lazyLoadToParams,
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
+} from '../../core/models/pagination.model';
 
 @Component({
   selector: 'app-shipments',
@@ -62,6 +67,7 @@ export class ShipmentsComponent implements OnInit {
   // Reactive state
   shipments = this.shipmentService.shipments;
   loading = this.shipmentService.loading;
+  totalRecords = this.shipmentService.totalRecords;
 
   // Filter state
   filters = signal<ShipmentFilters>({});
@@ -80,6 +86,11 @@ export class ShipmentsComponent implements OnInit {
   estimatedDeliveryFromDate = signal<Date | null>(null);
   estimatedDeliveryToDate = signal<Date | null>(null);
 
+  // Pagination state
+  first = signal(0);
+  rows = signal(DEFAULT_PAGE_SIZE);
+  rowsPerPageOptions = PAGE_SIZE_OPTIONS;
+
   // Options for dropdowns
   statusOptions = this.shipmentService.getShipmentStatuses();
   carrierOptions = this.shipmentService.getCarriers();
@@ -97,12 +108,40 @@ export class ShipmentsComponent implements OnInit {
     this.packService.load().subscribe();
     this.batchService.load().subscribe();
     this.productService.load().subscribe();
-    this.loadShipments();
+    // Initial load will be triggered by the table's onLazyLoad event
+  }
+
+  /**
+   * Handle lazy load event from PrimeNG table for server-side pagination
+   */
+  onLazyLoad(event: TableLazyLoadEvent) {
+    this.first.set(event.first || 0);
+    this.rows.set(event.rows || DEFAULT_PAGE_SIZE);
+
+    const paginationParams = lazyLoadToParams({
+      first: event.first,
+      rows: event.rows,
+    });
+
+    this.shipmentService.load(this.filters(), paginationParams).subscribe({
+      error: (error) => {
+        console.error('Error loading shipments:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load shipments',
+        });
+      },
+    });
   }
 
   loadShipments() {
-    const currentFilters = this.filters();
-    this.shipmentService.load(currentFilters).subscribe({
+    const paginationParams = lazyLoadToParams({
+      first: this.first(),
+      rows: this.rows(),
+    });
+
+    this.shipmentService.load(this.filters(), paginationParams).subscribe({
       error: (error) => {
         console.error('Error loading shipments:', error);
         this.messageService.add({
@@ -119,6 +158,7 @@ export class ShipmentsComponent implements OnInit {
       ...f,
       search: this.searchTerm() || undefined,
     }));
+    this.first.set(0);
     this.loadShipments();
   }
 
@@ -127,6 +167,7 @@ export class ShipmentsComponent implements OnInit {
       ...f,
       status: (this.selectedStatus() as any) || undefined,
     }));
+    this.first.set(0);
     this.loadShipments();
   }
 
@@ -135,6 +176,7 @@ export class ShipmentsComponent implements OnInit {
       ...f,
       carrier: (this.selectedCarrier() as any) || undefined,
     }));
+    this.first.set(0);
     this.loadShipments();
   }
 
@@ -143,6 +185,7 @@ export class ShipmentsComponent implements OnInit {
       ...f,
       service_type: (this.selectedServiceType() as any) || undefined,
     }));
+    this.first.set(0);
     this.loadShipments();
   }
 
@@ -152,6 +195,7 @@ export class ShipmentsComponent implements OnInit {
       temperature_requirement:
         (this.selectedTemperatureRequirement() as any) || undefined,
     }));
+    this.first.set(0);
     this.loadShipments();
   }
 
@@ -160,6 +204,7 @@ export class ShipmentsComponent implements OnInit {
       ...f,
       delivery_status: (this.selectedDeliveryStatus() as any) || undefined,
     }));
+    this.first.set(0);
     this.loadShipments();
   }
 
@@ -168,6 +213,7 @@ export class ShipmentsComponent implements OnInit {
       ...f,
       special_handling: this.selectedSpecialHandling() ?? undefined,
     }));
+    this.first.set(0);
     this.loadShipments();
   }
 
@@ -176,6 +222,7 @@ export class ShipmentsComponent implements OnInit {
       ...f,
       pack: this.selectedPack() || undefined,
     }));
+    this.first.set(0);
     this.loadShipments();
   }
 
@@ -184,6 +231,7 @@ export class ShipmentsComponent implements OnInit {
       ...f,
       batch: this.selectedBatch() || undefined,
     }));
+    this.first.set(0);
     this.loadShipments();
   }
 
@@ -192,6 +240,7 @@ export class ShipmentsComponent implements OnInit {
       ...f,
       product: this.selectedProduct() || undefined,
     }));
+    this.first.set(0);
     this.loadShipments();
   }
 
@@ -204,6 +253,7 @@ export class ShipmentsComponent implements OnInit {
       shipped_from: fromDate ? this.formatDate(fromDate) : undefined,
       shipped_to: toDate ? this.formatDate(toDate) : undefined,
     }));
+    this.first.set(0);
     this.loadShipments();
   }
 
@@ -216,6 +266,7 @@ export class ShipmentsComponent implements OnInit {
       estimated_delivery_from: fromDate ? this.formatDate(fromDate) : undefined,
       estimated_delivery_to: toDate ? this.formatDate(toDate) : undefined,
     }));
+    this.first.set(0);
     this.loadShipments();
   }
 
@@ -235,6 +286,7 @@ export class ShipmentsComponent implements OnInit {
     this.estimatedDeliveryFromDate.set(null);
     this.estimatedDeliveryToDate.set(null);
     this.filters.set({});
+    this.first.set(0);
     this.loadShipments();
   }
 

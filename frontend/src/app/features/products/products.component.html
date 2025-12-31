@@ -95,13 +95,16 @@
     <p-table
       [value]="products()"
       [loading]="loading()"
+      [lazy]="true"
       [paginator]="true"
       [size]="`small`"
-      [rows]="5"
-      [rowsPerPageOptions]="[5, 10, 20, 50]"
+      [rows]="rows()"
+      [first]="first()"
+      [totalRecords]="totalRecords()"
+      [rowsPerPageOptions]="rowsPerPageOptions"
       [showCurrentPageReport]="true"
       currentPageReportTemplate="Showing {first} to {last} of {totalRecords} products"
-      [globalFilterFields]="['name', 'gtin', 'manufacturer']"
+      (onLazyLoad)="onLazyLoad($event)"
     >
       <ng-template pTemplate="header">
         <tr>

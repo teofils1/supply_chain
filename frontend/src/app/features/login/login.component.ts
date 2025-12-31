@@ -53,14 +53,15 @@ export class LoginComponent {
           // Redirect to the originally requested URL or home page
           const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
           this.router.navigateByUrl(returnUrl);
+          this.loading.set(false);
         }, 100);
       },
       error: (err) => {
         this.error.set(
           err?.error?.detail || this.i18n.instant('login.invalid')
         );
+        this.loading.set(false);
       },
-      complete: () => this.loading.set(false),
     });
   }
 }

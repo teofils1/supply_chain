@@ -48,13 +48,14 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "supplychain.middleware.RequestLoggingMiddleware",  # Request/response logging (first)
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "supplychain.middleware.CurrentUserMiddleware",  # Add our custom middleware
+    "supplychain.middleware.CurrentUserMiddleware",  # Track current user
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -98,6 +99,10 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "EXCEPTION_HANDLER": "supplychain.exceptions.custom_exception_handler",
+    # Pagination - configurable page size with sensible defaults
+    "DEFAULT_PAGINATION_CLASS": "supplychain.pagination.StandardResultsPagination",
+    "PAGE_SIZE": int(os.getenv("API_PAGE_SIZE", "5")),
 }
 
 SIMPLE_JWT = {
@@ -200,6 +205,36 @@ BLOCKCHAIN_CONTRACT_ADDRESS = os.getenv("BLOCKCHAIN_CONTRACT_ADDRESS", None)
 BLOCKCHAIN_PRIVATE_KEY = os.getenv("BLOCKCHAIN_PRIVATE_KEY", None)
 BLOCKCHAIN_NETWORK_NAME = os.getenv("BLOCKCHAIN_NETWORK_NAME", "ethereum-mainnet")
 
+# =============================================================================
+# Structured Logging Configuration (structlog)
+# =============================================================================
+#
+# The application uses structlog for structured logging with the following features:
+# - JSON format in production (machine-readable for log aggregation)
+# - Pretty console output in development (human-readable)
+# - Request/response logging for audit trails
+# - Separate log files: app.log, error.log, audit.log
+#
+# Environment variables:
+# - LOG_LEVEL: Minimum log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+# - LOG_JSON: Force JSON output (true/false, defaults based on DEBUG)
+# - LOG_TO_FILE: Enable file logging (true/false, defaults to true)
+
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO" if not DEBUG else "DEBUG")
+LOG_JSON = os.getenv("LOG_JSON", "").lower() in {"1", "true", "yes"} if os.getenv("LOG_JSON") else None
+LOG_TO_FILE = os.getenv("LOG_TO_FILE", "true").lower() in {"1", "true", "yes"}
+LOG_DIR = BASE_DIR.parent / "logs" if LOG_TO_FILE else None
+
+# Configure structlog at Django startup
+from supplychain.logging_config import configure_logging
+
+configure_logging(
+    debug=DEBUG,
+    log_level=LOG_LEVEL,
+    log_dir=LOG_DIR,
+    json_logs=LOG_JSON,
+)
+
 # API Documentation with drf-spectacular
 SPECTACULAR_SETTINGS = {
     "TITLE": "Supply Chain Tracking API",
@@ -246,3 +281,57 @@ SPECTACULAR_SETTINGS = {
         "drf_spectacular.hooks.postprocess_schema_enums",
     ],
 }
+
+# =============================================================================
+# Caching Configuration (Redis)
+# =============================================================================
+#
+# Redis-based caching for frequently accessed data. Falls back to local memory
+# cache if Redis is not configured.
+#
+# Environment variables:
+# - REDIS_URL: Redis connection URL (e.g., redis://localhost:6379/0)
+# - CACHE_TIMEOUT: Default cache timeout in seconds (default: 300)
+
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+CACHE_TIMEOUT = int(os.getenv("CACHE_TIMEOUT", "300"))
+
+try:
+    # Try to use Redis if available
+    import socket
+    host, port = REDIS_URL.replace("redis://", "").split("/")[0].split(":")
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(1)
+    result = sock.connect_ex((host, int(port)))
+    sock.close()
+    redis_available = result == 0
+except Exception:
+    redis_available = False
+
+if redis_available:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+            "TIMEOUT": CACHE_TIMEOUT,
+            "KEY_PREFIX": "supplychain",
+        }
+    }
+else:
+    # Fallback to local memory cache for development
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "unique-snowflake",
+            "TIMEOUT": CACHE_TIMEOUT,
+            "OPTIONS": {
+                "MAX_ENTRIES": 1000,
+            },
+        }
+    }
+
+# Session configuration (use cache backend if Redis available)
+if redis_available:
+    SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+    SESSION_CACHE_ALIAS = "default"
+

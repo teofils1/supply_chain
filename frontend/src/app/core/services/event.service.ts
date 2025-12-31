@@ -1,6 +1,12 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, map } from 'rxjs';
+import {
+  PaginatedResponse,
+  PaginationParams,
+  DEFAULT_PAGE_SIZE,
+} from '../models/pagination.model';
+import { CacheService } from './cache.service';
 
 export type EventType =
   | 'created'
@@ -196,19 +202,37 @@ export interface CreateEventData {
 @Injectable({ providedIn: 'root' })
 export class EventService {
   private http = inject(HttpClient);
+  private cacheService = inject(CacheService);
   private _events = signal<EventListItem[]>([]);
   private _loading = signal(false);
+  private _totalRecords = signal(0);
+  private _currentPage = signal(1);
+  private _pageSize = signal(DEFAULT_PAGE_SIZE);
 
   readonly events = computed(() => this._events());
   readonly loading = computed(() => this._loading());
+  readonly totalRecords = computed(() => this._totalRecords());
+  readonly currentPage = computed(() => this._currentPage());
+  readonly pageSize = computed(() => this._pageSize());
 
   /**
-   * Load events with optional filters
+   * Load events with optional filters and pagination
    */
-  load(filters?: EventFilters): Observable<EventListItem[]> {
+  load(
+    filters?: EventFilters,
+    pagination?: PaginationParams
+  ): Observable<PaginatedResponse<EventListItem>> {
     this._loading.set(true);
 
     let params = new HttpParams();
+
+    // Pagination params
+    const page = pagination?.page || 1;
+    const pageSize = pagination?.page_size || DEFAULT_PAGE_SIZE;
+    params = params.set('page', page.toString());
+    params = params.set('page_size', pageSize.toString());
+
+    // Filter params
     if (filters?.search) {
       params = params.set('search', filters.search);
     }
@@ -264,12 +288,130 @@ export class EventService {
       params = params.set('recent_days', filters.recent_days.toString());
     }
 
-    return this.http.get<EventListItem[]>('/api/events/', { params }).pipe(
-      tap((events) => {
-        this._events.set(events);
-        this._loading.set(false);
-      })
+    return this.http
+      .get<PaginatedResponse<EventListItem>>('/api/events/', { params })
+      .pipe(
+        tap((response) => {
+          this._events.set(response.results);
+          this._totalRecords.set(response.count);
+          this._currentPage.set(response.current_page);
+          this._pageSize.set(response.page_size);
+          this._loading.set(false);
+        })
+      );
+  }
+
+  /**
+   * Load more events and append to existing list (for infinite scroll)
+   */
+  loadMore(
+    filters?: EventFilters,
+    pagination?: PaginationParams
+  ): Observable<PaginatedResponse<EventListItem>> {
+    // Don't set _loading to true - we use a separate loadingMore signal in the component
+    // to avoid hiding the existing events
+
+    let params = new HttpParams();
+
+    // Pagination params
+    const page = pagination?.page || 1;
+    const pageSize = pagination?.page_size || DEFAULT_PAGE_SIZE;
+    params = params.set('page', page.toString());
+    params = params.set('page_size', pageSize.toString());
+
+    // Filter params (same as load)
+    if (filters?.search) {
+      params = params.set('search', filters.search);
+    }
+    if (filters?.event_type) {
+      params = params.set('event_type', filters.event_type);
+    }
+    if (filters?.entity_type) {
+      params = params.set('entity_type', filters.entity_type);
+    }
+    if (filters?.entity_id) {
+      params = params.set('entity_id', filters.entity_id.toString());
+    }
+    if (filters?.severity) {
+      params = params.set('severity', filters.severity);
+    }
+    if (filters?.user) {
+      params = params.set('user', filters.user.toString());
+    }
+    if (filters?.location) {
+      params = params.set('location', filters.location);
+    }
+    if (filters?.timestamp_from) {
+      params = params.set('timestamp_from', filters.timestamp_from);
+    }
+    if (filters?.timestamp_to) {
+      params = params.set('timestamp_to', filters.timestamp_to);
+    }
+    if (filters?.date_from) {
+      params = params.set('date_from', filters.date_from);
+    }
+    if (filters?.date_to) {
+      params = params.set('date_to', filters.date_to);
+    }
+    if (filters?.product) {
+      params = params.set('product', filters.product.toString());
+    }
+    if (filters?.batch) {
+      params = params.set('batch', filters.batch.toString());
+    }
+    if (filters?.pack) {
+      params = params.set('pack', filters.pack.toString());
+    }
+    if (filters?.shipment) {
+      params = params.set('shipment', filters.shipment.toString());
+    }
+    if (filters?.critical_only !== undefined) {
+      params = params.set('critical_only', filters.critical_only.toString());
+    }
+    if (filters?.alert_only !== undefined) {
+      params = params.set('alert_only', filters.alert_only.toString());
+    }
+    if (filters?.recent_days) {
+      params = params.set('recent_days', filters.recent_days.toString());
+    }
+
+    return this.http
+      .get<PaginatedResponse<EventListItem>>('/api/events/', { params })
+      .pipe(
+        tap((response) => {
+          // Append new events to existing list
+          this._events.update((existing) => [...existing, ...response.results]);
+          this._totalRecords.set(response.count);
+          this._currentPage.set(response.current_page);
+          this._pageSize.set(response.page_size);
+          // Don't modify _loading here - component manages loadingMore signal
+        })
+      );
+  }
+
+  /**
+   * Reset events list (for when filters change)
+   */
+  resetEvents(): void {
+    this._events.set([]);
+    this._currentPage.set(1);
+  }
+
+  /**
+   * Load all events (for backwards compatibility)
+   */
+  loadAll(filters?: EventFilters): Observable<EventListItem[]> {
+    return this.load(filters, { page: 1, page_size: 100 }).pipe(
+      map((response) => response.results)
     );
+  }
+
+  /**
+   * Refresh events data and invalidate cache
+   */
+  refresh(filters?: EventFilters): void {
+    this.cacheService.invalidateEntity('events');
+    this.load(filters).subscribe();
   }
 
   /**
@@ -285,6 +427,7 @@ export class EventService {
   create(data: CreateEventData): Observable<Event> {
     return this.http.post<Event>('/api/events/', data).pipe(
       tap((event) => {
+        this.cacheService.invalidateEntity('events');
         // Add the new event to the list (convert to list item format)
         const listItem: EventListItem = {
           id: event.id,
@@ -356,6 +499,7 @@ export class EventService {
           updated_at: event.updated_at,
           is_deleted: event.is_deleted,
         };
+        this.cacheService.invalidateEntity('events');
         this._events.update((list) =>
           list.map((e) => (e.id === id ? listItem : e))
         );
@@ -371,6 +515,7 @@ export class EventService {
       .delete<{ message: string }>(`/api/events/${id}/delete/`)
       .pipe(
         tap(() => {
+          this.cacheService.invalidateEntity('events');
           // Remove the event from the list or mark as deleted
           this._events.update((list) =>
             list.map((e) => (e.id === id ? { ...e, is_deleted: true } : e))

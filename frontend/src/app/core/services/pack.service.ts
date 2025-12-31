@@ -1,6 +1,12 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, map } from 'rxjs';
+import {
+  PaginatedResponse,
+  PaginationParams,
+  DEFAULT_PAGE_SIZE,
+} from '../models/pagination.model';
+import { CacheService } from './cache.service';
 
 export type PackStatus =
   | 'active'
@@ -118,21 +124,39 @@ export interface CreatePackData {
 @Injectable({ providedIn: 'root' })
 export class PackService {
   private http = inject(HttpClient);
+  private cacheService = inject(CacheService);
   private _packs = signal<PackListItem[]>([]);
   private _loading = signal(false);
+  private _totalRecords = signal(0);
+  private _currentPage = signal(1);
+  private _pageSize = signal(DEFAULT_PAGE_SIZE);
 
   readonly packs = computed(() =>
     this._packs().filter((pack) => !pack.is_deleted)
   );
   readonly loading = computed(() => this._loading());
+  readonly totalRecords = computed(() => this._totalRecords());
+  readonly currentPage = computed(() => this._currentPage());
+  readonly pageSize = computed(() => this._pageSize());
 
   /**
-   * Load packs with optional filters
+   * Load packs with optional filters and pagination
    */
-  load(filters?: PackFilters): Observable<PackListItem[]> {
+  load(
+    filters?: PackFilters,
+    pagination?: PaginationParams
+  ): Observable<PaginatedResponse<PackListItem>> {
     this._loading.set(true);
 
     let params = new HttpParams();
+
+    // Pagination params
+    const page = pagination?.page || 1;
+    const pageSize = pagination?.page_size || DEFAULT_PAGE_SIZE;
+    params = params.set('page', page.toString());
+    params = params.set('page_size', pageSize.toString());
+
+    // Filter params
     if (filters?.search) {
       params = params.set('search', filters.search);
     }
@@ -173,12 +197,34 @@ export class PackService {
       params = params.set('expiry_status', filters.expiry_status);
     }
 
-    return this.http.get<PackListItem[]>('/api/packs/', { params }).pipe(
-      tap((packs) => {
-        this._packs.set(packs);
-        this._loading.set(false);
-      })
+    return this.http
+      .get<PaginatedResponse<PackListItem>>('/api/packs/', { params })
+      .pipe(
+        tap((response) => {
+          this._packs.set(response.results);
+          this._totalRecords.set(response.count);
+          this._currentPage.set(response.current_page);
+          this._pageSize.set(response.page_size);
+          this._loading.set(false);
+        })
+      );
+  }
+
+  /**
+   * Load all packs (legacy method for backward compatibility)
+   */
+  loadAll(filters?: PackFilters): Observable<PackListItem[]> {
+    return this.load(filters, { page: 1, page_size: 100 }).pipe(
+      map((response) => response.results)
     );
+  }
+
+  /**
+   * Refresh packs data and invalidate cache
+   */
+  refresh(filters?: PackFilters): void {
+    this.cacheService.invalidateEntity('packs');
+    this.load(filters).subscribe();
   }
 
   /**
@@ -194,6 +240,7 @@ export class PackService {
   create(data: CreatePackData): Observable<Pack> {
     return this.http.post<Pack>('/api/packs/', data).pipe(
       tap((pack) => {
+        this.cacheService.invalidateEntity('packs');
         // Add the new pack to the list (convert to list item format)
         const listItem: PackListItem = {
           id: pack.id,
@@ -230,6 +277,7 @@ export class PackService {
   update(id: number, data: Partial<CreatePackData>): Observable<Pack> {
     return this.http.patch<Pack>(`/api/packs/${id}/`, data).pipe(
       tap((pack) => {
+        this.cacheService.invalidateEntity('packs');
         // Update the pack in the list
         const listItem: PackListItem = {
           id: pack.id,
@@ -270,6 +318,7 @@ export class PackService {
       .delete<{ message: string }>(`/api/packs/${id}/delete/`)
       .pipe(
         tap(() => {
+          this.cacheService.invalidateEntity('packs');
           // Remove the pack from the list completely
           this._packs.update((list) => list.filter((p) => p.id !== id));
         })

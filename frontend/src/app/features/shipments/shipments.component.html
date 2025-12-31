@@ -259,18 +259,16 @@
     <p-table
       [value]="shipments()"
       [loading]="loading()"
+      [lazy]="true"
       [paginator]="true"
-      [rows]="5"
+      [rows]="rows()"
+      [first]="first()"
+      [totalRecords]="totalRecords()"
       size="small"
-      [rowsPerPageOptions]="[5, 10, 20, 50]"
+      [rowsPerPageOptions]="rowsPerPageOptions"
       [showCurrentPageReport]="true"
       currentPageReportTemplate="Showing {first} to {last} of {totalRecords} shipments"
-      [globalFilterFields]="[
-        'tracking_number',
-        'origin_name',
-        'destination_name',
-        'carrier'
-      ]"
+      (onLazyLoad)="onLazyLoad($event)"
     >
       <ng-template pTemplate="header">
         <tr>
@@ -301,7 +299,9 @@
       <ng-template pTemplate="body" let-shipment>
         <tr>
           <td>
-            <span class="font-mono text-sm font-medium">{{ shipment.tracking_number }}</span>
+            <span class="font-mono text-sm font-medium">{{
+              shipment.tracking_number
+            }}</span>
           </td>
           <td>
             <p-tag
@@ -316,13 +316,17 @@
           <td>
             <div class="text-sm">
               <div class="font-medium">{{ shipment.origin_name }}</div>
-              <div class="text-gray-500 text-xs">{{ shipment.origin_address }}</div>
+              <div class="text-gray-500 text-xs">
+                {{ shipment.origin_address }}
+              </div>
             </div>
           </td>
           <td>
             <div class="text-sm">
               <div class="font-medium">{{ shipment.destination_name }}</div>
-              <div class="text-gray-500 text-xs">{{ shipment.destination_address }}</div>
+              <div class="text-gray-500 text-xs">
+                {{ shipment.destination_address }}
+              </div>
             </div>
           </td>
           <td>
@@ -336,10 +340,14 @@
             </div>
           </td>
           <td>
-            <span class="text-sm">{{ shipment.shipped_date | date: 'shortDate' }}</span>
+            <span class="text-sm">{{
+              shipment.shipped_date | date : "shortDate"
+            }}</span>
           </td>
           <td>
-            <span class="text-sm">{{ shipment.estimated_delivery_date | date: 'shortDate' }}</span>
+            <span class="text-sm">{{
+              shipment.estimated_delivery_date | date : "shortDate"
+            }}</span>
           </td>
           <td>
             <div class="flex flex-col gap-1">
@@ -356,15 +364,24 @@
                 class="text-xs"
               ></p-tag>
               <p-tag
-                *ngIf="!shipment.is_in_transit && !shipment.is_delivered && isOverdue(shipment)"
+                *ngIf="
+                  !shipment.is_in_transit &&
+                  !shipment.is_delivered &&
+                  isOverdue(shipment)
+                "
                 value="Overdue"
                 severity="danger"
                 class="text-xs"
               ></p-tag>
               <span
-                *ngIf="!shipment.is_in_transit && !shipment.is_delivered && !isOverdue(shipment)"
+                *ngIf="
+                  !shipment.is_in_transit &&
+                  !shipment.is_delivered &&
+                  !isOverdue(shipment)
+                "
                 class="text-xs text-gray-500"
-              >Pending</span>
+                >Pending</span
+              >
             </div>
           </td>
           <td>
@@ -398,7 +415,9 @@
             <div class="flex flex-col items-center gap-4">
               <i class="pi pi-truck text-4xl text-gray-400"></i>
               <div>
-                <p class="text-lg font-medium text-gray-600">No shipments found</p>
+                <p class="text-lg font-medium text-gray-600">
+                  No shipments found
+                </p>
                 <p class="text-sm text-gray-500">
                   Try adjusting your search criteria or create a new shipment.
                 </p>

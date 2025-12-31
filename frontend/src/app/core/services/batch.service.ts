@@ -1,6 +1,12 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, map } from 'rxjs';
+import {
+  PaginatedResponse,
+  PaginationParams,
+  DEFAULT_PAGE_SIZE,
+} from '../models/pagination.model';
+import { CacheService } from './cache.service';
 
 export type BatchStatus =
   | 'active'
@@ -94,19 +100,37 @@ export interface CreateBatchData {
 @Injectable({ providedIn: 'root' })
 export class BatchService {
   private http = inject(HttpClient);
+  private cacheService = inject(CacheService);
   private _batches = signal<BatchListItem[]>([]);
   private _loading = signal(false);
+  private _totalRecords = signal(0);
+  private _currentPage = signal(1);
+  private _pageSize = signal(DEFAULT_PAGE_SIZE);
 
   readonly batches = computed(() => this._batches());
   readonly loading = computed(() => this._loading());
+  readonly totalRecords = computed(() => this._totalRecords());
+  readonly currentPage = computed(() => this._currentPage());
+  readonly pageSize = computed(() => this._pageSize());
 
   /**
-   * Load batches with optional filters
+   * Load batches with optional filters and pagination
    */
-  load(filters?: BatchFilters): Observable<BatchListItem[]> {
+  load(
+    filters?: BatchFilters,
+    pagination?: PaginationParams
+  ): Observable<PaginatedResponse<BatchListItem>> {
     this._loading.set(true);
 
     let params = new HttpParams();
+
+    // Pagination params
+    const page = pagination?.page || 1;
+    const pageSize = pagination?.page_size || DEFAULT_PAGE_SIZE;
+    params = params.set('page', page.toString());
+    params = params.set('page_size', pageSize.toString());
+
+    // Filter params
     if (filters?.search) {
       params = params.set('search', filters.search);
     }
@@ -138,11 +162,25 @@ export class BatchService {
       params = params.set('expiry_status', filters.expiry_status);
     }
 
-    return this.http.get<BatchListItem[]>('/api/batches/', { params }).pipe(
-      tap((batches) => {
-        this._batches.set(batches);
-        this._loading.set(false);
-      })
+    return this.http
+      .get<PaginatedResponse<BatchListItem>>('/api/batches/', { params })
+      .pipe(
+        tap((response) => {
+          this._batches.set(response.results);
+          this._totalRecords.set(response.count);
+          this._currentPage.set(response.current_page);
+          this._pageSize.set(response.page_size);
+          this._loading.set(false);
+        })
+      );
+  }
+
+  /**
+   * Load all batches (legacy method for backward compatibility)
+   */
+  loadAll(filters?: BatchFilters): Observable<BatchListItem[]> {
+    return this.load(filters, { page: 1, page_size: 100 }).pipe(
+      map((response) => response.results)
     );
   }
 
@@ -182,6 +220,7 @@ export class BatchService {
           is_deleted: batch.is_deleted,
         };
         this._batches.update((list) => [...list, listItem]);
+        this.cacheService.invalidateEntity('batches');
       })
     );
   }
@@ -217,6 +256,7 @@ export class BatchService {
         this._batches.update((list) =>
           list.map((b) => (b.id === id ? listItem : b))
         );
+        this.cacheService.invalidateEntity('batches');
       })
     );
   }
@@ -229,10 +269,21 @@ export class BatchService {
       .delete<{ message: string }>(`/api/batches/${id}/delete/`)
       .pipe(
         tap(() => {
-          // Remove the batch from the list completely
           this._batches.update((list) => list.filter((b) => b.id !== id));
+          this.cacheService.invalidateEntity('batches');
         })
       );
+  }
+
+  /**
+   * Force refresh - invalidate cache and reload
+   */
+  refresh(
+    filters?: BatchFilters,
+    pagination?: PaginationParams
+  ): Observable<PaginatedResponse<BatchListItem>> {
+    this.cacheService.invalidateEntity('batches');
+    return this.load(filters, pagination);
   }
 
   /**

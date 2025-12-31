@@ -129,9 +129,9 @@ export class WelcomeComponent implements OnInit, OnDestroy {
 
   private loadRecentEvents() {
     return this.eventService.load({ recent_days: 7 }).pipe(
-      tap((events: EventListItem[]) => {
+      tap((response) => {
         // Sort by timestamp descending and take latest 5
-        const sortedEvents = events
+        const sortedEvents = response.results
           .sort(
             (a: EventListItem, b: EventListItem) =>
               new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
@@ -153,7 +153,7 @@ export class WelcomeComponent implements OnInit, OnDestroy {
       ]);
 
       const activeShipments =
-        shipments?.filter((s) =>
+        shipments?.results.filter((s) =>
           ['picked_up', 'in_transit', 'out_for_delivery'].includes(s.status)
         ).length || 0;
 
@@ -163,10 +163,10 @@ export class WelcomeComponent implements OnInit, OnDestroy {
       ).length;
 
       this.stats.set({
-        totalProducts: products?.length || 0,
-        totalBatches: batches?.length || 0,
-        totalPacks: packs?.length || 0,
-        totalShipments: shipments?.length || 0,
+        totalProducts: products?.count || 0,
+        totalBatches: batches?.count || 0,
+        totalPacks: packs?.count || 0,
+        totalShipments: shipments?.count || 0,
         activeShipments,
         criticalEvents,
       });

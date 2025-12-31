@@ -393,23 +393,55 @@
       </ng-template>
     </p-timeline>
 
+    <!-- Infinite scroll sentinel and load more for timeline -->
+    <div
+      *ngIf="viewMode() === 'timeline' && events().length > 0"
+      class="flex flex-col items-center py-4"
+    >
+      <!-- Loading more indicator -->
+      <div *ngIf="loadingMore()" class="flex items-center gap-2 text-gray-500">
+        <i class="pi pi-spinner pi-spin"></i>
+        <span>Loading more events...</span>
+      </div>
+
+      <!-- Load more button (fallback) -->
+      <p-button
+        *ngIf="hasMoreEvents() && !loadingMore()"
+        label="Load More"
+        icon="pi pi-arrow-down"
+        [outlined]="true"
+        (onClick)="loadMoreEvents()"
+        class="mt-2"
+      ></p-button>
+
+      <!-- End of list message -->
+      <div
+        *ngIf="!hasMoreEvents() && !loadingMore()"
+        class="text-gray-500 text-sm"
+      >
+        Showing all {{ totalRecords() }} events
+      </div>
+
+      <!-- Scroll sentinel for intersection observer -->
+      <div #scrollSentinel class="h-1 w-full"></div>
+    </div>
+
     <!-- Table View -->
     <div *ngIf="!loading() && events().length > 0 && viewMode() === 'table'">
       <p-table
         [value]="events()"
+        [lazy]="true"
         [paginator]="true"
         [rows]="rows()"
-        [totalRecords]="events().length"
+        [totalRecords]="totalRecords()"
         [first]="first()"
-        (onPage)="onPageChange($event)"
+        (onLazyLoad)="onLazyLoad($event)"
         [showCurrentPageReport]="true"
         currentPageReportTemplate="Showing {first} to {last} of {totalRecords} events"
-        [rowsPerPageOptions]="[5, 10, 25, 50]"
-        [rows]="5"
+        [rowsPerPageOptions]="rowsPerPageOptions"
         styleClass="p-datatable-sm"
         [sortField]="'timestamp'"
         [sortOrder]="-1"
-        [lazy]="false"
       >
         <!-- Event Type Column -->
         <ng-template pTemplate="header">

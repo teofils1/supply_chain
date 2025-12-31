@@ -1,6 +1,12 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, map } from 'rxjs';
+import {
+  PaginatedResponse,
+  PaginationParams,
+  DEFAULT_PAGE_SIZE,
+} from '../models/pagination.model';
+import { CacheService } from './cache.service';
 
 export type ShipmentStatus =
   | 'pending'
@@ -185,19 +191,37 @@ export interface CreateShipmentData {
 @Injectable({ providedIn: 'root' })
 export class ShipmentService {
   private http = inject(HttpClient);
+  private cacheService = inject(CacheService);
   private _shipments = signal<ShipmentListItem[]>([]);
   private _loading = signal(false);
+  private _totalRecords = signal(0);
+  private _currentPage = signal(1);
+  private _pageSize = signal(DEFAULT_PAGE_SIZE);
 
   readonly shipments = computed(() => this._shipments());
   readonly loading = computed(() => this._loading());
+  readonly totalRecords = computed(() => this._totalRecords());
+  readonly currentPage = computed(() => this._currentPage());
+  readonly pageSize = computed(() => this._pageSize());
 
   /**
-   * Load shipments with optional filters
+   * Load shipments with optional filters and pagination
    */
-  load(filters?: ShipmentFilters): Observable<ShipmentListItem[]> {
+  load(
+    filters?: ShipmentFilters,
+    pagination?: PaginationParams
+  ): Observable<PaginatedResponse<ShipmentListItem>> {
     this._loading.set(true);
 
     let params = new HttpParams();
+
+    // Pagination params
+    const page = pagination?.page || 1;
+    const pageSize = pagination?.page_size || DEFAULT_PAGE_SIZE;
+    params = params.set('page', page.toString());
+    params = params.set('page_size', pageSize.toString());
+
+    // Filter params
     if (filters?.search) {
       params = params.set('search', filters.search);
     }
@@ -266,13 +290,33 @@ export class ShipmentService {
     }
 
     return this.http
-      .get<ShipmentListItem[]>('/api/shipments/', { params })
+      .get<PaginatedResponse<ShipmentListItem>>('/api/shipments/', { params })
       .pipe(
-        tap((shipments) => {
-          this._shipments.set(shipments);
+        tap((response) => {
+          this._shipments.set(response.results);
+          this._totalRecords.set(response.count);
+          this._currentPage.set(response.current_page);
+          this._pageSize.set(response.page_size);
           this._loading.set(false);
         })
       );
+  }
+
+  /**
+   * Load all shipments (legacy method for backward compatibility)
+   */
+  loadAll(filters?: ShipmentFilters): Observable<ShipmentListItem[]> {
+    return this.load(filters, { page: 1, page_size: 100 }).pipe(
+      map((response) => response.results)
+    );
+  }
+
+  /**
+   * Refresh shipments data and invalidate cache
+   */
+  refresh(filters?: ShipmentFilters): void {
+    this.cacheService.invalidateEntity('shipments');
+    this.load(filters).subscribe();
   }
 
   /**
@@ -288,6 +332,7 @@ export class ShipmentService {
   create(data: CreateShipmentData): Observable<Shipment> {
     return this.http.post<Shipment>('/api/shipments/', data).pipe(
       tap((shipment) => {
+        this.cacheService.invalidateEntity('shipments');
         // Add the new shipment to the list (convert to list item format)
         const listItem: ShipmentListItem = {
           id: shipment.id,
@@ -326,6 +371,7 @@ export class ShipmentService {
   update(id: number, data: Partial<CreateShipmentData>): Observable<Shipment> {
     return this.http.patch<Shipment>(`/api/shipments/${id}/`, data).pipe(
       tap((shipment) => {
+        this.cacheService.invalidateEntity('shipments');
         // Update the shipment in the list
         const listItem: ShipmentListItem = {
           id: shipment.id,
@@ -368,6 +414,7 @@ export class ShipmentService {
       .delete<{ message: string }>(`/api/shipments/${id}/delete/`)
       .pipe(
         tap(() => {
+          this.cacheService.invalidateEntity('shipments');
           // Remove the shipment from the list or mark as deleted
           this._shipments.update((list) =>
             list.map((s) => (s.id === id ? { ...s, is_deleted: true } : s))

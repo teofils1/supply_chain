@@ -1,6 +1,12 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, map } from 'rxjs';
+import {
+  PaginatedResponse,
+  PaginationParams,
+  DEFAULT_PAGE_SIZE,
+} from '../models/pagination.model';
+import { CacheService } from './cache.service';
 
 export type ProductStatus = 'active' | 'inactive' | 'discontinued';
 export type ProductForm =
@@ -74,19 +80,37 @@ export interface CreateProductData {
 @Injectable({ providedIn: 'root' })
 export class ProductService {
   private http = inject(HttpClient);
+  private cacheService = inject(CacheService);
   private _products = signal<ProductListItem[]>([]);
   private _loading = signal(false);
+  private _totalRecords = signal(0);
+  private _currentPage = signal(1);
+  private _pageSize = signal(DEFAULT_PAGE_SIZE);
 
   readonly products = computed(() => this._products());
   readonly loading = computed(() => this._loading());
+  readonly totalRecords = computed(() => this._totalRecords());
+  readonly currentPage = computed(() => this._currentPage());
+  readonly pageSize = computed(() => this._pageSize());
 
   /**
-   * Load products with optional filters
+   * Load products with optional filters and pagination
    */
-  load(filters?: ProductFilters): Observable<ProductListItem[]> {
+  load(
+    filters?: ProductFilters,
+    pagination?: PaginationParams
+  ): Observable<PaginatedResponse<ProductListItem>> {
     this._loading.set(true);
 
     let params = new HttpParams();
+
+    // Pagination params
+    const page = pagination?.page || 1;
+    const pageSize = pagination?.page_size || DEFAULT_PAGE_SIZE;
+    params = params.set('page', page.toString());
+    params = params.set('page_size', pageSize.toString());
+
+    // Filter params
     if (filters?.search) {
       params = params.set('search', filters.search);
     }
@@ -100,11 +124,26 @@ export class ProductService {
       params = params.set('manufacturer', filters.manufacturer);
     }
 
-    return this.http.get<ProductListItem[]>('/api/products/', { params }).pipe(
-      tap((products) => {
-        this._products.set(products);
-        this._loading.set(false);
-      })
+    return this.http
+      .get<PaginatedResponse<ProductListItem>>('/api/products/', { params })
+      .pipe(
+        tap((response) => {
+          this._products.set(response.results);
+          this._totalRecords.set(response.count);
+          this._currentPage.set(response.current_page);
+          this._pageSize.set(response.page_size);
+          this._loading.set(false);
+        })
+      );
+  }
+
+  /**
+   * Load all products (legacy method for backward compatibility)
+   * Returns just the results array
+   */
+  loadAll(filters?: ProductFilters): Observable<ProductListItem[]> {
+    return this.load(filters, { page: 1, page_size: 100 }).pipe(
+      map((response) => response.results)
     );
   }
 
@@ -136,6 +175,8 @@ export class ProductService {
           is_deleted: product.is_deleted,
         };
         this._products.update((list) => [...list, listItem]);
+        // Invalidate cache to ensure fresh data on next load
+        this.cacheService.invalidateEntity('products');
       })
     );
   }
@@ -163,6 +204,8 @@ export class ProductService {
         this._products.update((list) =>
           list.map((p) => (p.id === id ? listItem : p))
         );
+        // Invalidate cache
+        this.cacheService.invalidateEntity('products');
       })
     );
   }
@@ -177,8 +220,21 @@ export class ProductService {
         tap(() => {
           // Remove the product from the list completely
           this._products.update((list) => list.filter((p) => p.id !== id));
+          // Invalidate cache
+          this.cacheService.invalidateEntity('products');
         })
       );
+  }
+
+  /**
+   * Force refresh - invalidate cache and reload
+   */
+  refresh(
+    filters?: ProductFilters,
+    pagination?: PaginationParams
+  ): Observable<PaginatedResponse<ProductListItem>> {
+    this.cacheService.invalidateEntity('products');
+    return this.load(filters, pagination);
   }
 
   /**

@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 
 // PrimeNG imports
 import { CardModule } from 'primeng/card';
-import { TableModule } from 'primeng/table';
+import { TableModule, TableLazyLoadEvent } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
@@ -27,6 +27,11 @@ import {
 import { BatchService } from '../../core/services/batch.service';
 import { ProductService } from '../../core/services/product.service';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import {
+  lazyLoadToParams,
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
+} from '../../core/models/pagination.model';
 
 @Component({
   selector: 'app-packs',
@@ -62,6 +67,7 @@ export class PacksComponent implements OnInit {
   // Reactive state
   packs = this.packService.packs;
   loading = this.packService.loading;
+  totalRecords = this.packService.totalRecords;
 
   // Filter state
   filters = signal<PackFilters>({});
@@ -76,6 +82,11 @@ export class PacksComponent implements OnInit {
   selectedQcPassed = signal<boolean | null>(null);
   expiryFromDate = signal<Date | null>(null);
   expiryToDate = signal<Date | null>(null);
+
+  // Pagination state
+  first = signal(0);
+  rows = signal(DEFAULT_PAGE_SIZE);
+  rowsPerPageOptions = PAGE_SIZE_OPTIONS;
 
   // Options for dropdowns
   batches = this.batchService.batches;
@@ -96,12 +107,40 @@ export class PacksComponent implements OnInit {
     // Load related data for filter dropdowns
     this.batchService.load().subscribe();
     this.productService.load().subscribe();
-    this.loadPacks();
+    // Initial load will be triggered by the table's onLazyLoad event
+  }
+
+  /**
+   * Handle lazy load event from PrimeNG table for server-side pagination
+   */
+  onLazyLoad(event: TableLazyLoadEvent) {
+    this.first.set(event.first || 0);
+    this.rows.set(event.rows || DEFAULT_PAGE_SIZE);
+
+    const paginationParams = lazyLoadToParams({
+      first: event.first,
+      rows: event.rows,
+    });
+
+    this.packService.load(this.filters(), paginationParams).subscribe({
+      error: (error) => {
+        console.error('Error loading packs:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load packs',
+        });
+      },
+    });
   }
 
   loadPacks() {
-    const currentFilters = this.filters();
-    this.packService.load(currentFilters).subscribe({
+    const paginationParams = lazyLoadToParams({
+      first: this.first(),
+      rows: this.rows(),
+    });
+
+    this.packService.load(this.filters(), paginationParams).subscribe({
       error: (error) => {
         console.error('Error loading packs:', error);
         this.messageService.add({
@@ -118,6 +157,7 @@ export class PacksComponent implements OnInit {
       ...f,
       search: this.searchTerm() || undefined,
     }));
+    this.first.set(0);
     this.loadPacks();
   }
 
@@ -126,6 +166,7 @@ export class PacksComponent implements OnInit {
       ...f,
       batch: this.selectedBatch() || undefined,
     }));
+    this.first.set(0);
     this.loadPacks();
   }
 
@@ -134,6 +175,7 @@ export class PacksComponent implements OnInit {
       ...f,
       product: this.selectedProduct() || undefined,
     }));
+    this.first.set(0);
     this.loadPacks();
   }
 
@@ -142,6 +184,7 @@ export class PacksComponent implements OnInit {
       ...f,
       status: (this.selectedStatus() as any) || undefined,
     }));
+    this.first.set(0);
     this.loadPacks();
   }
 
@@ -150,6 +193,7 @@ export class PacksComponent implements OnInit {
       ...f,
       pack_type: (this.selectedPackType() as any) || undefined,
     }));
+    this.first.set(0);
     this.loadPacks();
   }
 
@@ -158,6 +202,7 @@ export class PacksComponent implements OnInit {
       ...f,
       location: this.selectedLocation() || undefined,
     }));
+    this.first.set(0);
     this.loadPacks();
   }
 
@@ -166,6 +211,7 @@ export class PacksComponent implements OnInit {
       ...f,
       shipping_status: (this.selectedShippingStatus() as any) || undefined,
     }));
+    this.first.set(0);
     this.loadPacks();
   }
 
@@ -174,6 +220,7 @@ export class PacksComponent implements OnInit {
       ...f,
       expiry_status: (this.selectedExpiryStatus() as any) || undefined,
     }));
+    this.first.set(0);
     this.loadPacks();
   }
 
@@ -182,6 +229,7 @@ export class PacksComponent implements OnInit {
       ...f,
       qc_passed: this.selectedQcPassed() ?? undefined,
     }));
+    this.first.set(0);
     this.loadPacks();
   }
 
@@ -194,6 +242,7 @@ export class PacksComponent implements OnInit {
       expiry_from: fromDate ? this.formatDate(fromDate) : undefined,
       expiry_to: toDate ? this.formatDate(toDate) : undefined,
     }));
+    this.first.set(0);
     this.loadPacks();
   }
 
@@ -210,6 +259,7 @@ export class PacksComponent implements OnInit {
     this.expiryFromDate.set(null);
     this.expiryToDate.set(null);
     this.filters.set({});
+    this.first.set(0);
     this.loadPacks();
   }
 
