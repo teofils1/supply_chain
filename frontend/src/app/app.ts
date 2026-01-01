@@ -13,6 +13,7 @@ import { MenuItem } from 'primeng/api';
 import { AuthService } from './shared/auth.service';
 import { RoleService } from './shared/role.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { NotificationBellComponent } from './shared/components/notification-bell/notification-bell.component';
 
 @Component({
   selector: 'app-root',
@@ -26,6 +27,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
     ButtonModule,
     TieredMenuModule,
     TranslateModule,
+    NotificationBellComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',

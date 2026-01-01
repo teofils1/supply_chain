@@ -20,6 +20,17 @@
     </div>
 
     <div class="flex gap-2" *ngIf="!loading()">
+      <!-- PDF Generation button - only in view mode for existing batches -->
+      <p-button
+        *ngIf="!isNewBatch() && !isEditMode() && batch()"
+        label="Generate CoA"
+        icon="pi pi-file-pdf"
+        (onClick)="generateCoa()"
+        [loading]="generatingPdf()"
+        severity="secondary"
+        pTooltip="Download Certificate of Analysis PDF"
+      ></p-button>
+
       <!-- Edit button - only for existing batches in view mode -->
       <p-button
         *ngIf="!isNewBatch() && !isEditMode()"

@@ -1,0 +1,190 @@
+<p-toast></p-toast>
+
+<p-card>
+  <ng-template pTemplate="header">
+    <div class="card-header">
+      <h2 class="text-2xl font-bold">Notification Settings</h2>
+      <p-button
+        label="Create Rule"
+        icon="pi pi-plus"
+        (onClick)="openCreateDialog()"
+      ></p-button>
+    </div>
+  </ng-template>
+
+  <p-table
+    [value]="rules()"
+    [loading]="loading()"
+    [rowHover]="true"
+    styleClass="p-datatable-sm"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Name</th>
+        <th>Event Types</th>
+        <th>Severity Levels</th>
+        <th>Channels</th>
+        <th>Status</th>
+        <th style="width: 12rem">Actions</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-rule>
+      <tr>
+        <td>{{ rule.name }}</td>
+        <td>
+          <div class="flex flex-wrap gap-1">
+            @for (type of rule.event_types.slice(0, 2); track type) {
+            <span class="text-xs bg-gray-200 px-2 py-1 rounded">{{
+              type
+            }}</span>
+            } @if (rule.event_types.length > 2) {
+            <span class="text-xs text-gray-500"
+              >+{{ rule.event_types.length - 2 }} more</span
+            >
+            }
+          </div>
+        </td>
+        <td>
+          <div class="flex flex-wrap gap-1">
+            @for (level of rule.severity_levels; track level) {
+            <span
+              class="text-xs px-2 py-1 rounded"
+              [class.bg-red-100]="level === 'critical'"
+              [class.bg-orange-100]="level === 'high'"
+              [class.bg-blue-100]="level === 'medium'"
+              [class.bg-green-100]="level === 'low'"
+              [class.bg-gray-100]="level === 'info'"
+            >
+              {{ level }}
+            </span>
+            }
+          </div>
+        </td>
+        <td>
+          <div class="flex gap-2">
+            @for (channel of rule.channels; track channel) {
+            <i
+              [class]="
+                'pi pi-' +
+                (channel === 'email'
+                  ? 'envelope'
+                  : channel === 'sms'
+                  ? 'mobile'
+                  : 'globe')
+              "
+            ></i>
+            }
+          </div>
+        </td>
+        <td>
+          <p-toggleswitch
+            [(ngModel)]="rule.enabled"
+            (onChange)="toggleRule(rule)"
+          ></p-toggleswitch>
+        </td>
+        <td>
+          <div class="flex gap-2">
+            <p-button
+              icon="pi pi-pencil"
+              (onClick)="openEditDialog(rule)"
+              [text]="true"
+              size="small"
+            ></p-button>
+            <p-button
+              icon="pi pi-trash"
+              (onClick)="deleteRule(rule)"
+              [text]="true"
+              size="small"
+              severity="danger"
+            ></p-button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="6" class="text-center py-8">
+          <i class="pi pi-inbox text-4xl text-gray-400 mb-2"></i>
+          <p class="text-gray-500">No notification rules configured</p>
+          <p-button
+            label="Create your first rule"
+            icon="pi pi-plus"
+            (onClick)="openCreateDialog()"
+            [outlined]="true"
+            styleClass="mt-3"
+          ></p-button>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</p-card>
+
+<p-dialog
+  [(visible)]="showDialog"
+  [header]="editingRule ? 'Edit Notification Rule' : 'Create Notification Rule'"
+  [modal]="true"
+  [style]="{ width: '600px' }"
+>
+  <div class="flex flex-col gap-4">
+    <div>
+      <label class="block mb-2 font-medium">Rule Name *</label>
+      <input
+        pInputText
+        [(ngModel)]="formData.name"
+        placeholder="e.g., Critical Alerts"
+        class="w-full"
+      />
+    </div>
+
+    <div>
+      <label class="block mb-2 font-medium">Event Types *</label>
+      <p-multiselect
+        [(ngModel)]="formData.event_types"
+        [options]="eventTypeOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Select event types"
+        [filter]="true"
+        styleClass="w-full"
+      ></p-multiselect>
+    </div>
+
+    <div>
+      <label class="block mb-2 font-medium">Severity Levels *</label>
+      <p-multiselect
+        [(ngModel)]="formData.severity_levels"
+        [options]="severityOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Select severity levels"
+        styleClass="w-full"
+      ></p-multiselect>
+    </div>
+
+    <div>
+      <label class="block mb-2 font-medium">Notification Channels *</label>
+      <p-multiselect
+        [(ngModel)]="formData.channels"
+        [options]="channelOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Select channels"
+        styleClass="w-full"
+      ></p-multiselect>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <p-toggleswitch [(ngModel)]="formData.enabled"></p-toggleswitch>
+      <label class="font-medium">Enable this rule</label>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancel"
+      (onClick)="showDialog.set(false)"
+      [outlined]="true"
+    ></p-button>
+    <p-button label="Save" (onClick)="saveRule()" icon="pi pi-check"></p-button>
+  </ng-template>
+</p-dialog>

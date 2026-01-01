@@ -13,6 +13,7 @@
     "events": "Events",
     "analytics": "Analytics",
     "documents": "Documents",
+    "notifications": "Notifications",
     "dashboard": "User Dashboard",
     "users": "Users"
   },

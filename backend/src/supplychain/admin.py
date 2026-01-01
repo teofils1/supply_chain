@@ -586,3 +586,101 @@ class EventAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         """Only allow deletion for superusers."""
         return request.user.is_superuser
+
+
+@admin.register(m.NotificationRule)
+class NotificationRuleAdmin(admin.ModelAdmin):
+    list_display = ("name", "user", "enabled", "channels_display", "created_at")
+    list_filter = ("enabled", "created_at")
+    search_fields = ("name", "user__username", "user__email")
+    readonly_fields = ("created_at", "updated_at")
+
+    fieldsets = (
+        ("Basic Information", {"fields": ("user", "name", "enabled")}),
+        (
+            "Event Filtering",
+            {
+                "fields": ("event_types", "severity_levels"),
+                "description": "Leave empty to match all events/severities.",
+            },
+        ),
+        (
+            "Notification Channels",
+            {
+                "fields": ("channels",),
+                "description": "List of channels: email, websocket, sms",
+            },
+        ),
+        ("Timestamps", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
+    )
+
+    def channels_display(self, obj):
+        """Display channels as comma-separated list."""
+        return ", ".join(obj.channels) if obj.channels else "None"
+
+    channels_display.short_description = "Channels"
+
+
+@admin.register(m.NotificationLog)
+class NotificationLogAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "channel",
+        "status",
+        "event_type_display",
+        "severity_display",
+        "sent_at",
+        "escalated",
+    )
+    list_filter = ("status", "channel", "escalated", "created_at")
+    search_fields = ("user__username", "user__email", "event__description")
+    readonly_fields = (
+        "event",
+        "user",
+        "rule",
+        "channel",
+        "sent_at",
+        "acknowledged_at",
+        "error_message",
+        "escalated",
+        "escalated_to",
+        "escalated_at",
+        "created_at",
+        "updated_at",
+    )
+
+    fieldsets = (
+        ("Notification Details", {"fields": ("event", "user", "rule", "channel", "status")}),
+        ("Delivery Status", {"fields": ("sent_at", "acknowledged_at", "error_message")}),
+        (
+            "Escalation",
+            {
+                "fields": ("escalated", "escalated_to", "escalated_at"),
+                "classes": ("collapse",),
+            },
+        ),
+        ("Timestamps", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
+    )
+
+    def event_type_display(self, obj):
+        return obj.event.event_type if obj.event else "-"
+
+    event_type_display.short_description = "Event Type"
+
+    def severity_display(self, obj):
+        return obj.event.severity if obj.event else "-"
+
+    severity_display.short_description = "Severity"
+
+    def has_add_permission(self, request):
+        """Notification logs are created automatically."""
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        """Only status can be changed (for manual acknowledgment)."""
+        return True
+
+    def has_delete_permission(self, request, obj=None):
+        """Only superusers can delete logs."""
+        return request.user.is_superuser

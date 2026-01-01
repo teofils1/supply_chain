@@ -15,6 +15,8 @@ import { UsersComponent } from './features/users/users.component';
 import { AnalyticsComponent } from './features/analytics/analytics.component';
 import { DocumentsComponent } from './features/documents/documents.component';
 import { DocumentDetailComponent } from './features/documents/document-detail.component';
+import { NotificationListComponent } from './features/notifications/notification-list/notification-list.component';
+import { NotificationSettingsComponent } from './features/notifications/notification-settings/notification-settings.component';
 import { authGuard } from './shared/auth.guard';
 import { adminGuard } from './shared/admin.guard';
 import { operatorOrAdminGuard } from './shared/operator-or-admin.guard';
@@ -113,6 +115,16 @@ export const routes: Routes = [
   {
     path: 'documents/:id',
     component: DocumentDetailComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'notifications',
+    component: NotificationListComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'notifications/settings',
+    component: NotificationSettingsComponent,
     canActivate: [authGuard],
   },
   { path: 'login', component: LoginComponent },

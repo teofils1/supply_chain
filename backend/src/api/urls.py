@@ -216,4 +216,50 @@ urlpatterns = [
         views.BatchGenerateCoaView.as_view(),
         name="batch-generate-coa",
     ),
+    # Notification management
+    path(
+        "api/notifications/rules/",
+        views.NotificationRuleListCreateView.as_view(),
+        name="notification-rule-list-create",
+    ),
+    path(
+        "api/notifications/rules/<int:pk>/",
+        views.NotificationRuleDetailView.as_view(),
+        name="notification-rule-detail",
+    ),
+    path(
+        "api/notifications/rules/<int:pk>/toggle/",
+        views.NotificationRuleToggleView.as_view(),
+        name="notification-rule-toggle",
+    ),
+    path(
+        "api/notifications/logs/",
+        views.NotificationLogListView.as_view(),
+        name="notification-log-list",
+    ),
+    path(
+        "api/notifications/logs/<int:pk>/",
+        views.NotificationLogDetailView.as_view(),
+        name="notification-log-detail",
+    ),
+    path(
+        "api/notifications/logs/<int:pk>/acknowledge/",
+        views.NotificationLogAcknowledgeView.as_view(),
+        name="notification-log-acknowledge",
+    ),
+    path(
+        "api/notifications/logs/acknowledge-all/",
+        views.NotificationLogAcknowledgeAllView.as_view(),
+        name="notification-log-acknowledge-all",
+    ),
+    path(
+        "api/notifications/logs/unread-count/",
+        views.NotificationLogUnreadCountView.as_view(),
+        name="notification-log-unread-count",
+    ),
+    path(
+        "api/notifications/logs/recent/",
+        views.NotificationLogRecentView.as_view(),
+        name="notification-log-recent",
+    ),
 ]

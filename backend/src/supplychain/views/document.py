@@ -172,9 +172,18 @@ class EntityDocumentsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, entity_type, entity_id):
+        # Convert plural entity types to singular for model lookup
+        entity_type_singular = entity_type.lower()
+        if entity_type_singular.endswith('s'):
+            # Handle common plural forms
+            if entity_type_singular == 'batches':
+                entity_type_singular = 'batch'
+            elif entity_type_singular in ['products', 'packs', 'shipments']:
+                entity_type_singular = entity_type_singular[:-1]
+        
         try:
             content_type = ContentType.objects.get(
-                app_label="supplychain", model=entity_type.lower()
+                app_label="supplychain", model=entity_type_singular
             )
         except ContentType.DoesNotExist:
             return Response(

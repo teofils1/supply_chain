@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "corsheaders",
     "model_utils",  # For field change tracking
+    "django_celery_beat",  # Celery periodic tasks
     # Local apps
     "supplychain",
 ]
@@ -393,4 +394,43 @@ ALLOWED_DOCUMENT_TYPES = [
     "text/csv",
     "text/plain",
 ]
+
+# =============================================================================
+# Celery Configuration (RabbitMQ Broker)
+# =============================================================================
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "amqp://guest:guest@localhost:5672//")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "rpc://")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes max per task
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+# Celery Beat schedule for periodic tasks
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+# Disable Django fixup to avoid AttributeError with Celery 5.6+ solo pool
+# This is a known bug: https://github.com/celery/celery/issues/9aborana
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+CELERY_FIXUPS = []  # Disable all fixups including the buggy Django fixup
+
+# =============================================================================
+# Notification Settings
+# =============================================================================
+# Event types that trigger immediate notifications
+NOTIFICATION_CRITICAL_EVENTS = [
+    "recalled",
+    "temperature_alert",
+    "damaged",
+    "expired",
+    "error",
+]
+
+# Severity levels that trigger notifications
+NOTIFICATION_ALERT_SEVERITIES = ["critical", "high"]
+
+# Escalation timeout in minutes (escalate if not acknowledged)
+NOTIFICATION_ESCALATION_TIMEOUT = int(os.getenv("NOTIFICATION_ESCALATION_TIMEOUT", "30"))
 

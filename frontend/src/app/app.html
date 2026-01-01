@@ -21,6 +21,9 @@
       <a routerLink="/" class="font-semibold">{{ "app.title" | translate }}</a>
     </div>
     <div class="p-toolbar-group-end flex items-center gap-3 ml-auto">
+      @if (auth.isAuthenticated()) {
+      <app-notification-bell></app-notification-bell>
+      }
       <button
         pButton
         pRipple
@@ -181,6 +184,20 @@
               ></span>
               <span class="truncate ml-3" [class.hidden]="!isExpanded">{{
                 "nav.documents" | translate
+              }}</span>
+            </div>
+          </a>
+          <a
+            routerLink="/notifications"
+            routerLinkActive="font-semibold"
+            class="flex items-center gap-3 p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800"
+          >
+            <div class="d-flex">
+              <span
+                class="pi pi-bell w-5 text-center text-surface-900 dark:text-white"
+              ></span>
+              <span class="truncate ml-3" [class.hidden]="!isExpanded">{{
+                "nav.notifications" | translate
               }}</span>
             </div>
           </a>

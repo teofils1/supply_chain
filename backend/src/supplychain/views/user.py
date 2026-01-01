@@ -15,7 +15,7 @@ User = get_user_model()
 
 
 class UserListCreateView(generics.ListCreateAPIView):
-    queryset = User.objects.all().select_related("profile")
+    queryset = User.objects.all().select_related("profile").prefetch_related("role_assignments")
     permission_classes = [IsAuthenticated, p.UserManagementPermission]
 
     def get_serializer_class(self):

@@ -89,8 +89,11 @@ export class DocumentService {
     if (category) {
       params = params.set('category', category);
     }
+    // Properly pluralize entity type (batch -> batches, not batchs)
+    const pluralizedType =
+      entityType === 'batch' ? 'batches' : `${entityType}s`;
     return this.http.get<DocumentListItem[]>(
-      `/api/${entityType}s/${entityId}/documents/`,
+      `/api/${pluralizedType}/${entityId}/documents/`,
       { params }
     );
   }

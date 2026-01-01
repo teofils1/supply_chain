@@ -22,6 +22,8 @@ dependencies = [
     "structlog>=24.4.0",
     "web3>=7.13.0",
     "weasyprint>=62.3",
+    "celery>=5.4.0",
+    "django-celery-beat>=2.7.0",
 ]
 
  

@@ -1,0 +1,11 @@
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+}
+
+.unread-row {
+  background-color: var(--primary-50);
+  font-weight: 500;
+}

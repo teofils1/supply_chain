@@ -2,6 +2,7 @@ from .base import BaseModel
 from .batch import Batch
 from .document import Document
 from .event import Event
+from .notification import NotificationLog, NotificationRule
 from .pack import Pack
 from .product import Product
 from .shipment import Shipment, ShipmentPack
@@ -18,4 +19,6 @@ __all__ = [
     "ShipmentPack",
     "Event",
     "Document",
+    "NotificationRule",
+    "NotificationLog",
 ]

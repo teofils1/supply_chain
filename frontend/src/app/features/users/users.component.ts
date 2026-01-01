@@ -51,6 +51,12 @@ export class UsersComponent {
 
   roles: UserRole[] = ['Operator', 'Auditor', 'Admin'];
   users = this.svc.users;
+  totalCount = this.svc.totalCount;
+  currentPage = this.svc.currentPage;
+  totalPages = this.svc.totalPages;
+  pageSize = signal(25);
+  loading = signal(false);
+  isInitialized = signal(false);
 
   // Dialog state signals
   displayAdd = signal(false);
@@ -169,11 +175,56 @@ export class UsersComponent {
     this.svc.delete(user.id).subscribe(() => {
       this.displayDelete.set(false);
       this.deletingUser.set(null);
+      // Reload current page after deletion
+      this.svc.load(this.currentPage(), this.pageSize()).subscribe();
     });
+  }
+
+  onPageChange(event: any) {
+    // Prevent loading on initial lazy load event if already initialized
+    if (!this.isInitialized()) {
+      this.isInitialized.set(true);
+      return;
+    }
+
+    const page = event.page + 1; // PrimeNG uses 0-based index
+    const newPageSize = event.rows;
+    const oldPageSize = this.pageSize();
+
+    // Update page size if it changed
+    if (newPageSize !== oldPageSize) {
+      this.pageSize.set(newPageSize);
+      // Reset to page 1 when page size changes
+      this.loading.set(true);
+      this.svc.load(1, newPageSize).subscribe({
+        next: () => this.loading.set(false),
+        error: () => this.loading.set(false),
+      });
+    } else {
+      // Normal page navigation
+      this.loading.set(true);
+      this.svc.load(page, newPageSize).subscribe({
+        next: () => this.loading.set(false),
+        error: (err) => {
+          this.loading.set(false);
+          // If page is invalid, reset to page 1
+          if (err.error?.code === 'not_found') {
+            this.svc.load(1, newPageSize).subscribe();
+          }
+        },
+      });
+    }
   }
 
   constructor() {
     // load users initially
-    this.svc.load().subscribe();
+    this.loading.set(true);
+    this.svc.load(1, this.pageSize()).subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.isInitialized.set(true);
+      },
+      error: () => this.loading.set(false),
+    });
   }
 }

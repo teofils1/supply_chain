@@ -108,7 +108,7 @@ def create_automated_event(
 
     # Create the event
     try:
-        m.Event.create_event(
+        event = m.Event.create_event(
             event_type=event_type,
             entity_type=entity_type,
             entity_id=instance.id,
@@ -117,6 +117,17 @@ def create_automated_event(
             severity=severity,
             metadata=default_metadata,
         )
+
+        # Queue notification processing for the new event
+        # Import here to avoid circular imports
+        from supplychain.tasks import process_event_notifications
+
+        try:
+            process_event_notifications.delay(event.id)
+        except Exception as notify_error:
+            # Log but don't fail if notification queuing fails
+            print(f"Failed to queue notification: {notify_error}")
+
     except Exception as e:
         # Log the error but don't fail the original operation
         print(f"Failed to create automated event: {e}")

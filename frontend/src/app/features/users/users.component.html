@@ -9,7 +9,20 @@
   ></button>
 </div>
 
-<p-table [value]="users()" dataKey="id" class="text-sm" selectionMode="single">
+<p-table
+  [value]="users()"
+  dataKey="id"
+  class="text-sm"
+  selectionMode="single"
+  [paginator]="true"
+  [rows]="pageSize()"
+  [totalRecords]="totalCount()"
+  [lazy]="true"
+  (onLazyLoad)="onPageChange($event)"
+  [first]="(currentPage() - 1) * pageSize()"
+  [rowsPerPageOptions]="[10, 25, 50, 100]"
+  [loading]="loading()"
+>
   <ng-template pTemplate="header">
     <tr>
       <th>Username</th>

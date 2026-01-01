@@ -34,7 +34,9 @@ class UserListSerializer(serializers.ModelSerializer):
 
     def get_roles(self, obj):
         if hasattr(obj, "profile"):
-            return obj.profile.roles
+            roles = obj.profile.roles
+            # Ensure it's a list (in case property returns QuerySet)
+            return list(roles) if roles else []
         # Only return active (non-soft-deleted) role assignments
         return list(
             obj.role_assignments.filter(deleted_at__isnull=True).values_list(
@@ -75,7 +77,9 @@ class UserDetailSerializer(serializers.ModelSerializer):
     def get_roles(self, obj):
         """Get the roles assigned to this user"""
         if hasattr(obj, "profile"):
-            return obj.profile.roles
+            roles = obj.profile.roles
+            # Ensure it's a list (in case property returns QuerySet)
+            return list(roles) if roles else []
         # Only return active (non-soft-deleted) role assignments
         return list(
             obj.role_assignments.filter(deleted_at__isnull=True).values_list(

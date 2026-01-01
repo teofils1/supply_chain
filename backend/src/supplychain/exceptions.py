@@ -239,7 +239,7 @@ def _format_error_response(exc, response, request):
         error_response["request_id"] = request.request_id
 
     # Remove None values
-    if error_response["error"].get("details") is None:
+    if "details" in error_response["error"] and error_response["error"]["details"] is None:
         del error_response["error"]["details"]
 
     return error_response

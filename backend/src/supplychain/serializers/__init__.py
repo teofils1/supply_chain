@@ -35,6 +35,11 @@ from .document import (
     DocumentUploadSerializer,
     DocumentVersionSerializer,
 )
+from .notification import (
+    NotificationLogSerializer,
+    NotificationLogUpdateSerializer,
+    NotificationRuleSerializer,
+)
 
 __all__ = [
     "UserListSerializer",
@@ -60,4 +65,7 @@ __all__ = [
     "DocumentDetailSerializer",
     "DocumentUploadSerializer",
     "DocumentVersionSerializer",
+    "NotificationRuleSerializer",
+    "NotificationLogSerializer",
+    "NotificationLogUpdateSerializer",
 ]

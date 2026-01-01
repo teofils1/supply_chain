@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
@@ -31,6 +31,7 @@ import {
   CreateBatchData,
 } from '../../core/services/batch.service';
 import { ProductService } from '../../core/services/product.service';
+import { DocumentService } from '../../core/services/document.service';
 import { MessageService } from 'primeng/api';
 import { EntityDocumentsComponent } from '../documents/entity-documents.component';
 
@@ -62,15 +63,20 @@ import { EntityDocumentsComponent } from '../documents/entity-documents.componen
 export class BatchDetailComponent implements OnInit {
   private batchService = inject(BatchService);
   private productService = inject(ProductService);
+  private documentService = inject(DocumentService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private fb = inject(FormBuilder);
   private messageService = inject(MessageService);
 
+  @ViewChild(EntityDocumentsComponent)
+  documentsComponent?: EntityDocumentsComponent;
+
   // State
   batch = signal<Batch | null>(null);
   loading = signal(false);
   saving = signal(false);
+  generatingPdf = signal(false);
   isEditMode = signal(false);
   isNewBatch = signal(false);
 
@@ -336,5 +342,106 @@ export class BatchDetailComponent implements OnInit {
 
   goBack() {
     this.router.navigate(['/batches']);
+  }
+
+  /**
+   * Generate, save, and download Certificate of Analysis PDF
+   */
+  generateCoa() {
+    const batch = this.batch();
+    if (!batch) return;
+
+    this.generatingPdf.set(true);
+    // First save the document
+    this.documentService.generateCoa(batch.id, true).subscribe({
+      next: (savedDoc: any) => {
+        // Use the document download endpoint for proper download
+        if (savedDoc.id) {
+          this.documentService.getDownloadInfo(savedDoc.id).subscribe({
+            next: (downloadInfo) => {
+              // Fetch and download using the download URL
+              fetch(downloadInfo.download_url)
+                .then((response) => {
+                  if (!response.ok) throw new Error('Failed to fetch PDF');
+                  return response.blob();
+                })
+                .then((blob) => {
+                  const url = window.URL.createObjectURL(blob);
+                  const link = window.document.createElement('a');
+                  link.href = url;
+                  link.download = downloadInfo.file_name;
+                  window.document.body.appendChild(link);
+                  link.click();
+                  window.document.body.removeChild(link);
+                  window.URL.revokeObjectURL(url);
+                })
+                .catch((error) => {
+                  console.error('Error downloading PDF:', error);
+                  // Fallback: open download URL directly
+                  window.open(downloadInfo.download_url, '_blank');
+                });
+            },
+            error: (error) => {
+              console.error('Error getting download info:', error);
+            },
+          });
+        }
+
+        this.generatingPdf.set(false);
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Certificate of Analysis saved and downloaded',
+        });
+        // Refresh the documents table
+        if (this.documentsComponent) {
+          this.documentsComponent.loadDocuments();
+        }
+      },
+      error: (error) => {
+        console.error('Error generating CoA:', error);
+        this.generatingPdf.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to generate Certificate of Analysis',
+        });
+      },
+    });
+  }
+
+  /**
+   * Generate and download Certificate of Analysis PDF (direct download)
+   */
+  downloadCoa() {
+    const batch = this.batch();
+    if (!batch) return;
+
+    this.generatingPdf.set(true);
+    this.documentService.generateCoa(batch.id, false).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob as Blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `coa_${batch.lot_number}.pdf`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+        this.generatingPdf.set(false);
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Certificate of Analysis downloaded successfully',
+        });
+      },
+      error: (error) => {
+        console.error('Error generating CoA:', error);
+        this.generatingPdf.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to generate Certificate of Analysis',
+        });
+      },
+    });
   }
 }

@@ -20,6 +20,24 @@
     </div>
     <div class="flex gap-2">
       <p-button
+        *ngIf="isViewMode() && shipment()"
+        label="Shipping Label"
+        icon="pi pi-file-pdf"
+        (onClick)="generateShippingLabel()"
+        [loading]="generatingPdf()"
+        severity="secondary"
+        pTooltip="Download shipping label PDF"
+      ></p-button>
+      <p-button
+        *ngIf="isViewMode() && shipment()"
+        label="Packing List"
+        icon="pi pi-file-pdf"
+        (onClick)="generatePackingList()"
+        [loading]="generatingPdf()"
+        severity="secondary"
+        pTooltip="Download packing list PDF"
+      ></p-button>
+      <p-button
         *ngIf="isViewMode()"
         label="Edit"
         icon="pi pi-pencil"

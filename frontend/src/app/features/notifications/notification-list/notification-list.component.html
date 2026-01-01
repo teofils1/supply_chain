@@ -1,0 +1,150 @@
+<p-card>
+  <ng-template pTemplate="header">
+    <div class="card-header">
+      <h2 class="text-2xl font-bold">Notifications</h2>
+      <p-button
+        label="Mark all as read"
+        icon="pi pi-check"
+        (onClick)="acknowledgeAll()"
+        [outlined]="true"
+      ></p-button>
+    </div>
+  </ng-template>
+
+  <div class="filters mb-4">
+    <div class="flex gap-3 items-end">
+      <div class="w-48">
+        <label class="block mb-2 text-sm font-medium">Status</label>
+        <p-select
+          [(ngModel)]="statusFilter"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          (onChange)="loadNotifications()"
+          placeholder="All statuses"
+          styleClass="w-full"
+        ></p-select>
+      </div>
+      <div class="w-48">
+        <label class="block mb-2 text-sm font-medium">Channel</label>
+        <p-select
+          [(ngModel)]="channelFilter"
+          [options]="channelOptions"
+          optionLabel="label"
+          optionValue="value"
+          (onChange)="loadNotifications()"
+          placeholder="All channels"
+          styleClass="w-full"
+        ></p-select>
+      </div>
+      <div class="w-48">
+        <label class="block mb-2 text-sm font-medium">Read Status</label>
+        <p-select
+          [(ngModel)]="unreadFilter"
+          [options]="unreadOptions"
+          optionLabel="label"
+          optionValue="value"
+          (onChange)="loadNotifications()"
+          placeholder="All"
+          styleClass="w-full"
+        ></p-select>
+      </div>
+    </div>
+  </div>
+
+  <p-table
+    [value]="notifications()"
+    [lazy]="true"
+    [paginator]="true"
+    [rows]="20"
+    [totalRecords]="totalRecords()"
+    [loading]="loading()"
+    (onLazyLoad)="loadNotifications($event)"
+    [rowHover]="true"
+    styleClass="p-datatable-sm"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th style="width: 3rem"></th>
+        <th>Event</th>
+        <th>Severity</th>
+        <th>Channel</th>
+        <th>Status</th>
+        <th>Created</th>
+        <th>Sent</th>
+        <th>Acknowledged</th>
+        <th style="width: 10rem">Actions</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-notification>
+      <tr [class.unread-row]="!notification.acknowledged_at">
+        <td>
+          @if (!notification.acknowledged_at) {
+          <i class="pi pi-circle-fill text-primary text-xs"></i>
+          }
+        </td>
+        <td>
+          <div class="font-medium">{{ notification.event.event_type }}</div>
+          <div class="text-sm text-gray-600">
+            {{ notification.event.description }}
+          </div>
+        </td>
+        <td>
+          <p-tag
+            [value]="notification.event.severity"
+            [severity]="getSeverityClass(notification.event.severity)"
+          ></p-tag>
+        </td>
+        <td>
+          <i
+            [class]="
+              'pi pi-' +
+              (notification.channel === 'email'
+                ? 'envelope'
+                : notification.channel === 'sms'
+                ? 'mobile'
+                : 'globe')
+            "
+          ></i>
+          {{ notification.channel }}
+        </td>
+        <td>
+          <p-tag
+            [value]="notification.status"
+            [severity]="getStatusClass(notification.status)"
+          ></p-tag>
+        </td>
+        <td>{{ formatDate(notification.created_at) }}</td>
+        <td>{{ formatDate(notification.sent_at) }}</td>
+        <td>{{ formatDate(notification.acknowledged_at) }}</td>
+        <td>
+          @if (!notification.acknowledged_at) {
+          <p-button
+            label="Mark read"
+            icon="pi pi-check"
+            (onClick)="acknowledgeNotification(notification)"
+            [text]="true"
+            size="small"
+          ></p-button>
+          } @if (notification.error_message) {
+          <p-button
+            icon="pi pi-exclamation-triangle"
+            [pTooltip]="notification.error_message"
+            [text]="true"
+            size="small"
+            severity="danger"
+          ></p-button>
+          }
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="9" class="text-center py-8">
+          <i class="pi pi-inbox text-4xl text-gray-400 mb-2"></i>
+          <p class="text-gray-500">No notifications found</p>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</p-card>
