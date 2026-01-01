@@ -327,26 +327,3 @@ The documentation includes:
 5. Notifications appear in the bell icon when events occur
 6. Click bell to view recent notifications or navigate to full list
 
-7. Inventory Management
-   Warehouse location tracking (bin/shelf)
-   Stock level alerts (min/max thresholds)
-   Automated reorder suggestions
-   Inventory reconciliation tools
-   FIFO/FEFO/LIFO picking strategies
-
-8. Advanced Blockchain Features
-   Replace mock implementation with real blockchain
-   Multi-chain support (Ethereum, Polygon, Hyperledger)
-   Smart contracts for automated compliance
-   Public verification portal (verify by serial number)
-
-9. Returns Management
-   Return request workflow
-   RMA (Return Merchandise Authorization)
-   Refund/replacement tracking
-   Return reason analysis
-
-10. Supplier/Customer Portal
-    External user access with limited permissions
-    Self-service order tracking
-    API keys for integration

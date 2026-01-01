@@ -56,11 +56,12 @@
     [value]="notifications()"
     [lazy]="true"
     [paginator]="true"
-    [rows]="20"
+    [rows]="5"
     [totalRecords]="totalRecords()"
     [loading]="loading()"
     (onLazyLoad)="loadNotifications($event)"
     [rowHover]="true"
+    [rowsPerPageOptions]="[5, 10, 20, 50]"
     styleClass="p-datatable-sm"
   >
     <ng-template pTemplate="header">
