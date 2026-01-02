@@ -164,11 +164,6 @@ urlpatterns = [
         views.TemperatureExcursionTrendsView.as_view(),
         name="analytics-temperature-excursions",
     ),
-    path(
-        "api/analytics/demand-forecast/",
-        views.DemandForecastingView.as_view(),
-        name="analytics-demand-forecast",
-    ),
     # Document management
     path(
         "api/documents/",

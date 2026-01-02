@@ -1,0 +1,44 @@
+# Celery Beat Scheduler Dockerfile
+FROM python:3.12-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    UV_VERSION=0.5.11
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    curl \
+    # WeasyPrint dependencies
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf-2.0-0 \
+    libffi-dev \
+    shared-mime-info \
+    libglib2.0-0 \
+    libcairo2 \
+    libpangoft2-1.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+RUN pip install --no-cache-dir uv==${UV_VERSION}
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependency files and README (needed for hatchling build)
+COPY pyproject.toml uv.lock README.md ./
+
+# Install Python dependencies
+RUN uv sync --frozen --no-dev
+
+# Copy application code
+COPY . .
+
+# Create logs directory
+RUN mkdir -p logs
+
+# Run celery beat
+CMD ["uv", "run", "celery", "-A", "api", "beat", "--loglevel=info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]

@@ -277,7 +277,14 @@ class Shipment(BaseModel):
             raise ValidationError(errors)
 
         # Auto-update status based on delivery date
-        if self.actual_delivery_date and self.status not in ["delivered", "returned"]:
+        # Don't override damaged/lost/cancelled statuses
+        if self.actual_delivery_date and self.status not in [
+            "delivered",
+            "returned",
+            "damaged",
+            "lost",
+            "cancelled",
+        ]:
             self.status = "delivered"
         elif self.shipped_date and self.status == "pending":
             self.status = "in_transit"
@@ -328,5 +335,14 @@ class ShipmentPack(BaseModel):
             self.pack.save()
         elif self.shipment.status == "delivered":
             self.pack.status = "delivered"
+            # Must set shipped_date before delivered_date for validation
+            if not self.pack.shipped_date:
+                self.pack.shipped_date = self.shipment.shipped_date
             self.pack.delivered_date = self.shipment.actual_delivery_date
+            self.pack.save()
+        elif self.shipment.status in ["damaged", "lost"]:
+            # For damaged/lost shipments, set shipped date but not delivered date
+            if not self.pack.shipped_date:
+                self.pack.shipped_date = self.shipment.shipped_date
+            self.pack.status = self.shipment.status
             self.pack.save()

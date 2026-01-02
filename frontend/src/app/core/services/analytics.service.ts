@@ -153,49 +153,6 @@ export interface TemperatureExcursions {
   recent_excursions: RecentExcursion[];
 }
 
-// Interfaces for Demand Forecasting
-export interface WeeklyForecast {
-  week: string;
-  predicted_demand: number;
-}
-
-export interface HistoricalDataPoint {
-  week: string;
-  demand: number;
-}
-
-export interface ProductForecast {
-  product_id: number;
-  product_name: string;
-  product_gtin: string;
-  historical_weekly_avg: number;
-  avg_weekly_forecast: number;
-  total_forecast: number;
-  demand_trend: 'increasing' | 'decreasing' | 'stable';
-  trend_value: number;
-  demand_change_pct: number;
-  weekly_forecasts: WeeklyForecast[];
-  historical_data: HistoricalDataPoint[];
-}
-
-export interface InventoryRecommendation {
-  product: string;
-  recommendation: 'increase_stock' | 'reduce_stock';
-  reason: string;
-  suggested_increase_pct?: number;
-  suggested_reduction_pct?: number;
-}
-
-export interface DemandForecast {
-  forecast_period_days: number;
-  history_period_days: number;
-  total_products_analyzed: number;
-  total_historical_demand: number;
-  avg_weekly_demand: number;
-  product_forecasts: ProductForecast[];
-  inventory_recommendations: InventoryRecommendation[];
-}
-
 // Interface for Analytics Summary
 export interface AnalyticsKPIs {
   total_shipments: number;
@@ -238,7 +195,6 @@ export class AnalyticsService {
   readonly loadingBatchYield = signal(false);
   readonly loadingCarrierPerformance = signal(false);
   readonly loadingTemperatureExcursions = signal(false);
-  readonly loadingDemandForecast = signal(false);
 
   // Data signals
   readonly summary = signal<AnalyticsSummary | null>(null);
@@ -246,7 +202,6 @@ export class AnalyticsService {
   readonly batchYield = signal<BatchYieldAnalysis | null>(null);
   readonly carrierPerformance = signal<CarrierPerformance | null>(null);
   readonly temperatureExcursions = signal<TemperatureExcursions | null>(null);
-  readonly demandForecast = signal<DemandForecast | null>(null);
 
   // Error signals
   readonly error = signal<string | null>(null);
@@ -378,35 +333,6 @@ export class AnalyticsService {
   }
 
   /**
-   * Get demand forecasting data
-   */
-  getDemandForecast(
-    forecastDays: number = 30,
-    historyDays: number = 180
-  ): Observable<DemandForecast> {
-    this.loadingDemandForecast.set(true);
-    this.error.set(null);
-
-    const params = new HttpParams()
-      .set('forecast_days', forecastDays.toString())
-      .set('history_days', historyDays.toString());
-
-    return this.http
-      .get<DemandForecast>(`${this.API_URL}/demand-forecast/`, { params })
-      .pipe(
-        tap((data) => {
-          this.demandForecast.set(data);
-          this.loadingDemandForecast.set(false);
-        }),
-        catchError((err) => {
-          this.loadingDemandForecast.set(false);
-          this.error.set('Failed to load demand forecast');
-          throw err;
-        })
-      );
-  }
-
-  /**
    * Load all analytics data at once
    */
   loadAllAnalytics(days: number = 30): void {
@@ -415,7 +341,6 @@ export class AnalyticsService {
     this.getBatchYieldAnalysis(days).subscribe();
     this.getCarrierPerformance(days).subscribe();
     this.getTemperatureExcursions(days).subscribe();
-    this.getDemandForecast(30, days * 6).subscribe();
   }
 
   /**
@@ -427,7 +352,6 @@ export class AnalyticsService {
     this.batchYield.set(null);
     this.carrierPerformance.set(null);
     this.temperatureExcursions.set(null);
-    this.demandForecast.set(null);
     this.error.set(null);
   }
 
@@ -440,8 +364,7 @@ export class AnalyticsService {
       this.loadingKPIs() ||
       this.loadingBatchYield() ||
       this.loadingCarrierPerformance() ||
-      this.loadingTemperatureExcursions() ||
-      this.loadingDemandForecast()
+      this.loadingTemperatureExcursions()
     );
   }
 }

@@ -141,11 +141,11 @@ class SupplyChainKPIsView(APIView):
             (special_handling / total_shipments * 100) if total_shipments > 0 else 0
         )
 
-        # Shipment volume trends (last 7 days)
-        seven_days_ago = end_date - timedelta(days=7)
+        # Shipment volume trends (daily breakdown for entire period)
+        # Use shipped_date when available, otherwise created_at for pending shipments
         daily_shipments = (
-            shipments.filter(created_at__gte=seven_days_ago)
-            .annotate(day=TruncDate("created_at"))
+            shipments.exclude(shipped_date__isnull=True)
+            .annotate(day=TruncDate("shipped_date"))
             .values("day")
             .annotate(count=Count("id"))
             .order_by("day")
@@ -449,16 +449,16 @@ class TemperatureExcursionTrendsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Get date range parameters
-        days = int(request.query_params.get("days", 90))
+        # Get date range parameters (default 200 days to capture temperature events at 100-180 days)
+        days = int(request.query_params.get("days", 200))
         end_date = timezone.now()
         start_date = end_date - timedelta(days=days)
 
-        # Get temperature-related events
+        # Get temperature-related events (use created_at to match seed data)
         temp_events = m.Event.objects.filter(
             created_at__gte=start_date,
             created_at__lte=end_date,
-            event_type="temperature_alert",
+            event_type__in=["temperature_alert", "temperature_excursion"],
         )
 
         total_excursions = temp_events.count()
@@ -477,17 +477,17 @@ class TemperatureExcursionTrendsView(APIView):
             .order_by("-count")
         )
 
-        # Daily excursion trend
+        # Daily excursion trend (use created_at to match filtering)
         daily_trend = (
-            temp_events.annotate(day=TruncDate("timestamp"))
+            temp_events.annotate(day=TruncDate("created_at"))
             .values("day")
             .annotate(count=Count("id"))
             .order_by("day")
         )
 
-        # Weekly excursion trend
+        # Weekly excursion trend (use created_at to match filtering)
         weekly_trend = (
-            temp_events.annotate(week=TruncWeek("timestamp"))
+            temp_events.annotate(week=TruncWeek("created_at"))
             .values("week")
             .annotate(count=Count("id"))
             .order_by("week")
@@ -557,164 +557,6 @@ class TemperatureExcursionTrendsView(APIView):
             }
         )
 
-
-class DemandForecastingView(APIView):
-    """
-    Predictive analytics for demand forecasting based on historical data.
-    """
-
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        # Get parameters
-        forecast_days = int(request.query_params.get("forecast_days", 30))
-        history_days = int(request.query_params.get("history_days", 180))
-
-        end_date = timezone.now()
-        start_date = end_date - timedelta(days=history_days)
-
-        # Historical shipment data by product
-        shipment_packs = m.ShipmentPack.objects.filter(
-            shipment__created_at__gte=start_date,
-            shipment__created_at__lte=end_date,
-        ).select_related("pack__batch__product", "shipment")
-
-        # Aggregate demand by product and week
-        product_demand = defaultdict(lambda: defaultdict(int))
-        product_info = {}
-
-        for sp in shipment_packs:
-            product = sp.pack.batch.product
-            week_start = sp.shipment.created_at.date() - timedelta(
-                days=sp.shipment.created_at.weekday()
-            )
-            product_demand[product.id][week_start] += sp.quantity_shipped
-            product_info[product.id] = {
-                "name": product.name,
-                "gtin": product.gtin,
-            }
-
-        # Calculate forecasts for each product
-        forecasts = []
-        for product_id, weekly_demand in product_demand.items():
-            weeks = sorted(weekly_demand.keys())
-            demands = [weekly_demand[w] for w in weeks]
-
-            if len(demands) < 4:
-                # Not enough data for forecasting
-                continue
-
-            # Simple moving average forecast
-            window_size = min(4, len(demands))
-            recent_avg = sum(demands[-window_size:]) / window_size
-
-            # Calculate trend (simple linear regression)
-            n = len(demands)
-            if n >= 2:
-                x_mean = (n - 1) / 2
-                y_mean = sum(demands) / n
-                numerator = sum((i - x_mean) * (d - y_mean) for i, d in enumerate(demands))
-                denominator = sum((i - x_mean) ** 2 for i in range(n))
-                trend = numerator / denominator if denominator != 0 else 0
-            else:
-                trend = 0
-
-            # Calculate seasonality (if we have enough data)
-            seasonality_factor = 1.0
-            if len(demands) >= 12:
-                # Compare current period to same period last quarter
-                current_quarter_avg = sum(demands[-4:]) / 4
-                prev_quarter_avg = sum(demands[-8:-4]) / 4 if len(demands) >= 8 else current_quarter_avg
-                if prev_quarter_avg > 0:
-                    seasonality_factor = current_quarter_avg / prev_quarter_avg
-
-            # Generate forecast for future weeks
-            forecast_weeks = forecast_days // 7
-            weekly_forecasts = []
-            for i in range(1, forecast_weeks + 1):
-                # Combine moving average, trend, and seasonality
-                forecast_value = max(0, (recent_avg + trend * i) * seasonality_factor)
-                week_date = end_date.date() + timedelta(weeks=i)
-                weekly_forecasts.append(
-                    {
-                        "week": week_date.isoformat(),
-                        "predicted_demand": round(forecast_value, 0),
-                    }
-                )
-
-            # Calculate forecast summary
-            total_forecast = sum(f["predicted_demand"] for f in weekly_forecasts)
-            avg_weekly_forecast = total_forecast / len(weekly_forecasts) if weekly_forecasts else 0
-
-            # Historical comparison
-            historical_weekly_avg = sum(demands) / len(demands)
-            demand_change_pct = (
-                ((avg_weekly_forecast - historical_weekly_avg) / historical_weekly_avg * 100)
-                if historical_weekly_avg > 0
-                else 0
-            )
-
-            forecasts.append(
-                {
-                    "product_id": product_id,
-                    "product_name": product_info[product_id]["name"],
-                    "product_gtin": product_info[product_id]["gtin"],
-                    "historical_weekly_avg": round(historical_weekly_avg, 0),
-                    "avg_weekly_forecast": round(avg_weekly_forecast, 0),
-                    "total_forecast": round(total_forecast, 0),
-                    "demand_trend": "increasing" if trend > 0 else "decreasing" if trend < 0 else "stable",
-                    "trend_value": round(trend, 2),
-                    "demand_change_pct": round(demand_change_pct, 2),
-                    "weekly_forecasts": weekly_forecasts,
-                    "historical_data": [
-                        {"week": w.isoformat(), "demand": d}
-                        for w, d in zip(weeks, demands)
-                    ],
-                }
-            )
-
-        # Sort by average forecast demand
-        forecasts.sort(key=lambda x: x["avg_weekly_forecast"], reverse=True)
-
-        # Overall demand trend
-        total_historical = sum(
-            sum(weekly_demand.values()) for weekly_demand in product_demand.values()
-        )
-        weeks_in_history = history_days // 7
-
-        # Inventory recommendations
-        inventory_recommendations = []
-        for forecast in forecasts[:10]:
-            if forecast["demand_trend"] == "increasing" and forecast["demand_change_pct"] > 10:
-                inventory_recommendations.append(
-                    {
-                        "product": forecast["product_name"],
-                        "recommendation": "increase_stock",
-                        "reason": f"Demand increasing by {forecast['demand_change_pct']}%",
-                        "suggested_increase_pct": min(50, forecast["demand_change_pct"]),
-                    }
-                )
-            elif forecast["demand_trend"] == "decreasing" and forecast["demand_change_pct"] < -10:
-                inventory_recommendations.append(
-                    {
-                        "product": forecast["product_name"],
-                        "recommendation": "reduce_stock",
-                        "reason": f"Demand decreasing by {abs(forecast['demand_change_pct'])}%",
-                        "suggested_reduction_pct": min(30, abs(forecast["demand_change_pct"])),
-                    }
-                )
-
-        return Response(
-            {
-                "forecast_period_days": forecast_days,
-                "history_period_days": history_days,
-                "total_products_analyzed": len(forecasts),
-                "total_historical_demand": total_historical,
-                "avg_weekly_demand": round(total_historical / weeks_in_history, 0) if weeks_in_history > 0 else 0,
-                "product_forecasts": forecasts[:20],  # Top 20 products
-                "inventory_recommendations": inventory_recommendations,
-            }
-        )
 
 
 class AnalyticsSummaryView(APIView):

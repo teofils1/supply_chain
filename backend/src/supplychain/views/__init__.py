@@ -2,7 +2,6 @@ from .analytics import (
     AnalyticsSummaryView,
     BatchYieldAnalysisView,
     CarrierPerformanceView,
-    DemandForecastingView,
     SupplyChainKPIsView,
     TemperatureExcursionTrendsView,
 )
@@ -89,7 +88,6 @@ __all__ = [
     "AnalyticsSummaryView",
     "BatchYieldAnalysisView",
     "CarrierPerformanceView",
-    "DemandForecastingView",
     "SupplyChainKPIsView",
     "TemperatureExcursionTrendsView",
     "DocumentListCreateView",

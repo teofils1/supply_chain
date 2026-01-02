@@ -33,7 +33,6 @@ import {
   BatchYieldAnalysis,
   CarrierPerformance,
   TemperatureExcursions,
-  DemandForecast,
   AnalyticsSummary,
 } from '../../core/services/analytics.service';
 import { Subscription, forkJoin } from 'rxjs';
@@ -92,7 +91,6 @@ export class AnalyticsComponent implements OnInit, OnDestroy {
   batchYield = this.analyticsService.batchYield;
   carrierPerformance = this.analyticsService.carrierPerformance;
   temperatureExcursions = this.analyticsService.temperatureExcursions;
-  demandForecast = this.analyticsService.demandForecast;
 
   // Chart configurations
   kpiChartData = computed(() => {
@@ -256,53 +254,6 @@ export class AnalyticsComponent implements OnInit, OnDestroy {
     };
   });
 
-  demandForecastChartData = computed(() => {
-    const data = this.demandForecast();
-    if (!data?.product_forecasts?.[0]) return null;
-
-    const product = data.product_forecasts[0];
-
-    return {
-      labels: [
-        ...product.historical_data.map((h) =>
-          new Date(h.week).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-          })
-        ),
-        ...product.weekly_forecasts.map((f) =>
-          new Date(f.week).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-          })
-        ),
-      ],
-      datasets: [
-        {
-          label: 'Historical Demand',
-          data: [
-            ...product.historical_data.map((h) => h.demand),
-            ...new Array(product.weekly_forecasts.length).fill(null),
-          ],
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.2)',
-          fill: true,
-        },
-        {
-          label: 'Forecasted Demand',
-          data: [
-            ...new Array(product.historical_data.length).fill(null),
-            ...product.weekly_forecasts.map((f) => f.predicted_demand),
-          ],
-          borderColor: '#8b5cf6',
-          backgroundColor: 'rgba(139, 92, 246, 0.2)',
-          borderDash: [5, 5],
-          fill: true,
-        },
-      ],
-    };
-  });
-
   // Chart options
   chartOptions = {
     plugins: {
@@ -391,7 +342,6 @@ export class AnalyticsComponent implements OnInit, OnDestroy {
       this.analyticsService.getBatchYieldAnalysis(period),
       this.analyticsService.getCarrierPerformance(period),
       this.analyticsService.getTemperatureExcursions(period),
-      this.analyticsService.getDemandForecast(30, period * 6),
     ]).subscribe({
       next: () => {
         this.loading.set(false);
