@@ -50,6 +50,7 @@ export class NotificationService {
   getNotifications(params?: {
     status?: string;
     channel?: string;
+    severity?: string;
     unread?: boolean;
     page?: number;
   }): Observable<{ count: number; results: NotificationLog[] }> {
@@ -58,6 +59,8 @@ export class NotificationService {
       if (params.status) httpParams = httpParams.set('status', params.status);
       if (params.channel)
         httpParams = httpParams.set('channel', params.channel);
+      if (params.severity)
+        httpParams = httpParams.set('severity', params.severity);
       if (params.unread !== undefined)
         httpParams = httpParams.set('unread', params.unread.toString());
       if (params.page)

@@ -91,6 +91,11 @@ class NotificationLogListView(generics.ListAPIView):
         if channel_filter:
             queryset = queryset.filter(channel=channel_filter)
 
+        # Filter by severity (through event relationship)
+        severity_filter = self.request.query_params.get("severity")
+        if severity_filter:
+            queryset = queryset.filter(event__severity=severity_filter)
+
         # Filter unread
         unread_only = self.request.query_params.get("unread")
         if unread_only and unread_only.lower() in ["true", "1", "yes"]:

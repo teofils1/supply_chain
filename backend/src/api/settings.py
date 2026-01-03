@@ -182,11 +182,7 @@ DEFAULT_FROM_EMAIL = os.getenv(
     "DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "no-reply@supplychain.com"
 )
 
-# For development, you can use console backend to see emails in console
-# Uncomment the line below if you want to test without actual email sending
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
-# For production/testing with real email
+# Email backend - use SMTP for actual sending
 EMAIL_BACKEND = os.getenv(
     "EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend"
 )

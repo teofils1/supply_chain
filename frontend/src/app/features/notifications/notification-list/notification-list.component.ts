@@ -38,6 +38,7 @@ export class NotificationListComponent implements OnInit {
   // Filters
   statusFilter: string | undefined;
   channelFilter: string | undefined;
+  severityFilter: string | undefined;
   unreadFilter: boolean | undefined;
 
   statusOptions = [
@@ -53,6 +54,15 @@ export class NotificationListComponent implements OnInit {
     { label: 'Email', value: 'email' },
     { label: 'SMS', value: 'sms' },
     { label: 'Webhook', value: 'webhook' },
+  ];
+
+  severityOptions = [
+    { label: 'All', value: undefined },
+    { label: 'Critical', value: 'critical' },
+    { label: 'High', value: 'high' },
+    { label: 'Medium', value: 'medium' },
+    { label: 'Low', value: 'low' },
+    { label: 'Info', value: 'info' },
   ];
 
   unreadOptions = [
@@ -73,6 +83,7 @@ export class NotificationListComponent implements OnInit {
       .getNotifications({
         status: this.statusFilter,
         channel: this.channelFilter,
+        severity: this.severityFilter,
         unread: this.unreadFilter,
         page,
       })

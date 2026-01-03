@@ -138,15 +138,19 @@ This is an automated notification from the Supply Chain Tracking System.
 @shared_task(bind=True)
 def process_event_notifications(self, event_id: int):
     """
-    Process an event and send notifications to all matching rules.
+    Process an event and send notifications to all users.
 
-    This is the main entry point called when a new event is created.
-    It evaluates all notification rules and queues individual notifications.
+    All events trigger notifications:
+    - Critical/High severity: Email notifications to all users
+    - Other severities: WebSocket notifications to all users
 
     Args:
         event_id: ID of the Event to process
     """
-    from supplychain.models import Event, NotificationRule
+    from supplychain.models import Event
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
 
     try:
         event = Event.objects.get(id=event_id)
@@ -154,54 +158,47 @@ def process_event_notifications(self, event_id: int):
         logger.error("process_notifications_failed", error="Event not found", event_id=event_id)
         return {"status": "failed", "error": "Event not found"}
 
-    # Check if this event should trigger notifications based on settings
-    should_notify = (
-        event.severity in getattr(settings, "NOTIFICATION_ALERT_SEVERITIES", ["critical", "high"])
-        or event.event_type in getattr(settings, "NOTIFICATION_CRITICAL_EVENTS", [])
-    )
+    # Determine notification channel based on severity
+    is_critical = event.severity in ["critical", "high"]
+    channel = "email" if is_critical else "websocket"
 
-    if not should_notify:
-        logger.debug(
-            "event_skipped_no_notification",
-            event_id=event_id,
-            event_type=event.event_type,
-            severity=event.severity,
-        )
-        return {"status": "skipped", "reason": "Event does not match notification criteria"}
-
-    # Find all matching notification rules
-    rules = NotificationRule.objects.filter(enabled=True).select_related("user")
+    # Get all active users
+    users = User.objects.filter(is_active=True)
 
     notifications_queued = 0
-    for rule in rules:
-        if rule.matches_event(event):
-            # Queue notifications for each channel in the rule
-            for channel in rule.channels:
-                if channel == "email":
-                    send_email_notification.delay(
-                        event_id=event.id,
-                        user_id=rule.user.id,
-                        rule_id=rule.id,
-                    )
-                    notifications_queued += 1
-                elif channel == "websocket":
-                    # WebSocket notifications can be added later
-                    pass
-                elif channel == "sms":
-                    # SMS notifications can be added later
-                    pass
+    for user in users:
+        if channel == "email":
+            send_email_notification.delay(
+                event_id=event.id,
+                user_id=user.id,
+                rule_id=None,
+            )
+            notifications_queued += 1
+        elif channel == "websocket":
+            # Create notification log for websocket delivery
+            from supplychain.models import NotificationLog
+            NotificationLog.objects.create(
+                event=event,
+                user=user,
+                channel="websocket",
+                status="sent",
+                sent_at=timezone.now(),
+            )
+            notifications_queued += 1
 
     logger.info(
         "event_notifications_processed",
         event_id=event_id,
         event_type=event.event_type,
         severity=event.severity,
+        channel=channel,
         notifications_queued=notifications_queued,
     )
 
     return {
         "status": "processed",
         "event_id": event_id,
+        "channel": channel,
         "notifications_queued": notifications_queued,
     }
 

@@ -217,6 +217,23 @@ def batch_post_save(sender, instance, created, **kwargs):
             # Create specific status change event
             create_status_change_event(instance, old_status, new_status)
 
+        # Check if batch has expired and create critical event
+        from django.utils import timezone
+        if instance.expiry_date and instance.expiry_date < timezone.now().date():
+            if instance.status not in ["expired", "destroyed"]:
+                create_automated_event(
+                    event_type="expired",
+                    instance=instance,
+                    description=f"Batch '{instance.lot_number}' has expired (expiry: {instance.expiry_date})",
+                    severity="critical",
+                    metadata={
+                        "lot_number": instance.lot_number,
+                        "product_name": instance.product.name,
+                        "expiry_date": instance.expiry_date.isoformat(),
+                        "current_status": instance.status,
+                    },
+                )
+
         create_automated_event(
             event_type="updated",
             instance=instance,
@@ -445,9 +462,9 @@ def create_status_change_event(instance, old_status, new_status):
 
     # Determine severity based on status change
     if new_status in ["recalled", "damaged", "lost", "destroyed"]:
-        severity = "high"
+        severity = "critical"  # Most serious situations
     elif new_status in ["quarantined", "expired", "cancelled"]:
-        severity = "medium"
+        severity = "high"  # Serious but not critical
     elif new_status in ["delivered", "shipped", "released"]:
         severity = "info"
 
@@ -501,6 +518,15 @@ def event_post_save(sender, instance, created, **kwargs):
         # Compute and store event hash for new events
         if not instance.event_hash:
             instance.update_event_hash()
+        
+        # Queue notification processing for the new event
+        from supplychain.tasks import process_event_notifications
+
+        try:
+            process_event_notifications.delay(instance.id)
+        except Exception as notify_error:
+            # Log but don't fail if notification queuing fails
+            print(f"Failed to queue notification for event {instance.id}: {notify_error}")
     else:
         # Recompute hash if event data was modified (except blockchain fields)
         # This helps detect tampering with event data

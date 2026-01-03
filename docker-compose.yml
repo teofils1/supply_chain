@@ -90,6 +90,16 @@ services:
     networks:
       - supply_chain_network
 
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: supply_chain_mailpit
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+    networks:
+      - supply_chain_network
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
@@ -111,6 +121,11 @@ services:
       REFRESH_TOKEN_LIFETIME_DAYS: 7
       CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
       CELERY_RESULT_BACKEND: redis://redis:6379/1
+      EMAIL_HOST: mailpit
+      EMAIL_PORT: 1025
+      EMAIL_USE_TLS: "False"
+      EMAIL_USE_SSL: "False"
+      DEFAULT_FROM_EMAIL: "noreply@supplychain.local"
       # Optional - add your Web3 settings if needed
       # WEB3_HTTP_PROVIDER: https://sepolia.infura.io/v3/your-key
       # CONTRACT_ADDRESS: 0xYourContract
@@ -146,6 +161,11 @@ services:
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
       CELERY_RESULT_BACKEND: redis://redis:6379/1
+      EMAIL_HOST: mailpit
+      EMAIL_PORT: 1025
+      EMAIL_USE_TLS: "False"
+      EMAIL_USE_SSL: "False"
+      DEFAULT_FROM_EMAIL: "noreply@supplychain.local"
     volumes:
       - ./backend:/app
       - backend_logs:/app/logs
@@ -178,6 +198,11 @@ services:
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
       CELERY_RESULT_BACKEND: redis://redis:6379/1
+      EMAIL_HOST: mailpit
+      EMAIL_PORT: 1025
+      EMAIL_USE_TLS: "False"
+      EMAIL_USE_SSL: "False"
+      DEFAULT_FROM_EMAIL: "noreply@supplychain.local"
     volumes:
       - ./backend:/app
       - backend_logs:/app/logs

@@ -12,7 +12,7 @@
   </ng-template>
 
   <div class="filters mb-4">
-    <div class="flex gap-3 items-end">
+    <div class="flex gap-3 items-end flex-wrap">
       <div class="w-48">
         <label class="block mb-2 text-sm font-medium">Status</label>
         <p-select
@@ -34,6 +34,18 @@
           optionValue="value"
           (onChange)="loadNotifications()"
           placeholder="All channels"
+          styleClass="w-full"
+        ></p-select>
+      </div>
+      <div class="w-48">
+        <label class="block mb-2 text-sm font-medium">Severity</label>
+        <p-select
+          [(ngModel)]="severityFilter"
+          [options]="severityOptions"
+          optionLabel="label"
+          optionValue="value"
+          (onChange)="loadNotifications()"
+          placeholder="All severities"
           styleClass="w-full"
         ></p-select>
       </div>
