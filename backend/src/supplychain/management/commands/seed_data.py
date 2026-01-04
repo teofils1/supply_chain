@@ -18,6 +18,7 @@ from django.db import transaction
 from django.utils import timezone
 
 import supplychain.models as m
+from supplychain.services.pdf_generator import PDFGeneratorService
 
 User = get_user_model()
 
@@ -62,6 +63,9 @@ class Command(BaseCommand):
 
             self.stdout.write("Seeding notification rules...")
             self._seed_notification_rules(all_users)
+
+            self.stdout.write("Seeding documents...")
+            self._seed_documents(batches, shipments)
 
         self.stdout.write(self.style.SUCCESS("Database seeded successfully!"))
         self.stdout.write(
@@ -953,3 +957,51 @@ class Command(BaseCommand):
                         "enabled": True,
                     },
                 )
+
+    def _seed_documents(self, batches, shipments):
+        """Seed document data (shipping labels, packing lists, CoAs)."""
+        document_count = 0
+
+        # Generate CoAs for a sample of batches
+        sample_batches = random.sample(batches, min(10, len(batches)))
+        for batch in sample_batches:
+            try:
+                PDFGeneratorService.generate_coa(batch, save_as_document=True)
+                document_count += 1
+                self.stdout.write(f"  Generated CoA for batch {batch.lot_number}")
+            except Exception as e:
+                self.stdout.write(
+                    self.style.WARNING(f"  Failed to generate CoA for batch {batch.lot_number}: {e}")
+                )
+
+        # Generate shipping labels and packing lists for delivered shipments
+        delivered_shipments = [s for s in shipments if s.status == "delivered"]
+        sample_shipments = random.sample(
+            delivered_shipments, min(15, len(delivered_shipments))
+        )
+
+        for shipment in sample_shipments:
+            try:
+                # Generate shipping label
+                PDFGeneratorService.generate_shipping_label(
+                    shipment, save_as_document=True
+                )
+                document_count += 1
+
+                # Generate packing list
+                PDFGeneratorService.generate_packing_list(
+                    shipment, save_as_document=True
+                )
+                document_count += 1
+
+                self.stdout.write(
+                    f"  Generated documents for shipment {shipment.tracking_number}"
+                )
+            except Exception as e:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  Failed to generate documents for shipment {shipment.tracking_number}: {e}"
+                    )
+                )
+
+        self.stdout.write(f"  Created {document_count} documents")

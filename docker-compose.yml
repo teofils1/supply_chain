@@ -126,6 +126,12 @@ services:
       EMAIL_USE_TLS: "False"
       EMAIL_USE_SSL: "False"
       DEFAULT_FROM_EMAIL: "noreply@supplychain.local"
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_PUBLIC_ENDPOINT: http://localhost:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET_NAME: supplychain-documents
+      MINIO_USE_SSL: "False"
       # Optional - add your Web3 settings if needed
       # WEB3_HTTP_PROVIDER: https://sepolia.infura.io/v3/your-key
       # CONTRACT_ADDRESS: 0xYourContract
@@ -141,6 +147,10 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      minio:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - supply_chain_network
     restart: unless-stopped
@@ -166,6 +176,12 @@ services:
       EMAIL_USE_TLS: "False"
       EMAIL_USE_SSL: "False"
       DEFAULT_FROM_EMAIL: "noreply@supplychain.local"
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_PUBLIC_ENDPOINT: http://localhost:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET_NAME: supplychain-documents
+      MINIO_USE_SSL: "False"
     volumes:
       - ./backend:/app
       - backend_logs:/app/logs
@@ -176,8 +192,12 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      minio:
+        condition: service_healthy
       backend:
         condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - supply_chain_network
     restart: unless-stopped
@@ -203,6 +223,12 @@ services:
       EMAIL_USE_TLS: "False"
       EMAIL_USE_SSL: "False"
       DEFAULT_FROM_EMAIL: "noreply@supplychain.local"
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_PUBLIC_ENDPOINT: http://localhost:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET_NAME: supplychain-documents
+      MINIO_USE_SSL: "False"
     volumes:
       - ./backend:/app
       - backend_logs:/app/logs
@@ -213,8 +239,12 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      minio:
+        condition: service_healthy
       backend:
         condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - supply_chain_network
     restart: unless-stopped

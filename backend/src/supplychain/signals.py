@@ -6,6 +6,8 @@ create events when supply chain entities are modified. This provides a complete
 audit trail without requiring manual event creation.
 """
 
+import logging
+
 from django.contrib.auth import get_user_model
 from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch import receiver
@@ -15,6 +17,7 @@ import supplychain.models as m
 from .middleware import get_current_user
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 def get_field_changes(instance, created=False):
@@ -95,6 +98,10 @@ def create_automated_event(
     # Get user from request context
     if user is None:
         user = get_current_user()
+    
+    # Ensure user is a valid User instance or None (not AnonymousUser)
+    if user and not user.is_authenticated:
+        user = None
 
     # Combine default metadata with provided metadata
     default_metadata = {
@@ -107,6 +114,8 @@ def create_automated_event(
         default_metadata.update(metadata)
 
     # Create the event
+    # Note: The event_post_save signal will automatically queue notifications
+    # for this event, so we don't need to do it here
     try:
         event = m.Event.create_event(
             event_type=event_type,
@@ -118,19 +127,13 @@ def create_automated_event(
             metadata=default_metadata,
         )
 
-        # Queue notification processing for the new event
-        # Import here to avoid circular imports
-        from supplychain.tasks import process_event_notifications
-
-        try:
-            process_event_notifications.delay(event.id)
-        except Exception as notify_error:
-            # Log but don't fail if notification queuing fails
-            print(f"Failed to queue notification: {notify_error}")
-
     except Exception as e:
         # Log the error but don't fail the original operation
-        print(f"Failed to create automated event: {e}")
+        logger.error(
+            f"Failed to create automated event for {instance.__class__.__name__} "
+            f"(id={instance.id}): {e}",
+            exc_info=True
+        )
 
 
 # Product signals
@@ -520,13 +523,21 @@ def event_post_save(sender, instance, created, **kwargs):
             instance.update_event_hash()
         
         # Queue notification processing for the new event
+        # Use on_commit to ensure the event is saved to DB before Celery task runs
+        from django.db import transaction
         from supplychain.tasks import process_event_notifications
 
-        try:
-            process_event_notifications.delay(instance.id)
-        except Exception as notify_error:
-            # Log but don't fail if notification queuing fails
-            print(f"Failed to queue notification for event {instance.id}: {notify_error}")
+        def queue_notifications():
+            try:
+                process_event_notifications.delay(instance.id)
+            except Exception as notify_error:
+                # Log but don't fail if notification queuing fails
+                logger.warning(
+                    f"Failed to queue notification for event {instance.id}: {notify_error}",
+                    exc_info=True
+                )
+        
+        transaction.on_commit(queue_notifications)
     else:
         # Recompute hash if event data was modified (except blockchain fields)
         # This helps detect tampering with event data

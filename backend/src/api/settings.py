@@ -339,13 +339,15 @@ if redis_available:
 # MinIO-based storage for document management. Uses S3-compatible API.
 #
 # Environment variables:
-# - MINIO_ENDPOINT: MinIO server URL (default: http://localhost:9000)
+# - MINIO_ENDPOINT: MinIO server URL for internal connections (default: http://localhost:9000)
+# - MINIO_PUBLIC_ENDPOINT: Public URL for external access (default: same as MINIO_ENDPOINT)
 # - MINIO_ACCESS_KEY: Access key (default: minioadmin)
 # - MINIO_SECRET_KEY: Secret key (default: minioadmin)
 # - MINIO_BUCKET_NAME: Bucket name (default: supplychain-documents)
 # - MINIO_USE_SSL: Use SSL (default: false for local dev)
 
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://localhost:9000")
+MINIO_PUBLIC_ENDPOINT = os.getenv("MINIO_PUBLIC_ENDPOINT", MINIO_ENDPOINT)
 MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
 MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
 MINIO_BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME", "supplychain-documents")
@@ -354,12 +356,12 @@ MINIO_USE_SSL = os.getenv("MINIO_USE_SSL", "false").lower() in {"1", "true", "ye
 # django-storages S3 configuration for MinIO
 STORAGES = {
     "default": {
-        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "BACKEND": "supplychain.storage.MinIOStorage",
         "OPTIONS": {
             "access_key": MINIO_ACCESS_KEY,
             "secret_key": MINIO_SECRET_KEY,
             "bucket_name": MINIO_BUCKET_NAME,
-            "endpoint_url": MINIO_ENDPOINT,
+            "endpoint_url": MINIO_ENDPOINT,  # Internal endpoint for file operations
             "use_ssl": MINIO_USE_SSL,
             "file_overwrite": False,
             "default_acl": None,
