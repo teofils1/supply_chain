@@ -5,8 +5,10 @@ This module tests the custom validators to ensure they properly validate
 data according to business rules.
 """
 
-import pytest
+from datetime import date
+
 from django.core.exceptions import ValidationError
+from django.test import TestCase
 
 from supplychain.validators import (
     validate_available_quantity_not_exceeds_produced,
@@ -20,13 +22,11 @@ from supplychain.validators import (
 )
 
 
-class TestDateValidators:
+class TestDateValidators(TestCase):
     """Test date validation functions."""
 
     def test_valid_expiry_after_manufacturing(self):
         """Test valid expiry date after manufacturing date."""
-        from datetime import date
-
         manufacturing = date(2024, 1, 1)
         expiry = date(2024, 12, 31)
         # Should not raise
@@ -34,20 +34,16 @@ class TestDateValidators:
 
     def test_invalid_expiry_before_manufacturing(self):
         """Test invalid expiry date before manufacturing date."""
-        from datetime import date
-
         manufacturing = date(2024, 12, 31)
         expiry = date(2024, 1, 1)
-        with pytest.raises(ValidationError):
+        with self.assertRaises(ValidationError):
             validate_expiry_after_manufacturing(manufacturing, expiry)
 
     def test_invalid_expiry_equals_manufacturing(self):
         """Test invalid expiry date equal to manufacturing date."""
-        from datetime import date
-
         manufacturing = date(2024, 1, 1)
         expiry = date(2024, 1, 1)
-        with pytest.raises(ValidationError):
+        with self.assertRaises(ValidationError):
             validate_expiry_after_manufacturing(manufacturing, expiry)
 
 

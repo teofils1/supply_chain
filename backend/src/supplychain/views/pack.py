@@ -180,33 +180,27 @@ class PackListCreateView(generics.ListCreateAPIView):
         return queryset.order_by("-created_at", "serial_number")
 
     def perform_create(self, serializer):
-        """Create a new pack and subtract quantity from batch."""
+        """Create a new pack and subtract quantity from batch atomically."""
+        from django.db import transaction
+        from rest_framework.exceptions import ValidationError
+        
         pack_data = serializer.validated_data
         batch = pack_data["batch"]
         pack_size = pack_data["pack_size"]
 
-        # Check if batch has sufficient available quantity
-        if not batch.has_sufficient_quantity(pack_size):
-            from rest_framework.exceptions import ValidationError
+        # Wrap entire operation in a transaction for atomicity
+        with transaction.atomic():
+            # Atomically consume the quantity from batch
+            # This prevents race conditions in concurrent pack creation
+            if not batch.consume_quantity(pack_size):
+                raise ValidationError(
+                    {
+                        "pack_size": f"Insufficient quantity in batch. Available: {batch.available_quantity}, Required: {pack_size}"
+                    }
+                )
 
-            raise ValidationError(
-                {
-                    "pack_size": f"Insufficient quantity in batch. Available: {batch.available_quantity}, Required: {pack_size}"
-                }
-            )
-
-        # Consume the quantity from batch
-        if not batch.consume_quantity(pack_size):
-            from rest_framework.exceptions import ValidationError
-
-            raise ValidationError(
-                {
-                    "pack_size": "Failed to consume quantity from batch. Please try again."
-                }
-            )
-
-        # Save the pack
-        serializer.save()
+            # Save the pack within the same transaction
+            serializer.save()
 
 
 class PackDetailUpdateView(generics.RetrieveUpdateAPIView):
@@ -221,7 +215,10 @@ class PackDetailUpdateView(generics.RetrieveUpdateAPIView):
         return m.Pack.all_objects.select_related("batch__product").all()
 
     def perform_update(self, serializer):
-        """Update pack and handle quantity changes if pack_size is modified."""
+        """Update pack and handle quantity changes if pack_size is modified atomically."""
+        from django.db import transaction
+        from rest_framework.exceptions import ValidationError
+        
         instance = serializer.instance
         old_pack_size = instance.pack_size
         old_batch = instance.batch
@@ -233,52 +230,43 @@ class PackDetailUpdateView(generics.RetrieveUpdateAPIView):
         # Calculate quantity difference
         quantity_diff = new_pack_size - old_pack_size
 
-        # If batch changed, restore old quantity to old batch and consume from new batch
-        if new_batch.id != old_batch.id:
-            # Restore quantity to old batch
-            old_batch.available_quantity += old_pack_size
-            old_batch.save(update_fields=["available_quantity"])
+        # Wrap entire operation in a transaction for atomicity
+        with transaction.atomic():
+            # If batch changed, restore old quantity to old batch and consume from new batch
+            if new_batch.id != old_batch.id:
+                # Atomically restore quantity to old batch
+                if not old_batch.restore_quantity(old_pack_size):
+                    raise ValidationError(
+                        {"batch": "Failed to restore quantity to old batch. Please try again."}
+                    )
 
-            # Check if new batch has sufficient quantity
-            if not new_batch.has_sufficient_quantity(new_pack_size):
-                from rest_framework.exceptions import ValidationError
+                # Atomically consume from new batch
+                if not new_batch.consume_quantity(new_pack_size):
+                    raise ValidationError(
+                        {
+                            "batch": f"Insufficient quantity in new batch. Available: {new_batch.available_quantity}, Required: {new_pack_size}"
+                        }
+                    )
 
-                raise ValidationError(
-                    {
-                        "batch": f"Insufficient quantity in new batch. Available: {new_batch.available_quantity}, Required: {new_pack_size}"
-                    }
-                )
+            # If only pack_size changed (same batch)
+            elif quantity_diff != 0:
+                if quantity_diff > 0:
+                    # Need to consume more from batch
+                    if not old_batch.consume_quantity(quantity_diff):
+                        raise ValidationError(
+                            {
+                                "pack_size": f"Insufficient quantity in batch. Available: {old_batch.available_quantity}, Additional required: {quantity_diff}"
+                            }
+                        )
+                else:
+                    # Restore quantity back to batch (quantity decreased)
+                    if not old_batch.restore_quantity(abs(quantity_diff)):
+                        raise ValidationError(
+                            {"pack_size": "Failed to restore quantity to batch. Please try again."}
+                        )
 
-            # Consume from new batch
-            if not new_batch.consume_quantity(new_pack_size):
-                from rest_framework.exceptions import ValidationError
-
-                raise ValidationError(
-                    {
-                        "batch": "Failed to consume quantity from new batch. Please try again."
-                    }
-                )
-
-        # If only pack_size changed (same batch)
-        elif quantity_diff != 0:
-            # Check if batch has sufficient quantity for the increase
-            if quantity_diff > 0 and not old_batch.has_sufficient_quantity(
-                quantity_diff
-            ):
-                from rest_framework.exceptions import ValidationError
-
-                raise ValidationError(
-                    {
-                        "pack_size": f"Insufficient quantity in batch. Available: {old_batch.available_quantity}, Additional required: {quantity_diff}"
-                    }
-                )
-
-            # Update batch quantity (subtract if increased, add if decreased)
-            old_batch.available_quantity -= quantity_diff
-            old_batch.save(update_fields=["available_quantity"])
-
-        # Save the pack
-        serializer.save()
+            # Save the pack within the same transaction
+            serializer.save()
 
 
 class PackDeleteView(generics.DestroyAPIView):
@@ -292,11 +280,18 @@ class PackDeleteView(generics.DestroyAPIView):
         return super().get_queryset().filter(deleted_at__isnull=True)
 
     def perform_destroy(self, instance):
-        """Soft delete the pack and restore quantity to batch."""
-        # Restore quantity to batch before deleting pack
-        batch = instance.batch
-        batch.available_quantity += instance.pack_size
-        batch.save(update_fields=["available_quantity"])
+        """Soft delete the pack and restore quantity to batch atomically."""
+        from django.db import transaction
+        from rest_framework.exceptions import ValidationError
+        
+        # Wrap in transaction for atomicity
+        with transaction.atomic():
+            # Atomically restore quantity to batch before deleting pack
+            batch = instance.batch
+            if not batch.restore_quantity(instance.pack_size):
+                raise ValidationError(
+                    {"detail": "Failed to restore quantity to batch. Please try again."}
+                )
 
         # Soft delete the pack
         instance.delete()  # This will use the soft delete from BaseModel

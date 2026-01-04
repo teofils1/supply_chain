@@ -163,15 +163,75 @@ class Batch(BaseModel):
 
     def consume_quantity(self, quantity: int) -> bool:
         """
-        Consume quantity from available stock.
+        Atomically consume quantity from available stock.
         Returns True if successful, False if insufficient quantity.
+        
+        This method uses database-level atomic operations to prevent race conditions
+        when multiple packs are created concurrently from the same batch.
         """
-        if not self.has_sufficient_quantity(quantity):
-            return False
+        from django.db import transaction
+        from django.db.models import F
 
-        self.available_quantity -= quantity
-        self.save(update_fields=["available_quantity"])
-        return True
+        with transaction.atomic():
+            # Use SELECT FOR UPDATE to lock the row and F() for atomic update
+            # This prevents race conditions in concurrent pack creation
+            updated = Batch.objects.filter(
+                id=self.id,
+                available_quantity__gte=quantity
+            ).update(
+                available_quantity=F('available_quantity') - quantity
+            )
+            
+            if updated == 0:
+                # Either batch doesn't exist or insufficient quantity
+                return False
+            
+            # Refresh from DB to get the updated value
+            self.refresh_from_db(fields=['available_quantity'])
+            return True
+    
+    def restore_quantity(self, quantity: int) -> bool:
+        """
+        Atomically restore quantity to available stock.
+        Returns True if successful, False otherwise.
+        
+        Used when packs are deleted or removed from shipments.
+        Includes validation to prevent available_quantity from exceeding quantity_produced.
+        """
+        from django.db import transaction
+        from django.db.models import F
+
+        with transaction.atomic():
+            # Lock the batch row and check current state
+            batch = Batch.objects.select_for_update().get(id=self.id)
+            
+            # Validate that restoring won't exceed quantity_produced
+            new_available = batch.available_quantity + quantity
+            if new_available > batch.quantity_produced:
+                # Log warning but allow it (this might indicate a bug elsewhere)
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(
+                    f"Restoring quantity to batch {batch.id} would exceed quantity_produced. "
+                    f"Current: {batch.available_quantity}, Restoring: {quantity}, "
+                    f"Produced: {batch.quantity_produced}. "
+                    f"This may indicate a data integrity issue."
+                )
+                # Cap at quantity_produced to maintain data integrity
+                new_available = batch.quantity_produced
+                quantity = new_available - batch.available_quantity
+            
+            # Use F() for atomic update to prevent race conditions
+            updated = Batch.objects.filter(id=self.id).update(
+                available_quantity=F('available_quantity') + quantity
+            )
+            
+            if updated == 0:
+                return False
+            
+            # Refresh from DB to get the updated value
+            self.refresh_from_db(fields=['available_quantity'])
+            return True
 
     def clean(self):
         """Validate model fields."""
@@ -211,8 +271,10 @@ class Batch(BaseModel):
 
     def save(self, *args, **kwargs):
         """Override save to run clean validation and initialize available_quantity."""
+        is_new = self.pk is None
+        
         # Initialize available_quantity to quantity_produced for new batches
-        if self.pk is None and self.available_quantity == 0:
+        if is_new and self.available_quantity == 0:
             self.available_quantity = self.quantity_produced
 
         self.clean()

@@ -91,6 +91,17 @@ case "${1}" in
         docker compose exec backend uv run python src/manage.py shell
         ;;
     
+    test)
+        echo -e "${GREEN}Running tests...${NC}"
+        if [ -z "$2" ]; then
+            # Run all tests
+            docker compose exec backend uv run python src/manage.py test
+        else
+            # Run specific test
+            docker compose exec backend uv run python src/manage.py test "$2"
+        fi
+        ;;
+    
     logs)
         if [ -z "$2" ]; then
             docker compose logs -f
@@ -149,6 +160,7 @@ case "${1}" in
         echo "  migrate         - Run database migrations"
         echo "  makemigrations  - Create new migrations"
         echo "  shell           - Open Django shell"
+        echo "  test [app.test] - Run tests (all or specific)"
         echo "  logs [service]  - View logs (optionally for specific service)"
         echo "  down            - Stop all services"
         echo "  down-v          - Stop all services and remove volumes"
@@ -159,6 +171,8 @@ case "${1}" in
         echo "Examples:"
         echo "  $0 up              # Start everything"
         echo "  $0 seed            # Seed data after starting"
+        echo "  $0 test            # Run all tests"
+        echo "  $0 test supplychain.tests.test_concurrent_operations  # Run specific test"
         echo "  $0 logs backend    # View backend logs"
         echo "  $0 restart backend # Restart just the backend"
         ;;

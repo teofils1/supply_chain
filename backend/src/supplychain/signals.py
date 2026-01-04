@@ -547,6 +547,22 @@ def event_post_save(sender, instance, created, **kwargs):
         current_hash = instance.compute_event_hash()
         if instance.event_hash != current_hash:
             # This could indicate tampering or legitimate update
-            # For now, just update the hash (in production, you might want to log this)
+            # Log a warning about potential data integrity issue
+            logger.warning(
+                f"Event {instance.id} hash mismatch detected. "
+                f"Stored hash: {instance.event_hash}, Computed hash: {current_hash}. "
+                f"This may indicate data tampering or an update to event data. "
+                f"Event type: {instance.event_type}, Entity: {instance.entity_type}#{instance.entity_id}",
+                extra={
+                    "event_id": instance.id,
+                    "event_type": instance.event_type,
+                    "old_hash": instance.event_hash,
+                    "new_hash": current_hash,
+                    "severity": "high",
+                    "potential_tampering": True,
+                }
+            )
+            
+            # Update the hash to reflect current state
             instance.event_hash = current_hash
             instance.save(update_fields=["event_hash"])
