@@ -9,7 +9,7 @@
               src="assets/logo.svg"
               alt="Logo"
               class="h-10 w-10"
-              onerror="this.style.display='none'"
+              onerror="this.style.display = 'none'"
             />
             <div>
               <h1 class="text-3xl font-bold text-primary">
@@ -39,10 +39,9 @@
           <p class="text-muted-color leading-relaxed">
             Our comprehensive supply chain tracking system provides end-to-end
             visibility for pharmaceutical products from manufacturing to patient
-            delivery. Built with blockchain integrity verification, real-time
-            monitoring, and regulatory compliance at its core, ensuring product
-            safety, authenticity, and traceability throughout the entire supply
-            chain journey.
+            delivery. Built with real-time monitoring and regulatory compliance
+            at its core, ensuring product safety, authenticity, and traceability
+            throughout the entire supply chain journey.
           </p>
         </div>
 
@@ -53,17 +52,21 @@
             class="text-center p-4 border border-surface rounded-lg bg-surface-50 dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors cursor-pointer"
           >
             @if (loading()) {
-            <p-skeleton
-              height="2rem"
-              width="3rem"
-              class="mx-auto mb-2"
-            ></p-skeleton>
-            <p-skeleton height="1rem" width="5rem" class="mx-auto"></p-skeleton>
+              <p-skeleton
+                height="2rem"
+                width="3rem"
+                class="mx-auto mb-2"
+              ></p-skeleton>
+              <p-skeleton
+                height="1rem"
+                width="5rem"
+                class="mx-auto"
+              ></p-skeleton>
             } @else {
-            <div class="text-2xl font-bold text-primary mb-1">
-              {{ stats().totalProducts }}
-            </div>
-            <div class="text-sm text-muted-color">Products</div>
+              <div class="text-2xl font-bold text-primary mb-1">
+                {{ stats().totalProducts }}
+              </div>
+              <div class="text-sm text-muted-color">Products</div>
             }
           </a>
           <a
@@ -71,17 +74,21 @@
             class="text-center p-4 border border-surface rounded-lg bg-surface-50 dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors cursor-pointer"
           >
             @if (loading()) {
-            <p-skeleton
-              height="2rem"
-              width="3rem"
-              class="mx-auto mb-2"
-            ></p-skeleton>
-            <p-skeleton height="1rem" width="5rem" class="mx-auto"></p-skeleton>
+              <p-skeleton
+                height="2rem"
+                width="3rem"
+                class="mx-auto mb-2"
+              ></p-skeleton>
+              <p-skeleton
+                height="1rem"
+                width="5rem"
+                class="mx-auto"
+              ></p-skeleton>
             } @else {
-            <div class="text-2xl font-bold text-primary mb-1">
-              {{ stats().totalBatches }}
-            </div>
-            <div class="text-sm text-muted-color">Batches</div>
+              <div class="text-2xl font-bold text-primary mb-1">
+                {{ stats().totalBatches }}
+              </div>
+              <div class="text-sm text-muted-color">Batches</div>
             }
           </a>
           <a
@@ -89,17 +96,21 @@
             class="text-center p-4 border border-surface rounded-lg bg-surface-50 dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors cursor-pointer"
           >
             @if (loading()) {
-            <p-skeleton
-              height="2rem"
-              width="3rem"
-              class="mx-auto mb-2"
-            ></p-skeleton>
-            <p-skeleton height="1rem" width="5rem" class="mx-auto"></p-skeleton>
+              <p-skeleton
+                height="2rem"
+                width="3rem"
+                class="mx-auto mb-2"
+              ></p-skeleton>
+              <p-skeleton
+                height="1rem"
+                width="5rem"
+                class="mx-auto"
+              ></p-skeleton>
             } @else {
-            <div class="text-2xl font-bold text-primary mb-1">
-              {{ stats().totalPacks }}
-            </div>
-            <div class="text-sm text-muted-color">Packs</div>
+              <div class="text-2xl font-bold text-primary mb-1">
+                {{ stats().totalPacks }}
+              </div>
+              <div class="text-sm text-muted-color">Packs</div>
             }
           </a>
           <a
@@ -107,17 +118,21 @@
             class="text-center p-4 border border-surface rounded-lg bg-surface-50 dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors cursor-pointer"
           >
             @if (loading()) {
-            <p-skeleton
-              height="2rem"
-              width="3rem"
-              class="mx-auto mb-2"
-            ></p-skeleton>
-            <p-skeleton height="1rem" width="5rem" class="mx-auto"></p-skeleton>
+              <p-skeleton
+                height="2rem"
+                width="3rem"
+                class="mx-auto mb-2"
+              ></p-skeleton>
+              <p-skeleton
+                height="1rem"
+                width="5rem"
+                class="mx-auto"
+              ></p-skeleton>
             } @else {
-            <div class="text-2xl font-bold text-primary mb-1">
-              {{ stats().activeShipments }}
-            </div>
-            <div class="text-sm text-muted-color">Active Shipments</div>
+              <div class="text-2xl font-bold text-primary mb-1">
+                {{ stats().activeShipments }}
+              </div>
+              <div class="text-sm text-muted-color">Active Shipments</div>
             }
           </a>
         </div>
@@ -130,10 +145,10 @@
           >
             <i class="pi pi-shield text-primary text-xl mt-1"></i>
             <div>
-              <h3 class="font-semibold mb-1">Blockchain Integrity</h3>
+              <h3 class="font-semibold mb-1">Data Integrity</h3>
               <p class="text-sm text-muted-color">
-                Immutable event recording with cryptographic verification
-                ensuring data integrity and authenticity
+                Event recording with verification checks to support data
+                integrity and authenticity
               </p>
             </div>
           </a>
@@ -237,15 +252,15 @@
           </div>
         </div>
         @if (stats().criticalEvents > 0) {
-        <div class="flex items-center justify-between">
-          <span class="text-sm">Critical Events</span>
-          <div class="flex items-center gap-2">
-            <i class="pi pi-exclamation-triangle text-red-500 text-xs"></i>
-            <span class="text-sm text-red-600 font-medium">{{
-              stats().criticalEvents
-            }}</span>
+          <div class="flex items-center justify-between">
+            <span class="text-sm">Critical Events</span>
+            <div class="flex items-center gap-2">
+              <i class="pi pi-exclamation-triangle text-red-500 text-xs"></i>
+              <span class="text-sm text-red-600 font-medium">{{
+                stats().criticalEvents
+              }}</span>
+            </div>
           </div>
-        </div>
         }
       </div>
     </p-card>
@@ -260,66 +275,73 @@
       </ng-template>
 
       <div class="space-y-3">
-        @if (loading()) { @for (item of [1,2,3]; track item) {
-        <div class="flex items-start gap-3">
-          <p-skeleton shape="circle" size="1.5rem"></p-skeleton>
-          <div class="flex-1 space-y-1">
-            <p-skeleton height="1rem" width="80%"></p-skeleton>
-            <p-skeleton height="0.75rem" width="50%"></p-skeleton>
-          </div>
-        </div>
-        } } @else if (error()) {
-        <div class="text-center py-4">
-          <i
-            class="pi pi-exclamation-triangle text-orange-500 text-2xl mb-2"
-          ></i>
-          <p class="text-sm text-muted-color">{{ error() }}</p>
-        </div>
-        } @else if (recentEvents().length === 0) {
-        <div class="text-center py-4">
-          <i class="pi pi-calendar text-muted-color text-2xl mb-2"></i>
-          <p class="text-sm text-muted-color">No recent events</p>
-        </div>
-        } @else { @for (event of recentEvents(); track event.id) {
-        <div
-          class="flex items-start gap-3 p-2 rounded hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors"
-        >
-          <i
-            [class]="
-              'pi ' +
-              getEventIcon(event.event_type) +
-              ' ' +
-              getEventIconColor(event.severity) +
-              ' mt-1 text-sm'
-            "
-          ></i>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium truncate">{{ event.description }}</p>
-            <div class="flex items-center gap-2 mt-1">
-              <span class="text-xs text-muted-color">{{
-                getRelativeTime(event.timestamp)
-              }}</span>
-              @if (event.entity_display_name) {
-              <span class="text-xs text-primary truncate">{{
-                event.entity_display_name
-              }}</span>
-              } @if (event.severity !== 'info') {
-              <p-tag
-                [value]="event.severity_display"
-                [severity]="
-                  event.severity === 'critical'
-                    ? 'danger'
-                    : event.severity === 'high'
-                    ? 'warning'
-                    : 'info'
-                "
-                styleClass="text-xs"
-              ></p-tag>
-              }
+        @if (loading()) {
+          @for (item of [1, 2, 3]; track item) {
+            <div class="flex items-start gap-3">
+              <p-skeleton shape="circle" size="1.5rem"></p-skeleton>
+              <div class="flex-1 space-y-1">
+                <p-skeleton height="1rem" width="80%"></p-skeleton>
+                <p-skeleton height="0.75rem" width="50%"></p-skeleton>
+              </div>
             </div>
+          }
+        } @else if (error()) {
+          <div class="text-center py-4">
+            <i
+              class="pi pi-exclamation-triangle text-orange-500 text-2xl mb-2"
+            ></i>
+            <p class="text-sm text-muted-color">{{ error() }}</p>
           </div>
-        </div>
-        } }
+        } @else if (recentEvents().length === 0) {
+          <div class="text-center py-4">
+            <i class="pi pi-calendar text-muted-color text-2xl mb-2"></i>
+            <p class="text-sm text-muted-color">No recent events</p>
+          </div>
+        } @else {
+          @for (event of recentEvents(); track event.id) {
+            <div
+              class="flex items-start gap-3 p-2 rounded hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors"
+            >
+              <i
+                [class]="
+                  'pi ' +
+                  getEventIcon(event.event_type) +
+                  ' ' +
+                  getEventIconColor(event.severity) +
+                  ' mt-1 text-sm'
+                "
+              ></i>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate">
+                  {{ event.description }}
+                </p>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-xs text-muted-color">{{
+                    getRelativeTime(event.timestamp)
+                  }}</span>
+                  @if (event.entity_display_name) {
+                    <span class="text-xs text-primary truncate">{{
+                      event.entity_display_name
+                    }}</span>
+                  }
+                  @if (event.severity !== "info") {
+                    <p-tag
+                      [value]="event.severity_display"
+                      [severity]="
+                        event.severity === 'critical'
+                          ? 'danger'
+                          : event.severity === 'high'
+                            ? 'warning'
+                            : 'info'
+                      "
+                      styleClass="text-xs"
+                    ></p-tag>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        }
       </div>
 
       <ng-template pTemplate="footer">
@@ -333,4 +355,5 @@
         ></a>
       </ng-template>
     </p-card>
+  </div>
 </div>

@@ -273,7 +273,7 @@
             'bg-blue-100 border-blue-500 text-blue-600':
               event.severity === 'low',
             'bg-green-100 border-green-500 text-green-600':
-              event.severity === 'info'
+              event.severity === 'info',
           }"
         >
           <i [class]="'pi ' + event.icon" class="text-sm"></i>
@@ -333,34 +333,6 @@
             <span *ngIf="event.isRecent" class="text-blue-600 text-xs font-bold"
               >NEW</span
             >
-            <!-- Blockchain Integrity Badge -->
-            <p-tag
-              *ngIf="event.is_blockchain_anchored"
-              [value]="'Verified'"
-              [severity]="'success'"
-              [icon]="'pi pi-shield'"
-              class="text-xs"
-              pTooltip="Blockchain Verified"
-            ></p-tag>
-            <p-tag
-              *ngIf="
-                !event.is_blockchain_anchored &&
-                event.integrity_status === 'pending'
-              "
-              [value]="'Pending'"
-              [severity]="'warning'"
-              [icon]="'pi pi-clock'"
-              class="text-xs"
-              pTooltip="Blockchain Verification Pending"
-            ></p-tag>
-            <p-tag
-              *ngIf="event.integrity_status === 'failed'"
-              [value]="'Failed'"
-              [severity]="'danger'"
-              [icon]="'pi pi-times-circle'"
-              class="text-xs"
-              pTooltip="Blockchain Verification Failed"
-            ></p-tag>
           </div>
 
           <!-- Event Description -->
@@ -458,7 +430,6 @@
               Severity
               <p-sortIcon field="severity"></p-sortIcon>
             </th>
-            <th>Integrity</th>
             <th pSortableColumn="timestamp">
               Timestamp
               <p-sortIcon field="timestamp"></p-sortIcon>
@@ -475,7 +446,7 @@
             [ngClass]="{
               'bg-red-50 dark:bg-red-900/10': event.is_critical,
               'bg-orange-50 dark:bg-orange-900/10':
-                event.is_alert && !event.is_critical
+                event.is_alert && !event.is_critical,
             }"
           >
             <!-- Event Type -->
@@ -488,7 +459,7 @@
                     'text-orange-600': event.severity === 'high',
                     'text-yellow-600': event.severity === 'medium',
                     'text-blue-600': event.severity === 'low',
-                    'text-green-600': event.severity === 'info'
+                    'text-green-600': event.severity === 'info',
                   }"
                 ></i>
                 <div class="flex flex-col">
@@ -511,34 +482,6 @@
                       class="text-blue-600 text-xs font-bold"
                       >NEW</span
                     >
-                    <!-- Blockchain Integrity Badge -->
-                    <p-tag
-                      *ngIf="event.is_blockchain_anchored"
-                      [value]="'Verified'"
-                      [severity]="'success'"
-                      [icon]="'pi pi-shield'"
-                      class="text-xs"
-                      pTooltip="Blockchain Verified"
-                    ></p-tag>
-                    <p-tag
-                      *ngIf="
-                        !event.is_blockchain_anchored &&
-                        event.integrity_status === 'pending'
-                      "
-                      [value]="'Pending'"
-                      [severity]="'warning'"
-                      [icon]="'pi pi-clock'"
-                      class="text-xs"
-                      pTooltip="Blockchain Verification Pending"
-                    ></p-tag>
-                    <p-tag
-                      *ngIf="event.integrity_status === 'failed'"
-                      [value]="'Failed'"
-                      [severity]="'danger'"
-                      [icon]="'pi pi-times-circle'"
-                      class="text-xs"
-                      pTooltip="Blockchain Verification Failed"
-                    ></p-tag>
                   </div>
                 </div>
               </div>
@@ -565,34 +508,6 @@
               ></p-tag>
             </td>
 
-            <!-- Blockchain Integrity -->
-            <td>
-              <p-tag
-                *ngIf="event.is_blockchain_anchored"
-                [value]="'Verified'"
-                [severity]="'success'"
-                [icon]="'pi pi-shield'"
-                class="text-xs"
-              ></p-tag>
-              <p-tag
-                *ngIf="
-                  !event.is_blockchain_anchored &&
-                  event.integrity_status === 'pending'
-                "
-                [value]="'Pending'"
-                [severity]="'warning'"
-                [icon]="'pi pi-clock'"
-                class="text-xs"
-              ></p-tag>
-              <p-tag
-                *ngIf="event.integrity_status === 'failed'"
-                [value]="'Failed'"
-                [severity]="'danger'"
-                [icon]="'pi pi-times-circle'"
-                class="text-xs"
-              ></p-tag>
-            </td>
-
             <!-- Timestamp -->
             <td>
               <div class="flex flex-col">
@@ -613,7 +528,7 @@
               <span class="text-sm" [title]="event.description">
                 {{
                   event.description.length > 50
-                    ? (event.description | slice : 0 : 50) + "..."
+                    ? (event.description | slice: 0 : 50) + "..."
                     : event.description
                 }}
               </span>
@@ -628,7 +543,7 @@
                 <i class="pi pi-map-marker text-xs"></i>
                 {{
                   event.location.length > 20
-                    ? (event.location | slice : 0 : 20) + "..."
+                    ? (event.location | slice: 0 : 20) + "..."
                     : event.location
                 }}
               </span>

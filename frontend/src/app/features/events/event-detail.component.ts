@@ -61,13 +61,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   loading = signal(false);
   loadingRelated = signal(false);
 
-  // Blockchain state
-  anchoringInProgress = signal(false);
-  verifyingBlockchain = signal(false);
-  verifyingIntegrity = signal(false);
-  verificationResult = signal<any>(null);
-  integrityResult = signal<any>(null);
-
   // Event ID from route
   eventId = signal<number | null>(null);
 
@@ -98,11 +91,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     // Reset all state when navigating to a new event
     this.event.set(null);
     this.relatedEvents.set([]);
-    this.verificationResult.set(null);
-    this.integrityResult.set(null);
-    this.anchoringInProgress.set(false);
-    this.verifyingBlockchain.set(false);
-    this.verifyingIntegrity.set(false);
   }
 
   loadEvent() {
@@ -161,7 +149,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   getSeverityColor(
-    severity: string
+    severity: string,
   ): 'success' | 'warning' | 'danger' | 'info' | 'secondary' {
     switch (severity) {
       case 'critical':
@@ -311,126 +299,5 @@ export class EventDetailComponent implements OnInit, OnDestroy {
           detail: 'Failed to copy to clipboard',
         });
       });
-  }
-
-  // Blockchain integrity methods
-
-  anchorToBlockchain() {
-    const eventId = this.eventId();
-    if (!eventId) return;
-
-    this.anchoringInProgress.set(true);
-    this.eventService.anchorEvent(eventId).subscribe({
-      next: (result) => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Anchored Successfully',
-          detail: `Event anchored to blockchain. TX: ${result.tx_hash.substring(
-            0,
-            16
-          )}...`,
-        });
-        this.anchoringInProgress.set(false);
-        // Reload event to get updated blockchain data
-        this.loadEvent();
-      },
-      error: (error) => {
-        console.error('Error anchoring event:', error);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Anchoring Failed',
-          detail:
-            error.error?.details || 'Failed to anchor event to blockchain',
-        });
-        this.anchoringInProgress.set(false);
-      },
-    });
-  }
-
-  verifyBlockchainAnchoring() {
-    const eventId = this.eventId();
-    if (!eventId) return;
-
-    this.verifyingBlockchain.set(true);
-    this.eventService.verifyBlockchainAnchoring(eventId).subscribe({
-      next: (result) => {
-        this.verificationResult.set(result);
-        this.verifyingBlockchain.set(false);
-
-        const message =
-          result.verified && result.integrity_verified
-            ? 'Event successfully verified on blockchain'
-            : result.verified
-            ? 'Blockchain verified, but data integrity compromised'
-            : 'Blockchain verification failed';
-
-        this.messageService.add({
-          severity:
-            result.verified && result.integrity_verified ? 'success' : 'warn',
-          summary: 'Verification Complete',
-          detail: message,
-        });
-      },
-      error: (error) => {
-        console.error('Error verifying blockchain:', error);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Verification Failed',
-          detail: 'Failed to verify blockchain anchoring',
-        });
-        this.verifyingBlockchain.set(false);
-      },
-    });
-  }
-
-  verifyDataIntegrity() {
-    const eventId = this.eventId();
-    if (!eventId) return;
-
-    this.verifyingIntegrity.set(true);
-    this.eventService.verifyIntegrity(eventId).subscribe({
-      next: (result) => {
-        this.integrityResult.set(result);
-        this.verifyingIntegrity.set(false);
-
-        this.messageService.add({
-          severity: result.integrity_verified ? 'success' : 'warn',
-          summary: 'Integrity Check Complete',
-          detail: result.integrity_verified
-            ? 'Event data integrity verified'
-            : 'Event data may have been tampered with',
-        });
-      },
-      error: (error) => {
-        console.error('Error verifying integrity:', error);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Verification Failed',
-          detail: 'Failed to verify data integrity',
-        });
-        this.verifyingIntegrity.set(false);
-      },
-    });
-  }
-
-  openBlockchainExplorer() {
-    const url = this.event()?.blockchain_explorer_url;
-    if (url) {
-      window.open(url, '_blank');
-    }
-  }
-
-  getIntegrityStatusColor(
-    status: string
-  ): 'success' | 'warning' | 'danger' | 'info' {
-    return this.eventService.getIntegrityStatusColor(status as any);
-  }
-
-  getIntegrityStatusIcon(status: string): string {
-    return this.eventService.getIntegrityStatusIcon(status as any);
-  }
-
-  getIntegrityStatusText(status: string): string {
-    return this.eventService.getIntegrityStatusText(status as any);
   }
 }
