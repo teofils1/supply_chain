@@ -34,11 +34,22 @@ export class LoginComponent {
   loading = signal(false);
   error = signal<string | null>(null);
 
+  private getSafeReturnUrl(): string {
+    const returnUrl = this.route.snapshot.queryParams['returnUrl'];
+    if (
+      typeof returnUrl === 'string' &&
+      returnUrl.startsWith('/') &&
+      !returnUrl.startsWith('//')
+    ) {
+      return returnUrl;
+    }
+    return '/';
+  }
+
   constructor() {
     // If user is already authenticated, redirect to home or intended destination
     if (this.auth.isAuthenticated()) {
-      const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
-      this.router.navigateByUrl(returnUrl);
+      this.router.navigateByUrl(this.getSafeReturnUrl());
     }
   }
 
@@ -51,8 +62,7 @@ export class LoginComponent {
         // Wait for user info to load before redirecting
         setTimeout(() => {
           // Redirect to the originally requested URL or home page
-          const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
-          this.router.navigateByUrl(returnUrl);
+          this.router.navigateByUrl(this.getSafeReturnUrl());
           this.loading.set(false);
         }, 100);
       },

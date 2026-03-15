@@ -139,7 +139,8 @@ class NotificationLogAcknowledgeView(APIView):
             )
 
         notification.acknowledged_at = timezone.now()
-        notification.save(update_fields=["acknowledged_at"])
+        notification.status = "acknowledged"
+        notification.save(update_fields=["acknowledged_at", "status"])
 
         serializer = NotificationLogSerializer(notification)
         return Response(serializer.data)
@@ -153,7 +154,7 @@ class NotificationLogAcknowledgeAllView(APIView):
     def post(self, request):
         updated = NotificationLog.objects.filter(
             user=request.user, acknowledged_at__isnull=True, deleted_at__isnull=True
-        ).update(acknowledged_at=timezone.now())
+        ).update(acknowledged_at=timezone.now(), status="acknowledged")
 
         return Response({"acknowledged": updated})
 

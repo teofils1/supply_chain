@@ -100,10 +100,10 @@ export class ShipmentDetailComponent implements OnInit {
   // Mode detection
   shipmentId = signal<number | null>(null);
   isEditMode = computed(() =>
-    this.route.snapshot.url.some((segment) => segment.path === 'edit')
+    this.route.snapshot.url.some((segment) => segment.path === 'edit'),
   );
   isCreateMode = computed(() =>
-    this.route.snapshot.url.some((segment) => segment.path === 'new')
+    this.route.snapshot.url.some((segment) => segment.path === 'new'),
   );
   isViewMode = computed(() => !this.isEditMode() && !this.isCreateMode());
 
@@ -186,13 +186,19 @@ export class ShipmentDetailComponent implements OnInit {
     }
 
     // Load available packs for selection
-    // For view/edit mode, load all packs to show existing shipment packs
-    // For create mode, only load active packs
+    // Create mode: only active packs not reserved by active shipments
+    // Edit mode: same, but allow packs already assigned to this shipment
     this.packService
       .load(
         this.isCreateMode()
-          ? { status: 'active' } // Only load active packs that can be shipped
-          : {} // Load all packs to show existing shipment packs
+          ? {
+              status: 'active',
+              available_for_shipment: true,
+            }
+          : {
+              available_for_shipment: true,
+              ...(this.shipmentId() ? { shipment_id: this.shipmentId()! } : {}),
+            },
       )
       .subscribe();
 

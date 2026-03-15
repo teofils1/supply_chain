@@ -916,22 +916,28 @@ class Command(BaseCommand):
         """Seed notification rules for users."""
         rule_configs = [
             {
-                "name": "Critical Alerts",
-                "event_types": ["recalled", "damaged", "expired", "error"],
+                "name": "Critical & Expiry Alerts",
+                "event_types": ["expired", "status_changed", "deleted"],
                 "severity_levels": ["high", "critical"],
                 "channels": ["email", "websocket"],
             },
             {
-                "name": "Shipment Updates",
-                "event_types": ["shipped", "delivered", "returned"],
+                "name": "Lifecycle Events",
+                "event_types": ["created", "updated", "deleted"],
                 "severity_levels": [],
                 "channels": ["websocket"],
             },
             {
-                "name": "Quality Control",
-                "event_types": ["quality_check", "temperature_alert"],
+                "name": "Status Monitoring",
+                "event_types": ["status_changed"],
                 "severity_levels": ["medium", "high", "critical"],
-                "channels": ["email"],
+                "channels": ["email", "websocket"],
+            },
+            {
+                "name": "All Critical Events",
+                "event_types": [],
+                "severity_levels": ["critical"],
+                "channels": ["email", "websocket"],
             },
             {
                 "name": "All Events",

@@ -44,17 +44,18 @@ export class NotificationBellComponent implements OnInit {
 
   loadRecent(): void {
     this.loading.set(true);
-    this.notificationService.getRecentNotifications().subscribe({
-      next: (notifications) => {
-        console.log('Loaded notifications:', notifications);
-        this.recentNotifications.set(notifications);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        console.error('Failed to load recent notifications:', err);
-        this.loading.set(false);
-      },
-    });
+    this.notificationService
+      .getNotifications({ unread: true, page: 1 })
+      .subscribe({
+        next: (response) => {
+          this.recentNotifications.set(response.results.slice(0, 10));
+          this.loading.set(false);
+        },
+        error: (err) => {
+          console.error('Failed to load recent notifications:', err);
+          this.loading.set(false);
+        },
+      });
   }
 
   acknowledgeNotification(notification: NotificationLog, event: Event): void {
@@ -62,8 +63,10 @@ export class NotificationBellComponent implements OnInit {
     this.notificationService
       .acknowledgeNotification(notification.id)
       .subscribe({
-        next: () => {
-          this.loadRecent();
+        next: (updatedNotification) => {
+          this.recentNotifications.update((items) =>
+            items.filter((item) => item.id !== notification.id),
+          );
         },
       });
   }
@@ -71,7 +74,7 @@ export class NotificationBellComponent implements OnInit {
   acknowledgeAll(): void {
     this.notificationService.acknowledgeAll().subscribe({
       next: () => {
-        this.loadRecent();
+        this.recentNotifications.set([]);
       },
     });
   }

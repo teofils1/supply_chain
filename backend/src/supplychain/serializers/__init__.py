@@ -23,6 +23,7 @@ from .shipment import (
     ShipmentDetailSerializer,
     ShipmentListSerializer,
     ShipmentPackSerializer,
+    ShipmentUpdateSerializer,
 )
 from .user import (
     UserCreateSerializer,
@@ -57,6 +58,7 @@ __all__ = [
     "ShipmentListSerializer",
     "ShipmentCreateSerializer",
     "ShipmentDetailSerializer",
+    "ShipmentUpdateSerializer",
     "ShipmentPackSerializer",
     "EventListSerializer",
     "EventCreateSerializer",

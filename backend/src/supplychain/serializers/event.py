@@ -230,7 +230,9 @@ class EventDetailSerializer(serializers.ModelSerializer):
                 "manufacturing_date": obj.content_object.manufacturing_date,
                 "expiry_date": obj.content_object.expiry_date,
                 "status": obj.content_object.status,
-                "quantity": obj.content_object.quantity,
+                "quantity": obj.content_object.quantity_produced,
+                "quantity_produced": obj.content_object.quantity_produced,
+                "available_quantity": obj.content_object.available_quantity,
             }
         elif (
             obj.entity_type == "pack"
@@ -244,7 +246,9 @@ class EventDetailSerializer(serializers.ModelSerializer):
                 "manufacturing_date": batch.manufacturing_date,
                 "expiry_date": batch.expiry_date,
                 "status": batch.status,
-                "quantity": batch.quantity,
+                "quantity": batch.quantity_produced,
+                "quantity_produced": batch.quantity_produced,
+                "available_quantity": batch.available_quantity,
             }
         return None
 

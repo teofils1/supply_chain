@@ -24,7 +24,7 @@ class NotificationRuleSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "user", "created_at", "updated_at"]
 
     def validate(self, data):
         """Validate notification rule data."""
@@ -33,6 +33,13 @@ class NotificationRuleSerializer(serializers.ModelSerializer):
         if request and request.user:
             data["user"] = request.user
         return data
+
+    def create(self, validated_data):
+        """Create a rule for the authenticated user."""
+        request = self.context.get("request")
+        if request and request.user and request.user.is_authenticated:
+            validated_data["user"] = request.user
+        return super().create(validated_data)
 
 
 class NotificationLogSerializer(serializers.ModelSerializer):

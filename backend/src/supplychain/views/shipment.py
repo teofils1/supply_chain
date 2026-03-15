@@ -212,6 +212,11 @@ class ShipmentDetailUpdateView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated, p.RoleBasedCRUDPermission]
     serializer_class = s.ShipmentDetailSerializer
 
+    def get_serializer_class(self):
+        if self.request.method in ["PUT", "PATCH"]:
+            return s.ShipmentUpdateSerializer
+        return s.ShipmentDetailSerializer
+
     def get_queryset(self):
         """Include soft-deleted shipments for detail view (admins might need to see them)."""
         return m.Shipment.all_objects.prefetch_related(
@@ -223,8 +228,6 @@ class ShipmentDetailUpdateView(generics.RetrieveUpdateAPIView):
 
     def perform_update(self, serializer):
         """Update shipment and handle pack relationships if needed."""
-        # Note: For updating pack relationships, we'd need additional logic
-        # This could be implemented as a separate endpoint or enhanced here
         serializer.save()
 
 

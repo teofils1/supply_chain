@@ -27,6 +27,13 @@ class PackListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         """Filter packs based on query parameters."""
         queryset = super().get_queryset()
+        active_shipment_statuses = [
+            "pending",
+            "confirmed",
+            "picked_up",
+            "in_transit",
+            "out_for_delivery",
+        ]
 
         # Search functionality
         search = self.request.query_params.get("search", None)
@@ -59,6 +66,25 @@ class PackListCreateView(generics.ListCreateAPIView):
         status_filter = self.request.query_params.get("status", None)
         if status_filter:
             queryset = queryset.filter(status=status_filter)
+
+        # Filter to packs available for shipment assignment
+        available_for_shipment = self.request.query_params.get(
+            "available_for_shipment", None
+        )
+        if available_for_shipment and available_for_shipment.lower() in ["true", "1"]:
+            blocked_shipment_packs = m.ShipmentPack.objects.filter(
+                shipment__status__in=active_shipment_statuses
+            )
+
+            shipment_id = self.request.query_params.get("shipment_id", None)
+            if shipment_id:
+                with contextlib.suppress(ValueError, TypeError):
+                    blocked_shipment_packs = blocked_shipment_packs.exclude(
+                        shipment_id=int(shipment_id)
+                    )
+
+            blocked_pack_ids = blocked_shipment_packs.values_list("pack_id", flat=True)
+            queryset = queryset.exclude(id__in=blocked_pack_ids)
 
         # Filter by pack type
         pack_type_filter = self.request.query_params.get("pack_type", None)

@@ -8,6 +8,7 @@ import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
+import { Router } from '@angular/router';
 import { NotificationService } from '../../../core/services/notification.service';
 import { NotificationLog } from '../../../core/models/notification.model';
 
@@ -30,6 +31,7 @@ import { NotificationLog } from '../../../core/models/notification.model';
 })
 export class NotificationListComponent implements OnInit {
   private notificationService = inject(NotificationService);
+  private router = inject(Router);
 
   notifications = signal<NotificationLog[]>([]);
   totalRecords = signal(0);
@@ -53,7 +55,7 @@ export class NotificationListComponent implements OnInit {
     { label: 'All', value: undefined },
     { label: 'Email', value: 'email' },
     { label: 'SMS', value: 'sms' },
-    { label: 'Webhook', value: 'webhook' },
+    { label: 'WebSocket', value: 'websocket' },
   ];
 
   severityOptions = [
@@ -101,8 +103,20 @@ export class NotificationListComponent implements OnInit {
     this.notificationService
       .acknowledgeNotification(notification.id)
       .subscribe({
-        next: () => {
-          this.loadNotifications();
+        next: (updatedNotification) => {
+          this.notifications.update((items) =>
+            items.map((item) =>
+              item.id === notification.id
+                ? {
+                    ...item,
+                    acknowledged_at:
+                      updatedNotification.acknowledged_at ??
+                      new Date().toISOString(),
+                    status: 'acknowledged',
+                  }
+                : item,
+            ),
+          );
         },
       });
   }
@@ -110,9 +124,20 @@ export class NotificationListComponent implements OnInit {
   acknowledgeAll(): void {
     this.notificationService.acknowledgeAll().subscribe({
       next: () => {
-        this.loadNotifications();
+        const nowIso = new Date().toISOString();
+        this.notifications.update((items) =>
+          items.map((item) => ({
+            ...item,
+            acknowledged_at: item.acknowledged_at ?? nowIso,
+            status: 'acknowledged',
+          })),
+        );
       },
     });
+  }
+
+  openNotificationSettings(): void {
+    this.router.navigate(['/notifications/settings']);
   }
 
   getSeverityClass(severity: string): string {

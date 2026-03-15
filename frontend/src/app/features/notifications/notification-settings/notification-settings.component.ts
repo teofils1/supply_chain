@@ -10,6 +10,7 @@ import { MultiSelectModule } from 'primeng/multiselect';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
+import { Router } from '@angular/router';
 import { NotificationService } from '../../../core/services/notification.service';
 import {
   NotificationRule,
@@ -38,6 +39,7 @@ import {
 export class NotificationSettingsComponent implements OnInit {
   private notificationService = inject(NotificationService);
   private messageService = inject(MessageService);
+  private router = inject(Router);
 
   rules = signal<NotificationRule[]>([]);
   loading = signal(false);
@@ -55,28 +57,11 @@ export class NotificationSettingsComponent implements OnInit {
 
   // Options for multi-selects
   eventTypeOptions = [
-    { label: 'Product Created', value: 'product_created' },
-    { label: 'Product Updated', value: 'product_updated' },
-    { label: 'Product Recalled', value: 'product_recalled' },
-    { label: 'Batch Created', value: 'batch_created' },
-    { label: 'Batch Updated', value: 'batch_updated' },
-    { label: 'Batch Recalled', value: 'batch_recalled' },
-    { label: 'Pack Created', value: 'pack_created' },
-    { label: 'Pack Scanned', value: 'pack_scanned' },
-    { label: 'Pack Damaged', value: 'pack_damaged' },
-    { label: 'Pack Expired', value: 'pack_expired' },
-    { label: 'Shipment Created', value: 'shipment_created' },
-    { label: 'Shipment Updated', value: 'shipment_updated' },
-    { label: 'Shipment Dispatched', value: 'shipment_dispatched' },
-    { label: 'Shipment In Transit', value: 'shipment_in_transit' },
-    { label: 'Shipment Delivered', value: 'shipment_delivered' },
-    { label: 'Shipment Delayed', value: 'shipment_delayed' },
-    { label: 'Temperature Alert', value: 'temperature_alert' },
-    { label: 'Humidity Alert', value: 'humidity_alert' },
-    { label: 'Location Update', value: 'location_update' },
-    { label: 'Access Granted', value: 'access_granted' },
-    { label: 'Access Denied', value: 'access_denied' },
-    { label: 'Error', value: 'error' },
+    { label: 'Created', value: 'created' },
+    { label: 'Updated', value: 'updated' },
+    { label: 'Deleted', value: 'deleted' },
+    { label: 'Status Changed', value: 'status_changed' },
+    { label: 'Expired', value: 'expired' },
   ];
 
   severityOptions = [
@@ -90,21 +75,47 @@ export class NotificationSettingsComponent implements OnInit {
   channelOptions = [
     { label: 'Email', value: 'email' },
     { label: 'SMS', value: 'sms' },
-    { label: 'Webhook', value: 'webhook' },
+    { label: 'WebSocket', value: 'websocket' },
   ];
 
   ngOnInit(): void {
     this.loadRules();
   }
 
+  private normalizeRule(rule: NotificationRule): NotificationRule {
+    return {
+      ...rule,
+      event_types: Array.isArray(rule.event_types) ? rule.event_types : [],
+      severity_levels: Array.isArray(rule.severity_levels)
+        ? rule.severity_levels
+        : [],
+      channels: Array.isArray(rule.channels) ? rule.channels : [],
+    };
+  }
+
   loadRules(): void {
     this.loading.set(true);
     this.notificationService.getNotificationRules().subscribe({
       next: (response) => {
-        this.rules.set(response.results);
+        const rawRules: NotificationRule[] = Array.isArray(response)
+          ? response
+          : Array.isArray((response as any)?.results)
+            ? ((response as any).results as NotificationRule[])
+            : [];
+
+        this.rules.set(
+          rawRules.map((rule: NotificationRule) => this.normalizeRule(rule)),
+        );
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load notification rules',
+        });
+      },
     });
   }
 
@@ -120,14 +131,19 @@ export class NotificationSettingsComponent implements OnInit {
     this.showDialog.set(true);
   }
 
+  openNotificationsList(): void {
+    this.router.navigate(['/notifications']);
+  }
+
   openEditDialog(rule: NotificationRule): void {
-    this.editingRule = rule;
+    const safeRule = this.normalizeRule(rule);
+    this.editingRule = safeRule;
     this.formData = {
-      name: rule.name,
-      event_types: [...rule.event_types],
-      severity_levels: [...rule.severity_levels],
-      channels: [...rule.channels],
-      enabled: rule.enabled,
+      name: safeRule.name,
+      event_types: [...safeRule.event_types],
+      severity_levels: [...safeRule.severity_levels],
+      channels: [...safeRule.channels],
+      enabled: safeRule.enabled,
     };
     this.showDialog.set(true);
   }
@@ -170,7 +186,12 @@ export class NotificationSettingsComponent implements OnInit {
         });
     } else {
       this.notificationService.createNotificationRule(this.formData).subscribe({
-        next: () => {
+        next: (createdRule) => {
+          const normalizedRule = this.normalizeRule(createdRule);
+          this.rules.update((existingRules) => [
+            normalizedRule,
+            ...existingRules,
+          ]);
           this.messageService.add({
             severity: 'success',
             summary: 'Success',

@@ -3,12 +3,22 @@
 <p-card>
   <ng-template pTemplate="header">
     <div class="card-header">
-      <h2 class="text-2xl font-bold">Notification Settings</h2>
-      <p-button
-        label="Create Rule"
-        icon="pi pi-plus"
-        (onClick)="openCreateDialog()"
-      ></p-button>
+      <h2 class="text-2xl font-bold text-surface-900 dark:text-surface-0">
+        Notification Settings
+      </h2>
+      <div class="flex gap-2">
+        <p-button
+          label="Notifications List"
+          icon="pi pi-list"
+          [outlined]="true"
+          (onClick)="openNotificationsList()"
+        ></p-button>
+        <p-button
+          label="Create Rule"
+          icon="pi pi-plus"
+          (onClick)="openCreateDialog()"
+        ></p-button>
+      </div>
     </div>
   </ng-template>
 
@@ -34,45 +44,52 @@
         <td>
           <div class="flex flex-wrap gap-1">
             @for (type of rule.event_types.slice(0, 2); track type) {
-            <span class="text-xs bg-gray-200 px-2 py-1 rounded">{{
-              type
-            }}</span>
-            } @if (rule.event_types.length > 2) {
-            <span class="text-xs text-gray-500"
-              >+{{ rule.event_types.length - 2 }} more</span
-            >
+              <span
+                class="text-xs bg-gray-200 dark:bg-surface-700 text-surface-900 dark:text-surface-0 px-2 py-1 rounded"
+                >{{ type }}</span
+              >
+            }
+            @if (rule.event_types.length > 2) {
+              <span class="text-xs text-surface-500 dark:text-surface-300"
+                >+{{ rule.event_types.length - 2 }} more</span
+              >
             }
           </div>
         </td>
         <td>
           <div class="flex flex-wrap gap-1">
             @for (level of rule.severity_levels; track level) {
-            <span
-              class="text-xs px-2 py-1 rounded"
-              [class.bg-red-100]="level === 'critical'"
-              [class.bg-orange-100]="level === 'high'"
-              [class.bg-blue-100]="level === 'medium'"
-              [class.bg-green-100]="level === 'low'"
-              [class.bg-gray-100]="level === 'info'"
-            >
-              {{ level }}
-            </span>
+              <span
+                class="text-xs px-2 py-1 rounded text-surface-900"
+                [class.bg-red-100]="level === 'critical'"
+                [class.dark:bg-red-300]="level === 'critical'"
+                [class.bg-orange-100]="level === 'high'"
+                [class.dark:bg-orange-300]="level === 'high'"
+                [class.bg-blue-100]="level === 'medium'"
+                [class.dark:bg-blue-300]="level === 'medium'"
+                [class.bg-green-100]="level === 'low'"
+                [class.dark:bg-green-300]="level === 'low'"
+                [class.bg-gray-100]="level === 'info'"
+                [class.dark:bg-surface-300]="level === 'info'"
+              >
+                {{ level }}
+              </span>
             }
           </div>
         </td>
         <td>
           <div class="flex gap-2">
             @for (channel of rule.channels; track channel) {
-            <i
-              [class]="
-                'pi pi-' +
-                (channel === 'email'
-                  ? 'envelope'
-                  : channel === 'sms'
-                  ? 'mobile'
-                  : 'globe')
-              "
-            ></i>
+              <i
+                [class]="
+                  'pi pi-' +
+                  (channel === 'email'
+                    ? 'envelope'
+                    : channel === 'sms'
+                      ? 'mobile'
+                      : 'globe')
+                "
+              ></i>
             }
           </div>
         </td>
@@ -105,7 +122,9 @@
       <tr>
         <td colspan="6" class="text-center py-8">
           <i class="pi pi-inbox text-4xl text-gray-400 mb-2"></i>
-          <p class="text-gray-500">No notification rules configured</p>
+          <p class="text-surface-500 dark:text-surface-300">
+            No notification rules configured
+          </p>
           <p-button
             label="Create your first rule"
             icon="pi pi-plus"
@@ -127,7 +146,9 @@
 >
   <div class="flex flex-col gap-4">
     <div>
-      <label class="block mb-2 font-medium">Rule Name *</label>
+      <label class="block mb-2 font-medium text-surface-900 dark:text-surface-0"
+        >Rule Name *</label
+      >
       <input
         pInputText
         [(ngModel)]="formData.name"
@@ -137,7 +158,9 @@
     </div>
 
     <div>
-      <label class="block mb-2 font-medium">Event Types *</label>
+      <label class="block mb-2 font-medium text-surface-900 dark:text-surface-0"
+        >Event Types *</label
+      >
       <p-multiselect
         [(ngModel)]="formData.event_types"
         [options]="eventTypeOptions"
@@ -150,7 +173,9 @@
     </div>
 
     <div>
-      <label class="block mb-2 font-medium">Severity Levels *</label>
+      <label class="block mb-2 font-medium text-surface-900 dark:text-surface-0"
+        >Severity Levels *</label
+      >
       <p-multiselect
         [(ngModel)]="formData.severity_levels"
         [options]="severityOptions"
@@ -162,7 +187,9 @@
     </div>
 
     <div>
-      <label class="block mb-2 font-medium">Notification Channels *</label>
+      <label class="block mb-2 font-medium text-surface-900 dark:text-surface-0"
+        >Notification Channels *</label
+      >
       <p-multiselect
         [(ngModel)]="formData.channels"
         [options]="channelOptions"
@@ -175,7 +202,9 @@
 
     <div class="flex items-center gap-2">
       <p-toggleswitch [(ngModel)]="formData.enabled"></p-toggleswitch>
-      <label class="font-medium">Enable this rule</label>
+      <label class="font-medium text-surface-900 dark:text-surface-0"
+        >Enable this rule</label
+      >
     </div>
   </div>
 

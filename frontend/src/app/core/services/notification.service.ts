@@ -41,7 +41,7 @@ export class NotificationService {
           // Silently handle errors to prevent console spam
           console.debug('Failed to fetch unread count:', error);
           return EMPTY; // Return empty observable on error
-        })
+        }),
       )
       .subscribe();
   }
@@ -68,7 +68,7 @@ export class NotificationService {
     }
     return this.http.get<{ count: number; results: NotificationLog[] }>(
       `${this.apiUrl}/logs/`,
-      { params: httpParams }
+      { params: httpParams },
     );
   }
 
@@ -81,7 +81,7 @@ export class NotificationService {
       catchError((error) => {
         console.error('Failed to load recent notifications:', error);
         return of([]);
-      })
+      }),
     );
   }
 
@@ -91,12 +91,11 @@ export class NotificationService {
       .pipe(tap(() => this.refreshUnreadCount()));
   }
 
-  acknowledgeAll(): Observable<{ acknowledged_count: number }> {
+  acknowledgeAll(): Observable<{ acknowledged: number }> {
     return this.http
-      .post<{ acknowledged_count: number }>(
-        `${this.apiUrl}/logs/acknowledge-all/`,
-        {}
-      )
+      .post<{
+        acknowledged: number;
+      }>(`${this.apiUrl}/logs/acknowledge-all/`, {})
       .pipe(tap(() => this.refreshUnreadCount()));
   }
 
@@ -107,7 +106,7 @@ export class NotificationService {
         tap((response) => {
           this.unreadCountSubject.next(response.unread_count);
           this.unreadCount.set(response.unread_count);
-        })
+        }),
       );
   }
 
@@ -121,7 +120,7 @@ export class NotificationService {
     results: NotificationRule[];
   }> {
     return this.http.get<{ count: number; results: NotificationRule[] }>(
-      `${this.apiUrl}/rules/`
+      `${this.apiUrl}/rules/`,
     );
   }
 
@@ -130,18 +129,18 @@ export class NotificationService {
   }
 
   createNotificationRule(
-    rule: NotificationRuleCreate
+    rule: NotificationRuleCreate,
   ): Observable<NotificationRule> {
     return this.http.post<NotificationRule>(`${this.apiUrl}/rules/`, rule);
   }
 
   updateNotificationRule(
     id: number,
-    rule: Partial<NotificationRuleCreate>
+    rule: Partial<NotificationRuleCreate>,
   ): Observable<NotificationRule> {
     return this.http.patch<NotificationRule>(
       `${this.apiUrl}/rules/${id}/`,
-      rule
+      rule,
     );
   }
 
@@ -152,7 +151,7 @@ export class NotificationService {
   toggleNotificationRule(id: number): Observable<NotificationRule> {
     return this.http.post<NotificationRule>(
       `${this.apiUrl}/rules/${id}/toggle/`,
-      {}
+      {},
     );
   }
 }

@@ -138,19 +138,15 @@ This is an automated notification from the Supply Chain Tracking System.
 @shared_task(bind=True)
 def process_event_notifications(self, event_id: int):
     """
-    Process an event and send notifications to all users.
+    Process an event and send notifications based on matching user rules.
 
-    All events trigger notifications:
-    - Critical/High severity: Email notifications to all users
-    - Other severities: WebSocket notifications to all users
+    Notifications are sent only for enabled rules that match the event.
+    Delivery channels come from each matching rule's configured channels.
 
     Args:
         event_id: ID of the Event to process
     """
-    from supplychain.models import Event
-    from django.contrib.auth import get_user_model
-
-    User = get_user_model()
+    from supplychain.models import Event, NotificationLog, NotificationRule
 
     try:
         event = Event.objects.get(id=event_id)
@@ -158,47 +154,61 @@ def process_event_notifications(self, event_id: int):
         logger.error("process_notifications_failed", error="Event not found", event_id=event_id)
         return {"status": "failed", "error": "Event not found"}
 
-    # Determine notification channel based on severity
-    is_critical = event.severity in ["critical", "high"]
-    channel = "email" if is_critical else "websocket"
-
-    # Get all active users
-    users = User.objects.filter(is_active=True)
+    rules = NotificationRule.objects.filter(
+        enabled=True,
+        deleted_at__isnull=True,
+        user__is_active=True,
+    ).select_related("user")
 
     notifications_queued = 0
-    for user in users:
-        if channel == "email":
-            send_email_notification.delay(
-                event_id=event.id,
-                user_id=user.id,
-                rule_id=None,
-            )
-            notifications_queued += 1
-        elif channel == "websocket":
-            # Create notification log for websocket delivery
-            from supplychain.models import NotificationLog
-            NotificationLog.objects.create(
-                event=event,
-                user=user,
-                channel="websocket",
-                status="sent",
-                sent_at=timezone.now(),
-            )
-            notifications_queued += 1
+    matched_rules = 0
+    for rule in rules:
+        if not rule.matches_event(event):
+            continue
+
+        matched_rules += 1
+        channels = rule.channels or []
+
+        for channel in channels:
+            if channel == "email":
+                send_email_notification.delay(
+                    event_id=event.id,
+                    user_id=rule.user_id,
+                    rule_id=rule.id,
+                )
+                notifications_queued += 1
+            elif channel == "websocket":
+                NotificationLog.objects.create(
+                    event=event,
+                    user=rule.user,
+                    rule=rule,
+                    channel="websocket",
+                    status="sent",
+                    sent_at=timezone.now(),
+                )
+                notifications_queued += 1
+            else:
+                logger.warning(
+                    "notification_channel_not_supported",
+                    channel=channel,
+                    event_id=event_id,
+                    user_id=rule.user_id,
+                    rule_id=rule.id,
+                )
 
     logger.info(
         "event_notifications_processed",
         event_id=event_id,
         event_type=event.event_type,
         severity=event.severity,
-        channel=channel,
+        matched_rules=matched_rules,
         notifications_queued=notifications_queued,
     )
 
     return {
         "status": "processed",
         "event_id": event_id,
-        "channel": channel,
+        "matched_rules": matched_rules,
         "notifications_queued": notifications_queued,
     }
 
@@ -219,6 +229,7 @@ def check_escalations():
     # Find unacknowledged critical notifications past the timeout
     unacknowledged = NotificationLog.objects.filter(
         status="sent",
+        acknowledged_at__isnull=True,
         escalated=False,
         sent_at__lt=cutoff_time,
         event__severity="critical",

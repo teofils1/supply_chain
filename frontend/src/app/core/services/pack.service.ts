@@ -91,6 +91,8 @@ export interface PackFilters {
   batch?: number;
   product?: number;
   status?: PackStatus;
+  available_for_shipment?: boolean;
+  shipment_id?: number;
   pack_type?: PackType;
   location?: string;
   expiry_from?: string;
@@ -132,7 +134,7 @@ export class PackService {
   private _pageSize = signal(DEFAULT_PAGE_SIZE);
 
   readonly packs = computed(() =>
-    this._packs().filter((pack) => !pack.is_deleted)
+    this._packs().filter((pack) => !pack.is_deleted),
   );
   readonly loading = computed(() => this._loading());
   readonly totalRecords = computed(() => this._totalRecords());
@@ -144,7 +146,7 @@ export class PackService {
    */
   load(
     filters?: PackFilters,
-    pagination?: PaginationParams
+    pagination?: PaginationParams,
   ): Observable<PaginatedResponse<PackListItem>> {
     this._loading.set(true);
 
@@ -168,6 +170,15 @@ export class PackService {
     }
     if (filters?.status) {
       params = params.set('status', filters.status);
+    }
+    if (filters?.available_for_shipment !== undefined) {
+      params = params.set(
+        'available_for_shipment',
+        filters.available_for_shipment.toString(),
+      );
+    }
+    if (filters?.shipment_id) {
+      params = params.set('shipment_id', filters.shipment_id.toString());
     }
     if (filters?.pack_type) {
       params = params.set('pack_type', filters.pack_type);
@@ -206,7 +217,7 @@ export class PackService {
           this._currentPage.set(response.current_page);
           this._pageSize.set(response.page_size);
           this._loading.set(false);
-        })
+        }),
       );
   }
 
@@ -215,7 +226,7 @@ export class PackService {
    */
   loadAll(filters?: PackFilters): Observable<PackListItem[]> {
     return this.load(filters, { page: 1, page_size: 100 }).pipe(
-      map((response) => response.results)
+      map((response) => response.results),
     );
   }
 
@@ -267,7 +278,7 @@ export class PackService {
           is_deleted: pack.is_deleted,
         };
         this._packs.update((list) => [...list, listItem]);
-      })
+      }),
     );
   }
 
@@ -304,9 +315,9 @@ export class PackService {
           is_deleted: pack.is_deleted,
         };
         this._packs.update((list) =>
-          list.map((p) => (p.id === id ? listItem : p))
+          list.map((p) => (p.id === id ? listItem : p)),
         );
-      })
+      }),
     );
   }
 
@@ -321,7 +332,7 @@ export class PackService {
           this.cacheService.invalidateEntity('packs');
           // Remove the pack from the list completely
           this._packs.update((list) => list.filter((p) => p.id !== id));
-        })
+        }),
       );
   }
 
