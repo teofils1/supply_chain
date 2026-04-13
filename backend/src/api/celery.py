@@ -14,7 +14,7 @@ import django
 
 django.setup()
 
-from celery import Celery
+from celery import Celery  # noqa: E402  # noqa: E402  # noqa: E402
 
 # Create the Celery application WITHOUT fixups
 app = Celery("api", fixups=[])

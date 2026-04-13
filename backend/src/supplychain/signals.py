@@ -98,7 +98,7 @@ def create_automated_event(
     # Get user from request context
     if user is None:
         user = get_current_user()
-    
+
     # Ensure user is a valid User instance or None (not AnonymousUser)
     if user and not user.is_authenticated:
         user = None
@@ -117,7 +117,7 @@ def create_automated_event(
     # Note: The event_post_save signal will automatically queue notifications
     # for this event, so we don't need to do it here
     try:
-        event = m.Event.create_event(
+        m.Event.create_event(
             event_type=event_type,
             entity_type=entity_type,
             entity_id=instance.id,
@@ -222,9 +222,8 @@ def batch_post_save(sender, instance, created, **kwargs):
 
         # Check if batch has expired and create critical event
         from django.utils import timezone
-        if instance.expiry_date and instance.expiry_date < timezone.now().date():
-            if instance.status not in ["expired", "destroyed"]:
-                create_automated_event(
+        if instance.expiry_date and instance.expiry_date < timezone.now().date() and instance.status not in ["expired", "destroyed"]:
+            create_automated_event(
                     event_type="expired",
                     instance=instance,
                     description=f"Batch '{instance.lot_number}' has expired (expiry: {instance.expiry_date})",
@@ -521,10 +520,11 @@ def event_post_save(sender, instance, created, **kwargs):
         # Compute and store event hash for new events
         if not instance.event_hash:
             instance.update_event_hash()
-        
+
         # Queue notification processing for the new event
         # Use on_commit to ensure the event is saved to DB before Celery task runs
         from django.db import transaction
+
         from supplychain.tasks import process_event_notifications
 
         def queue_notifications():
@@ -536,7 +536,7 @@ def event_post_save(sender, instance, created, **kwargs):
                     f"Failed to queue notification for event {instance.id}: {notify_error}",
                     exc_info=True
                 )
-        
+
         transaction.on_commit(queue_notifications)
     else:
         # Recompute hash if event data was modified (except blockchain fields)
@@ -562,7 +562,7 @@ def event_post_save(sender, instance, created, **kwargs):
                     "potential_tampering": True,
                 }
             )
-            
+
             # Update the hash to reflect current state
             instance.event_hash = current_hash
             instance.save(update_fields=["event_hash"])

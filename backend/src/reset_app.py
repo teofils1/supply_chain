@@ -19,7 +19,7 @@ sys.path.append(os.path.dirname(__file__))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "api.settings")
 django.setup()
 
-import supplychain.models as m
+import supplychain.models as m  # noqa: E402  # noqa: E402  # noqa: E402  # noqa: E402
 
 # List all models to clear (order given for reference; TRUNCATE CASCADE ignores order)
 MODELS = [

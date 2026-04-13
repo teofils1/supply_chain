@@ -223,7 +223,9 @@ LOG_TO_FILE = os.getenv("LOG_TO_FILE", "true").lower() in {"1", "true", "yes"}
 LOG_DIR = BASE_DIR.parent / "logs" if LOG_TO_FILE else None
 
 # Configure structlog at Django startup
-from supplychain.logging_config import configure_logging
+from supplychain.logging_config import (  # noqa: E402
+    configure_logging,
+)
 
 configure_logging(
     debug=DEBUG,

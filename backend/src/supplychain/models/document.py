@@ -11,7 +11,7 @@ from django.db import models
 from .base import BaseModel
 
 
-def document_upload_path(instance: "Document", filename: str) -> str:
+def document_upload_path(instance: Document, filename: str) -> str:
     """Generate upload path for documents: documents/<entity_type>/<entity_id>/<uuid>_<filename>"""
     entity_type = instance.content_type.model if instance.content_type else "general"
     entity_id = instance.object_id or "0"
@@ -153,7 +153,7 @@ class Document(BaseModel):
         self.file.seek(0)
         return sha256_hash.hexdigest()
 
-    def create_new_version(self, file, uploaded_by=None, **kwargs) -> "Document":
+    def create_new_version(self, file, uploaded_by=None, **kwargs) -> Document:
         """Create a new version of this document."""
         # Mark current as not latest
         self.is_latest = False

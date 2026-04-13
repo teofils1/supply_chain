@@ -8,7 +8,6 @@ from model_utils import FieldTracker
 
 from ..validators import (
     validate_lot_number_format,
-    validate_positive_quantity,
 )
 from .base import BaseModel
 from .product import Product
@@ -165,7 +164,7 @@ class Batch(BaseModel):
         """
         Atomically consume quantity from available stock.
         Returns True if successful, False if insufficient quantity.
-        
+
         This method uses database-level atomic operations to prevent race conditions
         when multiple packs are created concurrently from the same batch.
         """
@@ -181,20 +180,20 @@ class Batch(BaseModel):
             ).update(
                 available_quantity=F('available_quantity') - quantity
             )
-            
+
             if updated == 0:
                 # Either batch doesn't exist or insufficient quantity
                 return False
-            
+
             # Refresh from DB to get the updated value
             self.refresh_from_db(fields=['available_quantity'])
             return True
-    
+
     def restore_quantity(self, quantity: int) -> bool:
         """
         Atomically restore quantity to available stock.
         Returns True if successful, False otherwise.
-        
+
         Used when packs are deleted or removed from shipments.
         Includes validation to prevent available_quantity from exceeding quantity_produced.
         """
@@ -204,7 +203,7 @@ class Batch(BaseModel):
         with transaction.atomic():
             # Lock the batch row and check current state
             batch = Batch.objects.select_for_update().get(id=self.id)
-            
+
             # Validate that restoring won't exceed quantity_produced
             new_available = batch.available_quantity + quantity
             if new_available > batch.quantity_produced:
@@ -220,15 +219,15 @@ class Batch(BaseModel):
                 # Cap at quantity_produced to maintain data integrity
                 new_available = batch.quantity_produced
                 quantity = new_available - batch.available_quantity
-            
+
             # Use F() for atomic update to prevent race conditions
             updated = Batch.objects.filter(id=self.id).update(
                 available_quantity=F('available_quantity') + quantity
             )
-            
+
             if updated == 0:
                 return False
-            
+
             # Refresh from DB to get the updated value
             self.refresh_from_db(fields=['available_quantity'])
             return True
@@ -272,7 +271,7 @@ class Batch(BaseModel):
     def save(self, *args, **kwargs):
         """Override save to run clean validation and initialize available_quantity."""
         is_new = self.pk is None
-        
+
         # Initialize available_quantity to quantity_produced for new batches
         if is_new and self.available_quantity == 0:
             self.available_quantity = self.quantity_produced

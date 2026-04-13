@@ -7,6 +7,7 @@ data according to business rules.
 
 from datetime import date
 
+import pytest
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 

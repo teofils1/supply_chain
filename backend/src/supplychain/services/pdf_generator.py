@@ -36,7 +36,7 @@ class PDFGeneratorService:
 
     @classmethod
     def generate_shipping_label(
-        cls, shipment: "Shipment", save_as_document: bool = True
+        cls, shipment: Shipment, save_as_document: bool = True
     ) -> bytes | Document:
         """
         Generate a shipping label PDF for a shipment.
@@ -69,7 +69,7 @@ class PDFGeneratorService:
 
     @classmethod
     def generate_packing_list(
-        cls, shipment: "Shipment", save_as_document: bool = True
+        cls, shipment: Shipment, save_as_document: bool = True
     ) -> bytes | Document:
         """
         Generate a packing list PDF for a shipment.
@@ -109,7 +109,7 @@ class PDFGeneratorService:
 
     @classmethod
     def generate_coa(
-        cls, batch: "Batch", save_as_document: bool = True
+        cls, batch: Batch, save_as_document: bool = True
     ) -> bytes | Document:
         """
         Generate a Certificate of Analysis (CoA) PDF for a batch.
@@ -502,8 +502,8 @@ COA_TEMPLATE = """
 
     <div class="footer">
         <p><strong>Certification Statement:</strong></p>
-        <p>This is to certify that the above batch has been manufactured and tested in accordance with 
-        applicable quality standards and specifications. The batch meets all quality requirements 
+        <p>This is to certify that the above batch has been manufactured and tested in accordance with
+        applicable quality standards and specifications. The batch meets all quality requirements
         and is approved for {% if batch.qa_approved %}release{% else %}further review{% endif %}.</p>
 
         <div class="signature-line">

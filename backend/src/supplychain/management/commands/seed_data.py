@@ -6,7 +6,6 @@ Usage:
     python manage.py seed_data --clear  # Clear existing data first
 """
 
-import hashlib
 import random
 from datetime import timedelta
 from decimal import Decimal
@@ -70,7 +69,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("Database seeded successfully!"))
         self.stdout.write(
             self.style.SUCCESS(
-                f"Main user (SUPERUSER): teodor (password: teodorpass)"
+                "Main user (SUPERUSER): teodor (password: teodorpass)"
             )
         )
 
@@ -477,7 +476,7 @@ class Command(BaseCommand):
         carriers = ["fedex", "ups", "dhl", "usps", "local", "internal"]
         service_types = ["standard", "express", "overnight", "ground", "cold_chain"]
         temp_requirements = ["ambient", "cool", "frozen", "ultra_cold", "controlled"]
-        
+
         # Define carrier-specific damage rates (some carriers are more reliable)
         # These are higher than real-world rates for demonstration purposes
         carrier_damage_rates = {
@@ -488,7 +487,7 @@ class Command(BaseCommand):
             "local": 0.06,   # 6% damage rate
             "internal": 0.025, # 2.5% damage rate
         }
-        
+
         statuses = [
             "pending",
             "confirmed",
@@ -520,24 +519,21 @@ class Command(BaseCommand):
         ]
 
         # Create 120 shipments distributed across 90 days for better daily volume analytics
-        shipped_packs = [p for p in packs if p.status in ["shipped", "delivered"]]
+        [p for p in packs if p.status in ["shipped", "delivered"]]
         available_packs = [p for p in packs if p.status == "active"]
-        
+
         # Create varied daily volumes - some days have many shipments, some have few
         shipments_by_day = {}
         for day_offset in range(90):
             # Vary volume: weekdays have more, weekends have less, some peaks and valleys
             base_volume = random.randint(0, 4)
             day_of_week = (now - timedelta(days=day_offset)).weekday()
-            if day_of_week >= 5:  # Weekend
-                volume = max(0, base_volume - 1)
-            else:  # Weekday
-                volume = base_volume
-            
+            volume = max(0, base_volume - 1) if day_of_week >= 5 else base_volume
+
             # Add some peak days (10% of days have extra volume)
             if random.random() < 0.1:
                 volume += random.randint(2, 5)
-            
+
             shipments_by_day[day_offset] = volume
 
         shipment_count = 0
@@ -545,8 +541,8 @@ class Command(BaseCommand):
         lost_count = 0
         for day_offset in range(90):
             num_shipments = shipments_by_day[day_offset]
-            
-            for j in range(num_shipments):
+
+            for _j in range(num_shipments):
                 shipment_count += 1
                 tracking_number = f"SHIP-2025-{shipment_count:06d}"
                 carrier = random.choice(carriers)
@@ -554,15 +550,15 @@ class Command(BaseCommand):
                 origin = random.choice(origins)
                 destination = random.choice(destinations)
                 temp_req = random.choice(temp_requirements)
-                
+
                 # Determine status - first pick from base statuses, then apply carrier-specific damage/loss rates
                 base_status = random.choice(statuses)
-                
+
                 # Apply carrier-specific damage rate only to shipments that would otherwise be delivered
                 if base_status == "delivered":
                     damage_rate = carrier_damage_rates.get(carrier, 0.015)
                     loss_rate = damage_rate * 0.2  # Loss rate is typically 20% of damage rate
-                    
+
                     rand = random.random()
                     if rand < loss_rate:
                         status = "lost"
@@ -641,7 +637,7 @@ class Command(BaseCommand):
                         )
                         if len(available_packs) > 5:
                             available_packs.remove(pack)
-                
+
                 shipments.append(shipment)
 
         self.stdout.write(f"  Created {shipment_count} shipments ({damaged_count} damaged, {lost_count} lost)")
@@ -666,7 +662,7 @@ class Command(BaseCommand):
         now = timezone.now()
 
         events_created = 0
-        
+
         def create_event_with_date(days_ago, **kwargs):
             """Helper to create event with custom created_at date (bypassing auto_now_add)."""
             event = m.Event.objects.create(**kwargs)
@@ -677,7 +673,7 @@ class Command(BaseCommand):
         # Events for products - all products with varied event history
         for product in products:
             content_type = ContentType.objects.get_for_model(product)
-            for j in range(random.randint(3, 8)):
+            for _j in range(random.randint(3, 8)):
                 event_type = random.choice(["created", "updated", "status_changed"])
                 days_ago = random.randint(1, 365)
                 create_event_with_date(
@@ -697,9 +693,9 @@ class Command(BaseCommand):
         # Events for batches - all batches with comprehensive history including temperature events
         for batch in batches:
             content_type = ContentType.objects.get_for_model(batch)
-            
+
             # Regular events
-            for j in range(random.randint(3, 8)):
+            for _j in range(random.randint(3, 8)):
                 event_type = random.choice(event_types[:6])
                 days_ago = random.randint(1, 365)
                 create_event_with_date(
@@ -715,16 +711,16 @@ class Command(BaseCommand):
                     user=random.choice(users),
                 )
                 events_created += 1
-            
+
             # Add temperature excursion events for some batches (30% chance)
             # Spread these across 100-180 days ago (no overlap with shipments at 0-90 days)
             if random.random() < 0.3:
-                for k in range(random.randint(1, 3)):
+                for _k in range(random.randint(1, 3)):
                     days_ago = random.randint(100, 180)
                     temp_recorded = random.uniform(-5, 35)
                     temp_min = float(batch.product.storage_temp_min or 2)
                     temp_max = float(batch.product.storage_temp_max or 8)
-                    
+
                     create_event_with_date(
                         days_ago=days_ago,
                         event_type="temperature_excursion",
@@ -748,7 +744,7 @@ class Command(BaseCommand):
         # Events for packs - more packs for better analytics with temperature monitoring
         for pack in packs[:200]:
             content_type = ContentType.objects.get_for_model(pack)
-            for j in range(random.randint(2, 5)):
+            for _j in range(random.randint(2, 5)):
                 event_type = random.choice(event_types[:8])
                 days_ago = random.randint(1, 180)
                 create_event_with_date(
@@ -764,7 +760,7 @@ class Command(BaseCommand):
                     user=random.choice(users),
                 )
                 events_created += 1
-            
+
             # Add temperature alerts for some packs in transit (20% chance)
             # Spread these across 100-150 days ago (completely separate from shipments)
             if pack.status in ["shipped", "delivered"] and random.random() < 0.2:
@@ -772,7 +768,7 @@ class Command(BaseCommand):
                 temp_recorded = random.uniform(-2, 30)
                 temp_min = float(pack.batch.product.storage_temp_min or 2)
                 temp_max = float(pack.batch.product.storage_temp_max or 8)
-                
+
                 create_event_with_date(
                     days_ago=days_ago,
                     event_type="temperature_alert",
@@ -795,7 +791,7 @@ class Command(BaseCommand):
         # Events for shipments - all shipments with detailed history
         for shipment in shipments:
             content_type = ContentType.objects.get_for_model(shipment)
-            for j in range(random.randint(3, 7)):
+            for _j in range(random.randint(3, 7)):
                 event_type = random.choice(["created", "status_changed", "shipped", "delivered", "updated"])
                 days_ago = random.randint(1, 90)
                 create_event_with_date(
@@ -815,14 +811,14 @@ class Command(BaseCommand):
                     user=random.choice(users),
                 )
                 events_created += 1
-            
+
             # Add temperature excursion events for shipments with temperature requirements (25% chance)
             # Only create for non-ambient shipments that are shipped or delivered
-            if (shipment.temperature_requirement != "ambient" and 
+            if (shipment.temperature_requirement != "ambient" and
                 shipment.status in ["shipped", "in_transit", "delivered", "damaged"] and
                 random.random() < 0.25):
                 days_ago = random.randint(1, 90)
-                
+
                 # Define temperature ranges based on requirement
                 temp_ranges = {
                     "cool": (2, 8),
@@ -831,7 +827,7 @@ class Command(BaseCommand):
                     "controlled": (15, 25),
                 }
                 temp_min, temp_max = temp_ranges.get(shipment.temperature_requirement, (2, 8))
-                
+
                 # Generate an out-of-range temperature
                 if random.random() < 0.5:
                     # Temperature too high
@@ -839,7 +835,7 @@ class Command(BaseCommand):
                 else:
                     # Temperature too low
                     temp_recorded = temp_min - random.uniform(2, 10)
-                
+
                 create_event_with_date(
                     days_ago=days_ago,
                     event_type="temperature_excursion",
@@ -860,7 +856,7 @@ class Command(BaseCommand):
                     user=random.choice(users),
                 )
                 events_created += 1
-            
+
             # Add specific damage/lost events for damaged or lost shipments
             if shipment.status == "damaged":
                 days_ago = random.randint(1, 90)
@@ -889,7 +885,7 @@ class Command(BaseCommand):
                     user=random.choice(users),
                 )
                 events_created += 1
-            
+
             elif shipment.status == "lost":
                 days_ago = random.randint(1, 90)
                 create_event_with_date(

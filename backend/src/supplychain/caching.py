@@ -8,11 +8,11 @@ to improve API response times.
 import functools
 import hashlib
 import json
-from typing import Any, Callable
-
-from django.core.cache import cache
+from collections.abc import Callable
+from typing import Any
 
 import structlog
+from django.core.cache import cache
 
 logger = structlog.get_logger(__name__)
 

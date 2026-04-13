@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import sys
+
 import django
 
 # Setup Django environment
@@ -8,9 +9,11 @@ sys.path.insert(0, '/app/src')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
 django.setup()
 
-from supplychain.models import Shipment
-from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta  # noqa: E402
+
+from django.utils import timezone  # noqa: E402
+
+from supplychain.models import Shipment  # noqa: E402  # noqa: E402
 
 # Check shipments in the last 30 days
 end_date = timezone.now()

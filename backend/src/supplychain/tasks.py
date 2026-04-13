@@ -27,7 +27,7 @@ def send_email_notification(self, event_id: int, user_id: int, rule_id: int = No
         rule_id: Optional ID of the NotificationRule that matched
     """
     from supplychain.models import Event, NotificationLog, NotificationRule
-    
+
     User = get_user_model()
 
     try:

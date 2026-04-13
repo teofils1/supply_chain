@@ -5,7 +5,6 @@ from rest_framework import serializers
 
 from .. import models as m
 
-
 ACTIVE_SHIPMENT_STATUSES = [
     "pending",
     "confirmed",

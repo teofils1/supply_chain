@@ -4,32 +4,22 @@ Analytics views for supply chain KPIs, metrics, and predictive analytics.
 
 from __future__ import annotations
 
-from collections import defaultdict
 from datetime import date, timedelta
 from decimal import Decimal
 
 from django.db.models import (
     Avg,
-    Case,
     Count,
     F,
-    FloatField,
     Q,
     Sum,
-    Value,
-    When,
 )
 from django.db.models.functions import (
     Coalesce,
-    ExtractMonth,
-    ExtractWeek,
-    ExtractYear,
     TruncDate,
-    TruncMonth,
     TruncWeek,
 )
 from django.utils import timezone
-from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView

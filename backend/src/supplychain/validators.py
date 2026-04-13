@@ -6,7 +6,6 @@ across the supply chain tracking system.
 """
 
 import re
-from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
@@ -23,14 +22,13 @@ def validate_expiry_after_manufacturing(manufacturing_date, expiry_date):
     Raises:
         ValidationError: If expiry date is not after manufacturing date
     """
-    if manufacturing_date and expiry_date:
-        if expiry_date <= manufacturing_date:
-            raise ValidationError(
-                {
-                    "expiry_date": "Expiry date must be after manufacturing date.",
-                    "manufacturing_date": "Manufacturing date must be before expiry date.",
-                }
-            )
+    if manufacturing_date and expiry_date and expiry_date <= manufacturing_date:
+        raise ValidationError(
+            {
+                "expiry_date": "Expiry date must be after manufacturing date.",
+                "manufacturing_date": "Manufacturing date must be before expiry date.",
+            }
+        )
 
 
 def validate_available_quantity_not_exceeds_produced(
@@ -46,9 +44,8 @@ def validate_available_quantity_not_exceeds_produced(
     Raises:
         ValidationError: If available quantity exceeds produced quantity
     """
-    if quantity_produced is not None and available_quantity is not None:
-        if available_quantity > quantity_produced:
-            raise ValidationError(
+    if quantity_produced is not None and available_quantity is not None and available_quantity > quantity_produced:
+        raise ValidationError(
                 {
                     "available_quantity": f"Available quantity ({available_quantity}) cannot exceed quantity produced ({quantity_produced})."
                 }
@@ -148,11 +145,10 @@ def validate_temperature_value(value):
     Raises:
         ValidationError: If temperature is outside reasonable bounds
     """
-    if value is not None:
-        if value < -100 or value > 100:
-            raise ValidationError(
-                "Temperature must be between -100°C and 100°C."
-            )
+    if value is not None and (value < -100 or value > 100):
+        raise ValidationError(
+            "Temperature must be between -100°C and 100°C."
+        )
 
 
 def validate_gtin_format(value):

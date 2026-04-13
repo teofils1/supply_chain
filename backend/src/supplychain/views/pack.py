@@ -209,7 +209,7 @@ class PackListCreateView(generics.ListCreateAPIView):
         """Create a new pack and subtract quantity from batch atomically."""
         from django.db import transaction
         from rest_framework.exceptions import ValidationError
-        
+
         pack_data = serializer.validated_data
         batch = pack_data["batch"]
         pack_size = pack_data["pack_size"]
@@ -244,7 +244,7 @@ class PackDetailUpdateView(generics.RetrieveUpdateAPIView):
         """Update pack and handle quantity changes if pack_size is modified atomically."""
         from django.db import transaction
         from rest_framework.exceptions import ValidationError
-        
+
         instance = serializer.instance
         old_pack_size = instance.pack_size
         old_batch = instance.batch
@@ -309,7 +309,7 @@ class PackDeleteView(generics.DestroyAPIView):
         """Soft delete the pack and restore quantity to batch atomically."""
         from django.db import transaction
         from rest_framework.exceptions import ValidationError
-        
+
         # Wrap in transaction for atomicity
         with transaction.atomic():
             # Atomically restore quantity to batch before deleting pack

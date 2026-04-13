@@ -170,15 +170,13 @@ class Product(BaseModel):
             ] = "Maximum humidity must be greater than minimum humidity."
 
         # Validate temperature values are within reasonable bounds
-        if self.storage_temp_min is not None:
-            if self.storage_temp_min < -100 or self.storage_temp_min > 100:
-                errors[
+        if self.storage_temp_min is not None and (self.storage_temp_min < -100 or self.storage_temp_min > 100):
+            errors[
                     "storage_temp_min"
                 ] = "Minimum temperature must be between -100°C and 100°C."
 
-        if self.storage_temp_max is not None:
-            if self.storage_temp_max < -100 or self.storage_temp_max > 100:
-                errors[
+        if self.storage_temp_max is not None and (self.storage_temp_max < -100 or self.storage_temp_max > 100):
+            errors[
                     "storage_temp_max"
                 ] = "Maximum temperature must be between -100°C and 100°C."
 

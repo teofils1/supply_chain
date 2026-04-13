@@ -73,10 +73,7 @@ class NotificationRule(BaseModel):
             return False
 
         # Check severity (empty list = match all)
-        if self.severity_levels and event.severity not in self.severity_levels:
-            return False
-
-        return True
+        return not (self.severity_levels and event.severity not in self.severity_levels)
 
 
 class NotificationLog(BaseModel):

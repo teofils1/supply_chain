@@ -82,7 +82,7 @@ class AtomicOperationUnitTestCase(TestCase):
         # Consume all
         self.batch.consume_quantity(100)
         self.batch.refresh_from_db()
-        
+
         # Try to consume more
         result = self.batch.consume_quantity(10)
         self.assertFalse(result)
@@ -92,11 +92,11 @@ class AtomicOperationUnitTestCase(TestCase):
     def test_multiple_small_consumptions(self):
         """Test multiple sequential small consumptions."""
         quantities = [10, 15, 20, 25, 30]  # Total: 100
-        
+
         for qty in quantities:
             result = self.batch.consume_quantity(qty)
             self.assertTrue(result, f"Failed to consume {qty}")
-        
+
         self.batch.refresh_from_db()
         self.assertEqual(self.batch.available_quantity, 0)
 
@@ -106,12 +106,12 @@ class AtomicOperationUnitTestCase(TestCase):
         self.batch.consume_quantity(50)
         self.batch.refresh_from_db()
         self.assertEqual(self.batch.available_quantity, 50)
-        
+
         # Try to restore more than consumed (should be capped)
         result = self.batch.restore_quantity(100)
         self.assertTrue(result)
         self.batch.refresh_from_db()
-        
+
         # Should be capped at quantity_produced
         self.assertEqual(self.batch.available_quantity, 100)
 
@@ -119,7 +119,7 @@ class AtomicOperationUnitTestCase(TestCase):
 class ConcurrentBatchOperationsTestCase(TransactionTestCase):
     """
     Test concurrent batch operations to verify atomic operations.
-    
+
     Uses TransactionTestCase to allow real database transactions in threads.
     """
 
@@ -147,7 +147,7 @@ class ConcurrentBatchOperationsTestCase(TransactionTestCase):
         errors = []
         successes = []
         failures = []
-        
+
         def try_consume(amount, thread_id):
             """Try to consume quantity in a thread."""
             try:
@@ -173,21 +173,21 @@ class ConcurrentBatchOperationsTestCase(TransactionTestCase):
 
         # Verify results
         self.assertEqual(len(errors), 0, f"Errors occurred: {errors}")
-        
+
         # Refresh batch
         self.batch.refresh_from_db()
-        
+
         # Should have exactly 3 successes (90 units consumed) and 2 failures
         # Or exactly 3 successes (100 units) and 2 failures depending on timing
-        self.assertIn(len(successes), [3, 4], 
+        self.assertIn(len(successes), [3, 4],
                      f"Expected 3-4 successful consumptions, got {len(successes)}")
-        
+
         # Available quantity should reflect successful consumptions
         expected_consumed = len(successes) * 30
         expected_available = 100 - expected_consumed
-        
+
         self.assertEqual(
-            self.batch.available_quantity, 
+            self.batch.available_quantity,
             expected_available,
             f"Expected {expected_available} available after {len(successes)} consumptions of 30 each"
         )
@@ -195,7 +195,7 @@ class ConcurrentBatchOperationsTestCase(TransactionTestCase):
     def test_concurrent_consume_and_restore(self):
         """Test concurrent consume and restore operations maintain consistency."""
         errors = []
-        
+
         def consume_and_restore(iteration):
             """Consume and immediately restore in a thread."""
             try:
@@ -222,7 +222,7 @@ class ConcurrentBatchOperationsTestCase(TransactionTestCase):
 
         # Refresh batch - should be back to 100 (or very close due to race conditions)
         self.batch.refresh_from_db()
-        
+
         # Due to timing, final value should be <= 100 (capped by restore_quantity)
         self.assertLessEqual(self.batch.available_quantity, 100)
         self.assertGreaterEqual(self.batch.available_quantity, 0)
@@ -253,20 +253,20 @@ class PackInventoryIntegrationTestCase(TestCase):
     def test_pack_creation_consumes_inventory(self):
         """Test that creating a pack consumes batch inventory."""
         initial_available = self.batch.available_quantity
-        
+
         # Create a pack manually (simulating what the view does)
         pack_size = 25
         success = self.batch.consume_quantity(pack_size)
         self.assertTrue(success)
-        
-        pack = Pack.objects.create(
+
+        Pack.objects.create(
             batch=self.batch,
             serial_number="SN-TEST-001",
             pack_size=pack_size,
             pack_type="bottle",
             status="active",
         )
-        
+
         # Verify inventory was consumed
         self.batch.refresh_from_db()
         self.assertEqual(self.batch.available_quantity, initial_available - pack_size)
@@ -276,7 +276,7 @@ class PackInventoryIntegrationTestCase(TestCase):
         # Create a pack
         pack_size = 25
         self.batch.consume_quantity(pack_size)
-        
+
         pack = Pack.objects.create(
             batch=self.batch,
             serial_number="SN-TEST-002",
@@ -284,24 +284,22 @@ class PackInventoryIntegrationTestCase(TestCase):
             pack_type="bottle",
             status="active",
         )
-        
+
         self.batch.refresh_from_db()
         available_after_create = self.batch.available_quantity
-        
+
         # Delete the pack and restore inventory
         pack_to_delete = Pack.objects.get(id=pack.id)
         self.batch.restore_quantity(pack_to_delete.pack_size)
         pack_to_delete.delete()
-        
+
         # Verify inventory was restored
         self.batch.refresh_from_db()
         self.assertEqual(
-            self.batch.available_quantity, 
+            self.batch.available_quantity,
             available_after_create + pack_size
         )
 
     def test_multiple_pack_creation_inventory_tracking(self):
         """Test that multiple pack creations correctly track inventory."""
-        pack_sizes = [10, 20, 30]
-        packs = []
-        
+

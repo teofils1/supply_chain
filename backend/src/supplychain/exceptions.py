@@ -8,7 +8,8 @@ This module provides:
 """
 
 import structlog
-from django.core.exceptions import PermissionDenied, ValidationError as DjangoValidationError
+from django.core.exceptions import PermissionDenied
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import Http404
 from rest_framework import status
 from rest_framework.exceptions import APIException
@@ -201,10 +202,7 @@ def _format_error_response(exc, response, request):
         code = "error"
 
     # Build error message
-    if hasattr(exc, "detail"):
-        detail = exc.detail
-    else:
-        detail = str(exc)
+    detail = exc.detail if hasattr(exc, "detail") else str(exc)
 
     # Structure the response
     if isinstance(detail, dict):

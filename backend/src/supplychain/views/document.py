@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from django.contrib.contenttypes.models import ContentType
-from django.http import FileResponse, HttpResponse
+from django.http import HttpResponse
 from rest_framework import generics, status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -180,7 +180,7 @@ class EntityDocumentsView(APIView):
                 entity_type_singular = 'batch'
             elif entity_type_singular in ['products', 'packs', 'shipments']:
                 entity_type_singular = entity_type_singular[:-1]
-        
+
         try:
             content_type = ContentType.objects.get(
                 app_label="supplychain", model=entity_type_singular

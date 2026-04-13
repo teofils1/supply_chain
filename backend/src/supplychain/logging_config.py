@@ -13,7 +13,6 @@ with the following features:
 
 import logging
 import logging.handlers
-import os
 import sys
 from pathlib import Path
 
