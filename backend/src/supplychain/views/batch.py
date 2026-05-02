@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 from datetime import date, timedelta
 
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
@@ -140,6 +141,34 @@ class BatchDetailUpdateView(generics.RetrieveUpdateAPIView):
     def get_queryset(self):
         """Include soft-deleted batches for detail view (admins might need to see them)."""
         return m.Batch.all_objects.select_related("product").all()
+
+    def perform_update(self, serializer):
+        from ..services.events import generate_event_details_for_update
+        
+        # Get the old instance to compare
+        old_instance = self.get_object()
+        
+        # Perform the update
+        instance = serializer.save()
+        
+        # Generate event details
+        event_type, description, metadata = generate_event_details_for_update(
+            entity_name="Batch",
+            entity_identifier=instance.lot_number,
+            old_instance=old_instance,
+            new_instance=instance
+        )
+        
+        # Create domain-specific event mapped by the utility generator
+        m.Event.objects.create(
+            event_type=event_type,
+            description=description,
+            metadata=metadata,
+            entity_type=ContentType.objects.get_for_model(m.Batch),
+            entity_id=instance.id,
+            location=instance.manufacturing_location,
+            user=self.request.user
+        )
 
 
 class BatchDeleteView(generics.DestroyAPIView):

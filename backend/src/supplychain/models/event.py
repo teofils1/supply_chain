@@ -22,28 +22,38 @@ class Event(BaseModel):
 
     # Event Types
     EVENT_TYPE_CHOICES = [
-        ("created", "Created"),
-        ("updated", "Updated"),
-        ("deleted", "Deleted"),
-        ("status_changed", "Status Changed"),
-        ("location_changed", "Location Changed"),
-        ("quality_check", "Quality Check"),
-        ("temperature_alert", "Temperature Alert"),
-        ("shipped", "Shipped"),
-        ("delivered", "Delivered"),
-        ("returned", "Returned"),
-        ("damaged", "Damaged"),
-        ("expired", "Expired"),
-        ("recalled", "Recalled"),
-        ("inventory_count", "Inventory Count"),
-        ("maintenance", "Maintenance"),
-        ("calibration", "Calibration"),
-        ("user_action", "User Action"),
-        ("system_action", "System Action"),
-        ("alert", "Alert"),
-        ("warning", "Warning"),
-        ("error", "Error"),
-        ("other", "Other"),
+        # Batch Events
+        ("batch_created", "Batch Created"),
+        ("batch_released", "Batch Released"),
+        ("batch_quarantined", "Batch Quarantined"),
+        ("batch_recalled", "Batch Recalled"),
+        ("quality_control_passed", "QC Passed"),
+        ("quality_control_failed", "QC Failed"),
+        
+        # Shipment Events
+        ("shipment_created", "Shipment Created"),
+        ("shipment_dispatched", "Shipment Dispatched"),
+        ("shipment_in_transit", "Shipment In Transit"),
+        ("shipment_delayed", "Shipment Delayed"),
+        ("shipment_delivered", "Shipment Delivered"),
+        ("shipment_customs_cleared", "Shipment Customs Cleared"),
+        
+        # Pack/Inventory Events
+        ("pack_commissioned", "Pack Commissioned"),
+        ("pack_aggregated", "Pack Aggregated"),
+        ("pack_disaggregated", "Pack Disaggregated"),
+        ("pack_decommissioned", "Pack Decommissioned"),
+        ("inventory_adjustment", "Inventory Adjustment"),
+        
+        # Alert/Environmental Events
+        ("temperature_deviation", "Temperature Deviation"),
+        ("humidity_deviation", "Humidity Deviation"),
+        ("location_transfer", "Location Transfer"),
+        ("damage_reported", "Damage Reported"),
+        
+        # System/Entity Events
+        ("entity_created", "Entity Created"),
+        ("configuration_changed", "Configuration Changed"),
     ]
 
     # Entity Types (for the entities this event can be associated with)
