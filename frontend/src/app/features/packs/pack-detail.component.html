@@ -89,38 +89,49 @@
         <!-- Batch Selection -->
         <div class="flex flex-col">
           <label class="text-sm font-medium mb-2" for="batch">
-            Batch <span class="text-red-500">*</span>
+            Batch <span class="text-red-500" *ngIf="!isViewMode()">*</span>
           </label>
-          <p-select
-            id="batch"
-            formControlName="batch"
-            [options]="batches()"
-            optionLabel="lot_number"
-            optionValue="id"
-            placeholder="Select a batch"
-            [class.ng-invalid]="isFieldInvalid('batch')"
-            class="w-full"
+          <ng-container *ngIf="!isViewMode()">
+            <p-select
+              id="batch"
+              formControlName="batch"
+              [options]="batchOptions()"
+              optionLabel="lot_number"
+              optionValue="id"
+              placeholder="Select a batch"
+              [class.ng-invalid]="isFieldInvalid('batch')"
+              class="w-full"
+            >
+              <ng-template pTemplate="selectedItem" let-selectedOption>
+                <div *ngIf="selectedOption">
+                  <div class="font-medium">{{ selectedOption.lot_number }}</div>
+                  <div class="text-xs text-gray-500">
+                    {{ selectedOption.product_name }}
+                  </div>
+                </div>
+              </ng-template>
+              <ng-template pTemplate="item" let-batch>
+                <div>
+                  <div class="font-medium">{{ batch.lot_number }}</div>
+                  <div class="text-xs text-gray-500">
+                    {{ batch.product_name }}
+                  </div>
+                </div>
+              </ng-template>
+            </p-select>
+            <small *ngIf="isFieldInvalid('batch')" class="text-red-500">
+              {{ getFieldError("batch") }}
+            </small>
+          </ng-container>
+          <div
+            *ngIf="isViewMode()"
+            class="p-3 bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded-md"
           >
-            <ng-template pTemplate="selectedItem" let-selectedOption>
-              <div *ngIf="selectedOption">
-                <div class="font-medium">{{ selectedOption.lot_number }}</div>
-                <div class="text-xs text-gray-500">
-                  {{ selectedOption.product_name }}
-                </div>
-              </div>
-            </ng-template>
-            <ng-template pTemplate="item" let-batch>
-              <div>
-                <div class="font-medium">{{ batch.lot_number }}</div>
-                <div class="text-xs text-gray-500">
-                  {{ batch.product_name }}
-                </div>
-              </div>
-            </ng-template>
-          </p-select>
-          <small *ngIf="isFieldInvalid('batch')" class="text-red-500">
-            {{ getFieldError("batch") }}
-          </small>
+            <div class="font-medium">{{ pack()?.batch_lot_number }}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">
+              {{ pack()?.product_name }}
+            </div>
+          </div>
         </div>
 
         <!-- Serial Number -->
@@ -267,7 +278,7 @@
             >Effective Manufacturing Date</label
           >
           <span class="text-sm p-2 bg-gray-50 rounded">
-            {{ pack()?.effective_manufacturing_date | date : "shortDate" }}
+            {{ pack()?.effective_manufacturing_date | date: "shortDate" }}
           </span>
         </div>
 
@@ -275,15 +286,15 @@
           <label class="text-sm font-medium mb-2">Effective Expiry Date</label>
           <div class="flex items-center gap-2">
             <span class="text-sm p-2 bg-gray-50 rounded">
-              {{ pack()?.effective_expiry_date | date : "shortDate" }}
+              {{ pack()?.effective_expiry_date | date: "shortDate" }}
             </span>
             <p-tag
               [value]="
                 pack()?.is_expired
                   ? 'Expired'
                   : (pack()?.days_until_expiry ?? 0) <= 30
-                  ? 'Expiring Soon'
-                  : 'Active'
+                    ? 'Expiring Soon'
+                    : 'Active'
               "
               [severity]="getExpiryStatusSeverity(pack()!)"
               class="text-xs"
@@ -417,6 +428,7 @@
             Shipped Date
           </label>
           <p-datepicker
+            *ngIf="!isViewMode()"
             id="shipped_date"
             formControlName="shipped_date"
             placeholder="Select shipped date"
@@ -425,6 +437,16 @@
             iconDisplay="input"
             class="w-full"
           ></p-datepicker>
+          <div
+            *ngIf="isViewMode()"
+            class="p-3 bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded-md"
+          >
+            {{
+              pack()?.shipped_date
+                ? (pack()?.shipped_date | date: "medium")
+                : "Not shipped"
+            }}
+          </div>
         </div>
 
         <!-- Delivered Date -->
@@ -433,6 +455,7 @@
             Delivered Date
           </label>
           <p-datepicker
+            *ngIf="!isViewMode()"
             id="delivered_date"
             formControlName="delivered_date"
             placeholder="Select delivered date"
@@ -441,6 +464,16 @@
             iconDisplay="input"
             class="w-full"
           ></p-datepicker>
+          <div
+            *ngIf="isViewMode()"
+            class="p-3 bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded-md"
+          >
+            {{
+              pack()?.delivered_date
+                ? (pack()?.delivered_date | date: "medium")
+                : "Not delivered"
+            }}
+          </div>
         </div>
 
         <!-- Tracking Number -->
@@ -449,6 +482,7 @@
             Tracking Number
           </label>
           <input
+            *ngIf="!isViewMode()"
             id="tracking_number"
             type="text"
             pInputText
@@ -456,6 +490,12 @@
             placeholder="Enter tracking number"
             class="w-full"
           />
+          <div
+            *ngIf="isViewMode()"
+            class="p-3 bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded-md"
+          >
+            {{ pack()?.tracking_number || "No tracking number" }}
+          </div>
         </div>
 
         <!-- Shipping Status Display (View Mode) -->

@@ -13,8 +13,8 @@
           isNewBatch()
             ? "Create Batch"
             : isEditMode()
-            ? "Edit Batch"
-            : "Batch Details"
+              ? "Edit Batch"
+              : "Batch Details"
         }}
       </h2>
     </div>
@@ -88,22 +88,33 @@
         <!-- Product -->
         <div class="flex flex-col">
           <label class="text-sm font-medium mb-2">
-            Product <span class="text-red-500">*</span>
+            Product <span class="text-red-500" *ngIf="!isViewMode()">*</span>
           </label>
-          <p-select
-            [options]="products()"
-            optionLabel="name"
-            optionValue="id"
-            formControlName="product"
-            placeholder="Select product"
-            [class.ng-invalid]="
-              batchForm.get('product')?.invalid &&
-              batchForm.get('product')?.touched
-            "
-          ></p-select>
-          <small class="text-red-500" *ngIf="getFieldError('product')">
-            {{ getFieldError("product") }}
-          </small>
+          <ng-container *ngIf="!isViewMode()">
+            <p-select
+              [options]="productOptions()"
+              optionLabel="name"
+              optionValue="id"
+              formControlName="product"
+              placeholder="Select product"
+              [class.ng-invalid]="
+                batchForm.get('product')?.invalid &&
+                batchForm.get('product')?.touched
+              "
+            ></p-select>
+            <small class="text-red-500" *ngIf="getFieldError('product')">
+              {{ getFieldError("product") }}
+            </small>
+          </ng-container>
+          <div
+            *ngIf="isViewMode()"
+            class="p-3 bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded-md"
+          >
+            <div class="font-medium">{{ batch()?.product_name }}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">
+              {{ batch()?.product_gtin }}
+            </div>
+          </div>
         </div>
 
         <!-- Lot Number -->
@@ -129,15 +140,26 @@
         <!-- Manufacturing Date -->
         <div class="flex flex-col">
           <label class="text-sm font-medium mb-2">
-            Manufacturing Date <span class="text-red-500">*</span>
+            Manufacturing Date
+            <span class="text-red-500" *ngIf="!isViewMode()">*</span>
           </label>
           <p-datepicker
+            *ngIf="!isViewMode()"
             formControlName="manufacturing_date"
             placeholder="Select manufacturing date"
             dateFormat="yy-mm-dd"
             iconDisplay="input"
-            [disabled]="!isEditMode()"
           ></p-datepicker>
+          <div
+            *ngIf="isViewMode()"
+            class="p-3 bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded-md"
+          >
+            {{
+              batch()?.manufacturing_date
+                ? (batch()?.manufacturing_date | date: "mediumDate")
+                : "Not set"
+            }}
+          </div>
           <small
             class="text-red-500"
             *ngIf="getFieldError('manufacturing_date')"
@@ -149,15 +171,38 @@
         <!-- Expiry Date -->
         <div class="flex flex-col">
           <label class="text-sm font-medium mb-2">
-            Expiry Date <span class="text-red-500">*</span>
+            Expiry Date
+            <span class="text-red-500" *ngIf="!isViewMode()">*</span>
           </label>
           <p-datepicker
+            *ngIf="!isViewMode()"
             formControlName="expiry_date"
             placeholder="Select expiry date"
             dateFormat="yy-mm-dd"
             iconDisplay="input"
-            [disabled]="!isEditMode()"
           ></p-datepicker>
+          <div
+            *ngIf="isViewMode()"
+            class="p-3 bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded-md flex justify-between items-center"
+          >
+            <span>{{
+              batch()?.expiry_date
+                ? (batch()?.expiry_date | date: "mediumDate")
+                : "Not set"
+            }}</span>
+            <p-tag
+              *ngIf="batch()"
+              [value]="batch()!.is_expired ? 'Expired' : 'Valid'"
+              [severity]="
+                batch()!.is_expired
+                  ? 'danger'
+                  : batch()!.days_until_expiry <= 30
+                    ? 'warning'
+                    : 'success'
+              "
+            >
+            </p-tag>
+          </div>
           <small class="text-red-500" *ngIf="getFieldError('expiry_date')">
             {{ getFieldError("expiry_date") }}
           </small>
@@ -440,7 +485,7 @@
         <div class="flex flex-col">
           <label class="text-sm font-medium mb-2">Shelf Life Remaining</label>
           <p class="text-gray-700 dark:text-gray-300">
-            {{ batch()?.shelf_life_remaining_percent | number : "1.1-1" }}%
+            {{ batch()?.shelf_life_remaining_percent | number: "1.1-1" }}%
           </p>
         </div>
       </div>
@@ -456,13 +501,13 @@
         <div class="flex flex-col">
           <label class="text-sm font-medium mb-2">Created</label>
           <p class="text-gray-700 dark:text-gray-300">
-            {{ batch()?.created_at | date : "medium" }}
+            {{ batch()?.created_at | date: "medium" }}
           </p>
         </div>
         <div class="flex flex-col" *ngIf="batch()?.updated_at">
           <label class="text-sm font-medium mb-2">Last Updated</label>
           <p class="text-gray-700 dark:text-gray-300">
-            {{ batch()?.updated_at | date : "medium" }}
+            {{ batch()?.updated_at | date: "medium" }}
           </p>
         </div>
       </div>

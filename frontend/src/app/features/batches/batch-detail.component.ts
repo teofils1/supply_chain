@@ -1,4 +1,11 @@
-import { Component, inject, signal, OnInit, ViewChild } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+  computed,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
@@ -83,8 +90,40 @@ export class BatchDetailComponent implements OnInit {
   // Form
   batchForm: FormGroup;
 
+  isViewMode = computed(() => !this.isNewBatch() && !this.isEditMode());
+
   // Options
   products = this.productService.products;
+
+  productOptions = computed(() => {
+    const loadedProducts = this.products();
+    const currentBatch = this.batch();
+
+    if (!currentBatch) return loadedProducts;
+
+    const hasProduct = loadedProducts.some(
+      (p) => p.id === currentBatch.product,
+    );
+    if (!hasProduct) {
+      return [
+        {
+          id: currentBatch.product,
+          name: currentBatch.product_name,
+          gtin: currentBatch.product_gtin,
+          description: '',
+          category: '',
+          target_market: '',
+          storage_conditions: '',
+          status: 'active' as any,
+          created_at: '',
+          is_deleted: false,
+        },
+        ...loadedProducts,
+      ];
+    }
+    return loadedProducts;
+  });
+
   statusOptions = this.batchService.getBatchStatuses();
 
   // Expose Math for template
@@ -115,10 +154,10 @@ export class BatchDetailComponent implements OnInit {
 
     const batchId = this.route.snapshot.paramMap.get('id');
     const isNewRoute = this.route.snapshot.url.some(
-      (segment) => segment.path === 'new'
+      (segment) => segment.path === 'new',
     );
     const isEdit = this.route.snapshot.url.some(
-      (segment) => segment.path === 'edit'
+      (segment) => segment.path === 'edit',
     );
 
     if (batchId === 'new' || isNewRoute) {

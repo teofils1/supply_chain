@@ -72,15 +72,53 @@ export class PackDetailComponent implements OnInit {
   // Mode detection
   packId = signal<number | null>(null);
   isEditMode = computed(() =>
-    this.route.snapshot.url.some((segment) => segment.path === 'edit')
+    this.route.snapshot.url.some((segment) => segment.path === 'edit'),
   );
   isCreateMode = computed(() =>
-    this.route.snapshot.url.some((segment) => segment.path === 'new')
+    this.route.snapshot.url.some((segment) => segment.path === 'new'),
   );
   isViewMode = computed(() => !this.isEditMode() && !this.isCreateMode());
 
   // Options
   batches = this.batchService.batches;
+
+  // Compute a list of batch options that guarantees the currently selected batch is included
+  batchOptions = computed(() => {
+    const loadedBatches = this.batches();
+    const currentPack = this.pack();
+
+    if (!currentPack) return loadedBatches;
+
+    // Check if the current pack's batch is in the loaded batches
+    const hasBatch = loadedBatches.some((b) => b.id === currentPack.batch);
+    if (!hasBatch) {
+      return [
+        {
+          id: currentPack.batch,
+          lot_number: currentPack.batch_lot_number,
+          product: 0,
+          product_name: currentPack.product_name,
+          product_gtin: currentPack.product_gtin,
+          status: 'active' as any,
+          manufacturing_date: '',
+          expiry_date: '',
+          quantity_produced: 0,
+          available_quantity: 0,
+          quantity_used: 0,
+          quality_control_passed: true,
+          is_expired: false,
+          days_until_expiry: 0,
+          shelf_life_remaining_percent: 0,
+          created_at: '',
+          is_deleted: false,
+        },
+        ...loadedBatches,
+      ];
+    }
+
+    return loadedBatches;
+  });
+
   statusOptions = this.packService.getPackStatuses();
   packTypeOptions = this.packService.getPackTypes();
 
