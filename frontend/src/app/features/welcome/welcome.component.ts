@@ -62,6 +62,7 @@ export class WelcomeComponent implements OnInit, OnDestroy {
 
   // Signals for reactive data
   recentEvents = signal<EventListItem[]>([]);
+  criticalEventsList = signal<EventListItem[]>([]);
   stats = signal<DashboardStats>({
     totalProducts: 0,
     totalBatches: 0,
@@ -79,7 +80,7 @@ export class WelcomeComponent implements OnInit, OnDestroy {
     const events = this.recentEvents();
 
     const criticalCount = events.filter(
-      (e) => e.severity === 'critical'
+      (e) => e.severity === 'critical',
     ).length;
     const errorCount = events.filter((e) => e.event_type === 'error').length;
 
@@ -100,7 +101,12 @@ export class WelcomeComponent implements OnInit, OnDestroy {
     this.refreshSubscription = interval(30000)
       .pipe(
         startWith(0),
-        switchMap(() => this.loadRecentEvents())
+        switchMap(() =>
+          Promise.all([
+            this.loadRecentEvents().toPromise(),
+            this.loadCriticalEvents().toPromise(),
+          ]),
+        ),
       )
       .subscribe();
   }
@@ -114,9 +120,10 @@ export class WelcomeComponent implements OnInit, OnDestroy {
       this.loading.set(true);
       this.error.set(null);
 
-      // Load recent events and stats in parallel
-      const [events] = await Promise.all([
+      // Load recent events, critical events and stats in parallel
+      await Promise.all([
         this.loadRecentEvents().toPromise(),
+        this.loadCriticalEvents().toPromise(),
         this.loadStats(),
       ]);
     } catch (error) {
@@ -130,16 +137,33 @@ export class WelcomeComponent implements OnInit, OnDestroy {
   private loadRecentEvents() {
     return this.eventService.load({ recent_days: 7 }).pipe(
       tap((response) => {
-        // Sort by timestamp descending and take latest 5
+        // Sort by timestamp descending and take latest 3
         const sortedEvents = response.results
           .sort(
             (a: EventListItem, b: EventListItem) =>
-              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
           )
-          .slice(0, 5);
+          .slice(0, 3);
         this.recentEvents.set(sortedEvents);
-      })
+      }),
     );
+  }
+
+  private loadCriticalEvents() {
+    return this.eventService
+      .load({ severity: 'critical', recent_days: 7 })
+      .pipe(
+        tap((response) => {
+          const sortedEvents = response.results
+            .sort(
+              (a: EventListItem, b: EventListItem) =>
+                new Date(b.timestamp).getTime() -
+                new Date(a.timestamp).getTime(),
+            )
+            .slice(0, 3);
+          this.criticalEventsList.set(sortedEvents);
+        }),
+      );
   }
 
   private async loadStats() {
@@ -154,12 +178,12 @@ export class WelcomeComponent implements OnInit, OnDestroy {
 
       const activeShipments =
         shipments?.results.filter((s) =>
-          ['picked_up', 'in_transit', 'out_for_delivery'].includes(s.status)
+          ['picked_up', 'in_transit', 'out_for_delivery'].includes(s.status),
         ).length || 0;
 
       const events = this.recentEvents();
       const criticalEvents = events.filter(
-        (e) => e.severity === 'critical' || e.is_critical
+        (e) => e.severity === 'critical' || e.is_critical,
       ).length;
 
       this.stats.set({

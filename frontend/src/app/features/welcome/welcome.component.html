@@ -205,62 +205,62 @@
 
   <!-- Enhanced Sidebar -->
   <div class="space-y-4">
-    <!-- System Status Card -->
+    <!-- Critical Events Card -->
     <p-card>
       <ng-template pTemplate="header">
         <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold">System Status</h2>
-          <div class="flex items-center gap-2">
-            <i
-              [class]="
-                'pi pi-circle-fill text-' +
-                systemHealth().color +
-                '-500 text-xs'
-              "
-            ></i>
-            <span
-              [class]="
-                'text-sm font-medium text-' + systemHealth().color + '-600'
-              "
-            >
-              {{ systemHealth().text }}
-            </span>
-          </div>
+          <h2 class="text-lg font-semibold text-red-600">Critical Events</h2>
+          <i class="pi pi-exclamation-triangle text-red-500 text-sm"></i>
         </div>
       </ng-template>
 
-      <div class="space-y-4">
-        <div class="flex items-center justify-between">
-          <span class="text-sm">Data Integrity</span>
-          <div class="flex items-center gap-2">
-            <i class="pi pi-shield text-green-500 text-xs"></i>
-            <span class="text-sm text-green-600 font-medium">Verified</span>
-          </div>
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-sm">Event Processing</span>
-          <div class="flex items-center gap-2">
-            <i class="pi pi-check-circle text-green-500 text-xs"></i>
-            <span class="text-sm text-green-600 font-medium">Active</span>
-          </div>
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-sm">Temperature Monitoring</span>
-          <div class="flex items-center gap-2">
-            <i class="pi pi-thermometer text-blue-500 text-xs"></i>
-            <span class="text-sm text-blue-600 font-medium">Normal</span>
-          </div>
-        </div>
-        @if (stats().criticalEvents > 0) {
-          <div class="flex items-center justify-between">
-            <span class="text-sm">Critical Events</span>
-            <div class="flex items-center gap-2">
-              <i class="pi pi-exclamation-triangle text-red-500 text-xs"></i>
-              <span class="text-sm text-red-600 font-medium">{{
-                stats().criticalEvents
-              }}</span>
+      <div class="space-y-3">
+        @if (loading()) {
+          @for (item of [1, 2, 3]; track item) {
+            <div class="flex items-start gap-3">
+              <p-skeleton shape="circle" size="1.5rem"></p-skeleton>
+              <div class="flex-1 space-y-1">
+                <p-skeleton height="1rem" width="80%"></p-skeleton>
+                <p-skeleton height="0.75rem" width="50%"></p-skeleton>
+              </div>
             </div>
+          }
+        } @else if (error()) {
+          <div class="text-center py-4">
+            <i
+              class="pi pi-exclamation-triangle text-orange-500 text-2xl mb-2"
+            ></i>
+            <p class="text-sm text-muted-color">{{ error() }}</p>
           </div>
+        } @else if (criticalEventsList().length === 0) {
+          <div class="text-center py-4">
+            <i class="pi pi-check-circle text-green-500 text-2xl mb-2"></i>
+            <p class="text-sm text-muted-color">No critical events</p>
+          </div>
+        } @else {
+          @for (event of criticalEventsList(); track event.id) {
+            <div
+              class="flex items-start gap-3 p-2 rounded hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors"
+            >
+              <i
+                [class]="
+                  'pi ' +
+                  getEventIcon(event.event_type) +
+                  ' text-red-500 mt-1 text-sm'
+                "
+              ></i>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate">
+                  {{ event.description }}
+                </p>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-xs text-muted-color">{{
+                    getRelativeTime(event.timestamp)
+                  }}</span>
+                </div>
+              </div>
+            </div>
+          }
         }
       </div>
     </p-card>
