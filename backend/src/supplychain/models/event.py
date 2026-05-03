@@ -54,9 +54,9 @@ class Event(BaseModel):
         # System/Entity Events
         ("entity_created", "Entity Created"),
         ("configuration_changed", "Configuration Changed"),
+        ("document_uploaded", "Document Uploaded"),
     ]
 
-    # Entity Types (for the entities this event can be associated with)
     ENTITY_TYPE_CHOICES = [
         ("product", "Product"),
         ("batch", "Batch"),
@@ -66,6 +66,7 @@ class Event(BaseModel):
         ("device", "Device"),
         ("location", "Location"),
         ("system", "System"),
+        ("document", "Document"),
     ]
 
     # Severity Levels

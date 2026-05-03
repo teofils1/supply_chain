@@ -20,6 +20,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { MessageService, ConfirmationService } from 'primeng/api';
 
 import { DocumentService } from '../../core/services/document.service';
+import { EventService, EventListItem } from '../../core/services/event.service';
 import {
   DocumentDetail,
   DocumentCategory,
@@ -49,6 +50,7 @@ import {
 })
 export class DocumentDetailComponent implements OnInit {
   private documentService = inject(DocumentService);
+  private eventService = inject(EventService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private messageService = inject(MessageService);
@@ -57,6 +59,52 @@ export class DocumentDetailComponent implements OnInit {
   // State
   document = signal<DocumentDetail | null>(null);
   loading = signal(false);
+
+  // Document Events
+  documentEvents = signal<EventListItem[]>([]);
+  eventsLoading = signal(false);
+  anchoring = signal(false);
+
+  get latestUploadEvent() {
+    return this.documentEvents().find(
+      (e) => e.event_type === 'document_uploaded',
+    );
+  }
+
+  get latestBlockchainEvent() {
+    return this.documentEvents().find(
+      (e) => e.is_blockchain_anchored && e.event_type === 'document_uploaded',
+    );
+  }
+
+  anchorDocument(): void {
+    const event = this.latestUploadEvent;
+    if (!event) return;
+
+    this.anchoring.set(true);
+    this.eventService.anchorEvent(event.id).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Document anchored to blockchain',
+        });
+        this.anchoring.set(false);
+        const doc = this.document();
+        if (doc) {
+          this.loadEvents(doc.id);
+        }
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to anchor document',
+        });
+        this.anchoring.set(false);
+      },
+    });
+  }
 
   // New version upload
   showVersionDialog = signal(false);
@@ -79,6 +127,7 @@ export class DocumentDetailComponent implements OnInit {
       next: (doc) => {
         this.document.set(doc);
         this.loading.set(false);
+        this.loadEvents(doc.id);
       },
       error: () => {
         this.messageService.add({
@@ -90,6 +139,21 @@ export class DocumentDetailComponent implements OnInit {
         this.router.navigate(['/documents']);
       },
     });
+  }
+
+  loadEvents(documentId: number): void {
+    this.eventsLoading.set(true);
+    this.eventService
+      .load({ entity_type: 'document', entity_id: documentId })
+      .subscribe({
+        next: (response: { results: EventListItem[] }) => {
+          this.documentEvents.set(response.results);
+          this.eventsLoading.set(false);
+        },
+        error: () => {
+          this.eventsLoading.set(false);
+        },
+      });
   }
 
   goBack(): void {
@@ -231,7 +295,7 @@ export class DocumentDetailComponent implements OnInit {
   }
 
   getCategorySeverity(
-    category: DocumentCategory
+    category: DocumentCategory,
   ): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
     const severityMap: Record<
       DocumentCategory,

@@ -10,6 +10,7 @@ from django.template import engines
 from weasyprint import HTML
 
 from ..models.document import Document
+from ..models.event import Event
 
 if TYPE_CHECKING:
     from ..models import Batch, Shipment
@@ -166,6 +167,24 @@ class PDFGeneratorService:
             file_type="application/pdf",
         )
         document.save()
+
+        # Compute file hash manually to be safe, since it might not be done here
+        document.file_hash = document.compute_file_hash()
+        document.save(update_fields=["file_hash"])
+
+        # Generate unanchored event so users can anchor it later from UI
+        Event.create_event(
+            event_type="document_uploaded",
+            entity_type="document",
+            entity_id=document.id,
+            description=f"Document {document.title} generated",
+            user=None,
+            metadata={
+                "file_hash": document.file_hash,
+                "version_number": document.version_number,
+            }
+        )
+
         return document
 
 

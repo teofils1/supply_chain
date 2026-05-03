@@ -30,7 +30,8 @@ export type EventType =
   | 'alert'
   | 'warning'
   | 'error'
-  | 'other';
+  | 'other'
+  | 'document_uploaded';
 
 export type EntityType =
   | 'product'
@@ -40,7 +41,8 @@ export type EntityType =
   | 'user'
   | 'device'
   | 'location'
-  | 'system';
+  | 'system'
+  | 'document';
 
 export type SeverityLevel = 'info' | 'low' | 'medium' | 'high' | 'critical';
 
@@ -220,7 +222,7 @@ export class EventService {
    */
   load(
     filters?: EventFilters,
-    pagination?: PaginationParams
+    pagination?: PaginationParams,
   ): Observable<PaginatedResponse<EventListItem>> {
     this._loading.set(true);
 
@@ -297,7 +299,7 @@ export class EventService {
           this._currentPage.set(response.current_page);
           this._pageSize.set(response.page_size);
           this._loading.set(false);
-        })
+        }),
       );
   }
 
@@ -306,7 +308,7 @@ export class EventService {
    */
   loadMore(
     filters?: EventFilters,
-    pagination?: PaginationParams
+    pagination?: PaginationParams,
   ): Observable<PaginatedResponse<EventListItem>> {
     // Don't set _loading to true - we use a separate loadingMore signal in the component
     // to avoid hiding the existing events
@@ -385,7 +387,7 @@ export class EventService {
           this._currentPage.set(response.current_page);
           this._pageSize.set(response.page_size);
           // Don't modify _loading here - component manages loadingMore signal
-        })
+        }),
       );
   }
 
@@ -402,7 +404,7 @@ export class EventService {
    */
   loadAll(filters?: EventFilters): Observable<EventListItem[]> {
     return this.load(filters, { page: 1, page_size: 100 }).pipe(
-      map((response) => response.results)
+      map((response) => response.results),
     );
   }
 
@@ -459,7 +461,7 @@ export class EventService {
           is_deleted: event.is_deleted,
         };
         this._events.update((list) => [listItem, ...list]);
-      })
+      }),
     );
   }
 
@@ -501,9 +503,9 @@ export class EventService {
         };
         this.cacheService.invalidateEntity('events');
         this._events.update((list) =>
-          list.map((e) => (e.id === id ? listItem : e))
+          list.map((e) => (e.id === id ? listItem : e)),
         );
-      })
+      }),
     );
   }
 
@@ -518,9 +520,9 @@ export class EventService {
           this.cacheService.invalidateEntity('events');
           // Remove the event from the list or mark as deleted
           this._events.update((list) =>
-            list.map((e) => (e.id === id ? { ...e, is_deleted: true } : e))
+            list.map((e) => (e.id === id ? { ...e, is_deleted: true } : e)),
           );
-        })
+        }),
       );
   }
 
@@ -783,7 +785,7 @@ export class EventService {
    * Get integrity status color for UI display
    */
   getIntegrityStatusColor(
-    status: IntegrityStatus
+    status: IntegrityStatus,
   ): 'success' | 'warning' | 'danger' | 'info' {
     switch (status) {
       case 'anchored':

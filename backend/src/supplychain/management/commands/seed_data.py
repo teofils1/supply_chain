@@ -652,8 +652,8 @@ class Command(BaseCommand):
             "quality_check",
             "shipped",
             "delivered",
-            "temperature_alert",
-            "temperature_excursion",
+            "temperature_deviation",
+            "temperature_deviation",
             "packed",
             "unpacked",
             "recalled",
@@ -674,7 +674,7 @@ class Command(BaseCommand):
         for product in products:
             content_type = ContentType.objects.get_for_model(product)
             for _j in range(random.randint(3, 8)):
-                event_type = random.choice(["created", "updated", "status_changed"])
+                event_type = random.choice(["entity_created", "configuration_changed", "document_uploaded"])
                 days_ago = random.randint(1, 365)
                 create_event_with_date(
                     days_ago=days_ago,
@@ -696,7 +696,7 @@ class Command(BaseCommand):
 
             # Regular events
             for _j in range(random.randint(3, 8)):
-                event_type = random.choice(event_types[:6])
+                event_type = random.choice(["batch_created", "batch_released", "batch_quarantined", "batch_recalled", "quality_control_passed", "quality_control_failed"])
                 days_ago = random.randint(1, 365)
                 create_event_with_date(
                     days_ago=days_ago,
@@ -723,7 +723,7 @@ class Command(BaseCommand):
 
                     create_event_with_date(
                         days_ago=days_ago,
-                        event_type="temperature_excursion",
+                        event_type="temperature_deviation",
                         entity_type="batch",
                         entity_id=batch.id,
                         content_type=content_type,
@@ -745,7 +745,7 @@ class Command(BaseCommand):
         for pack in packs[:200]:
             content_type = ContentType.objects.get_for_model(pack)
             for _j in range(random.randint(2, 5)):
-                event_type = random.choice(event_types[:8])
+                event_type = random.choice(["pack_commissioned", "pack_aggregated", "pack_disaggregated", "pack_decommissioned", "inventory_adjustment", "temperature_deviation", "humidity_deviation", "location_transfer"])
                 days_ago = random.randint(1, 180)
                 create_event_with_date(
                     days_ago=days_ago,
@@ -771,7 +771,7 @@ class Command(BaseCommand):
 
                 create_event_with_date(
                     days_ago=days_ago,
-                    event_type="temperature_alert",
+                    event_type="temperature_deviation",
                     entity_type="pack",
                     entity_id=pack.id,
                     content_type=content_type,
@@ -792,7 +792,7 @@ class Command(BaseCommand):
         for shipment in shipments:
             content_type = ContentType.objects.get_for_model(shipment)
             for _j in range(random.randint(3, 7)):
-                event_type = random.choice(["created", "status_changed", "shipped", "delivered", "updated"])
+                event_type = random.choice(["shipment_created", "shipment_dispatched", "shipment_in_transit", "shipment_delayed", "shipment_delivered", "shipment_customs_cleared", "damage_reported"])
                 days_ago = random.randint(1, 90)
                 create_event_with_date(
                     days_ago=days_ago,
@@ -838,7 +838,7 @@ class Command(BaseCommand):
 
                 create_event_with_date(
                     days_ago=days_ago,
-                    event_type="temperature_excursion",
+                    event_type="temperature_deviation",
                     entity_type="shipment",
                     entity_id=shipment.id,
                     content_type=content_type,

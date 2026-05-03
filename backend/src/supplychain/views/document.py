@@ -11,12 +11,14 @@ from rest_framework.views import APIView
 from .. import models as m
 from .. import permissions as p
 from ..models.document import Document
+from ..models.event import Event
 from ..serializers.document import (
     DocumentDetailSerializer,
     DocumentListSerializer,
     DocumentUploadSerializer,
     DocumentVersionSerializer,
 )
+from ..services.blockchain import blockchain_service
 from ..services.pdf_generator import PDFGeneratorService
 
 
@@ -160,6 +162,22 @@ class DocumentNewVersionView(APIView):
         # Compute and save file hash
         new_doc.file_hash = new_doc.compute_file_hash()
         new_doc.save(update_fields=["file_hash"])
+
+        # Generate event and anchor to blockchain
+        event = Event.create_event(
+            event_type="document_uploaded",
+            entity_type="document",
+            entity_id=new_doc.id,
+            description=f"Document {new_doc.title} uploaded",
+            user=request.user if request.user.is_authenticated else None,
+            metadata={
+                "file_hash": new_doc.file_hash,
+                "version_number": new_doc.version_number,
+            }
+        )
+        result = blockchain_service.anchor_event(event)
+        if result.get("success"):
+            event.mark_blockchain_anchored(result["tx_hash"], result["block_number"])
 
         return Response(
             DocumentDetailSerializer(new_doc).data, status=status.HTTP_201_CREATED

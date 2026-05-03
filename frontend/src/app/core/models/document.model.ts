@@ -9,7 +9,7 @@ export type DocumentCategory =
   | 'photo'
   | 'other';
 
-export type EntityType = 'product' | 'batch' | 'pack' | 'shipment';
+export type EntityType = 'product' | 'batch' | 'pack' | 'shipment' | 'document';
 
 export interface Document {
   id: number;

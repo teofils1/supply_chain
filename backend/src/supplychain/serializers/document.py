@@ -5,6 +5,8 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 
 from ..models.document import Document
+from ..models.event import Event
+from ..services.blockchain import blockchain_service
 
 
 class DocumentListSerializer(serializers.ModelSerializer):
@@ -216,6 +218,23 @@ class DocumentUploadSerializer(serializers.ModelSerializer):
         # Compute file hash
         document.file_hash = document.compute_file_hash()
         document.save()
+
+        # Generate event and anchor to blockchain
+        event = Event.create_event(
+            event_type="document_uploaded",
+            entity_type="document",
+            entity_id=document.id,
+            description=f"Document {document.title} uploaded",
+            user=uploaded_by,
+            metadata={
+                "file_hash": document.file_hash,
+                "version_number": document.version_number,
+            }
+        )
+        result = blockchain_service.anchor_event(event)
+        if result.get("success"):
+            event.mark_blockchain_anchored(result["tx_hash"], result["block_number"])
+
         return document
 
 
