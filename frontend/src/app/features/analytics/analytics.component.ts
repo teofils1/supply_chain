@@ -137,7 +137,7 @@ export class AnalyticsComponent implements OnInit, OnDestroy {
           weekday: 'short',
           month: 'short',
           day: 'numeric',
-        })
+        }),
       ),
       datasets: [
         {
@@ -171,7 +171,7 @@ export class AnalyticsComponent implements OnInit, OnDestroy {
         {
           data: data.status_distribution.map((s) => s.count),
           backgroundColor: data.status_distribution.map(
-            (s) => statusColors[s.status] || '#6b7280'
+            (s) => statusColors[s.status] || '#6b7280',
           ),
         },
       ],
@@ -187,7 +187,7 @@ export class AnalyticsComponent implements OnInit, OnDestroy {
         new Date(w.week).toLocaleDateString('en-US', {
           month: 'short',
           day: 'numeric',
-        })
+        }),
       ),
       datasets: [
         {
@@ -232,19 +232,19 @@ export class AnalyticsComponent implements OnInit, OnDestroy {
 
   temperatureTrendChartData = computed(() => {
     const data = this.temperatureExcursions();
-    if (!data?.weekly_trend) return null;
+    if (!data?.daily_trend) return null;
 
     return {
-      labels: data.weekly_trend.map((w) =>
-        new Date(w.week).toLocaleDateString('en-US', {
+      labels: data.daily_trend.map((d) =>
+        new Date(d.day).toLocaleDateString('en-US', {
           month: 'short',
           day: 'numeric',
-        })
+        }),
       ),
       datasets: [
         {
           label: 'Temperature Excursions',
-          data: data.weekly_trend.map((w) => w.count),
+          data: data.daily_trend.map((d) => d.count),
           borderColor: '#ef4444',
           backgroundColor: 'rgba(239, 68, 68, 0.2)',
           fill: true,
@@ -388,7 +388,7 @@ export class AnalyticsComponent implements OnInit, OnDestroy {
   }
 
   getSeverityColor(
-    severity: string
+    severity: string,
   ):
     | 'success'
     | 'info'
