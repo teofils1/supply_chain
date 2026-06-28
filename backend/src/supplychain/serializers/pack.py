@@ -105,7 +105,7 @@ class PackDetailSerializer(serializers.ModelSerializer):
     def validate_serial_number(self, value):
         """Validate serial number uniqueness."""
         # Check uniqueness (excluding current instance if updating)
-        queryset = m.Pack.objects.filter(serial_number=value)
+        queryset = m.Pack.all_objects.filter(serial_number=value)
         if self.instance:
             queryset = queryset.exclude(pk=self.instance.pk)
 
@@ -167,6 +167,7 @@ class PackCreateSerializer(serializers.ModelSerializer):
     days_until_expiry = serializers.ReadOnlyField()
     is_shipped = serializers.ReadOnlyField()
     is_delivered = serializers.ReadOnlyField()
+    is_deleted = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = m.Pack
@@ -198,6 +199,8 @@ class PackCreateSerializer(serializers.ModelSerializer):
             "is_shipped",
             "is_delivered",
             "created_at",
+            "updated_at",
+            "is_deleted",
         ]
         read_only_fields = [
             "id",
@@ -208,11 +211,13 @@ class PackCreateSerializer(serializers.ModelSerializer):
             "days_until_expiry",
             "is_shipped",
             "is_delivered",
+            "updated_at",
+            "is_deleted",
         ]
 
     def validate_serial_number(self, value):
         """Validate serial number uniqueness."""
-        if m.Pack.objects.filter(serial_number=value).exists():
+        if m.Pack.all_objects.filter(serial_number=value).exists():
             raise serializers.ValidationError(
                 "A pack with this serial number already exists."
             )

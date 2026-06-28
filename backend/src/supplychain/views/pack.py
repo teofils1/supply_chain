@@ -3,6 +3,8 @@ from __future__ import annotations
 import contextlib
 from datetime import date, timedelta
 
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import IntegrityError
 from django.db.models import Q
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
@@ -214,19 +216,28 @@ class PackListCreateView(generics.ListCreateAPIView):
         batch = pack_data["batch"]
         pack_size = pack_data["pack_size"]
 
-        # Wrap entire operation in a transaction for atomicity
-        with transaction.atomic():
-            # Atomically consume the quantity from batch
-            # This prevents race conditions in concurrent pack creation
-            if not batch.consume_quantity(pack_size):
-                raise ValidationError(
-                    {
-                        "pack_size": f"Insufficient quantity in batch. Available: {batch.available_quantity}, Required: {pack_size}"
-                    }
-                )
+        try:
+            # Wrap entire operation in a transaction for atomicity
+            with transaction.atomic():
+                # Atomically consume the quantity from batch
+                # This prevents race conditions in concurrent pack creation
+                if not batch.consume_quantity(pack_size):
+                    raise ValidationError(
+                        {
+                            "pack_size": f"Insufficient quantity in batch. Available: {batch.available_quantity}, Required: {pack_size}"
+                        }
+                    )
 
-            # Save the pack within the same transaction
-            serializer.save()
+                # Save the pack within the same transaction
+                serializer.save()
+        except IntegrityError as exc:
+            if "serial_number" in str(exc).lower():
+                raise ValidationError(
+                    {"serial_number": "A pack with this serial number already exists."}
+                ) from exc
+            raise ValidationError({"detail": "Failed to create pack."}) from exc
+        except DjangoValidationError as exc:
+            raise ValidationError(getattr(exc, "message_dict", exc.messages)) from exc
 
 
 class PackDetailUpdateView(generics.RetrieveUpdateAPIView):
@@ -263,7 +274,9 @@ class PackDetailUpdateView(generics.RetrieveUpdateAPIView):
                 # Atomically restore quantity to old batch
                 if not old_batch.restore_quantity(old_pack_size):
                     raise ValidationError(
-                        {"batch": "Failed to restore quantity to old batch. Please try again."}
+                        {
+                            "batch": "Failed to restore quantity to old batch. Please try again."
+                        }
                     )
 
                 # Atomically consume from new batch
@@ -288,7 +301,9 @@ class PackDetailUpdateView(generics.RetrieveUpdateAPIView):
                     # Restore quantity back to batch (quantity decreased)
                     if not old_batch.restore_quantity(abs(quantity_diff)):
                         raise ValidationError(
-                            {"pack_size": "Failed to restore quantity to batch. Please try again."}
+                            {
+                                "pack_size": "Failed to restore quantity to batch. Please try again."
+                            }
                         )
 
             # Save the pack within the same transaction
