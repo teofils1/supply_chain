@@ -145,7 +145,7 @@ class DocumentUploadSerializer(serializers.ModelSerializer):
         max_size = getattr(settings, "MAX_UPLOAD_SIZE", 50 * 1024 * 1024)
         if value.size > max_size:
             raise serializers.ValidationError(
-                f"File size exceeds maximum allowed ({max_size // (1024*1024)}MB)"
+                f"File size exceeds maximum allowed ({max_size // (1024 * 1024)}MB)"
             )
 
         allowed_types = getattr(
@@ -186,7 +186,9 @@ class DocumentUploadSerializer(serializers.ModelSerializer):
         model_class = content_type.model_class()
         if not model_class.objects.filter(pk=entity_id).exists():
             raise serializers.ValidationError(
-                {"entity_id": f"{entity_type.title()} with id {entity_id} does not exist"}
+                {
+                    "entity_id": f"{entity_type.title()} with id {entity_id} does not exist"
+                }
             )
 
         data["content_type"] = content_type
@@ -201,7 +203,9 @@ class DocumentUploadSerializer(serializers.ModelSerializer):
 
         # Get current user from request
         request = self.context.get("request")
-        uploaded_by = request.user if request and request.user.is_authenticated else None
+        uploaded_by = (
+            request.user if request and request.user.is_authenticated else None
+        )
 
         document = Document(
             content_type=content_type,
@@ -227,13 +231,20 @@ class DocumentUploadSerializer(serializers.ModelSerializer):
             description=f"Document {document.title} uploaded",
             user=uploaded_by,
             metadata={
+                "document_title": document.title,
+                "file_name": document.file_name,
                 "file_hash": document.file_hash,
                 "version_number": document.version_number,
-            }
+                "attached_entity_type": content_type.model,
+                "attached_entity_id": entity_id,
+            },
         )
         result = blockchain_service.anchor_event(event)
         if result.get("success"):
             event.mark_blockchain_anchored(result["tx_hash"], result["block_number"])
+            Event.create_document_anchored_event(event, result, uploaded_by)
+        else:
+            event.mark_blockchain_failed()
 
         return document
 
@@ -250,6 +261,6 @@ class DocumentVersionSerializer(serializers.Serializer):
         max_size = getattr(settings, "MAX_UPLOAD_SIZE", 50 * 1024 * 1024)
         if value.size > max_size:
             raise serializers.ValidationError(
-                f"File size exceeds maximum allowed ({max_size // (1024*1024)}MB)"
+                f"File size exceeds maximum allowed ({max_size // (1024 * 1024)}MB)"
             )
         return value

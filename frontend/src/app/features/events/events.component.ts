@@ -173,7 +173,7 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
           this.loadMoreEvents();
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
 
     this.intersectionObserver.observe(this.scrollSentinel.nativeElement);
@@ -406,7 +406,7 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   toggleView() {
     this.viewMode.update((mode) =>
-      mode === 'timeline' ? 'table' : 'timeline'
+      mode === 'timeline' ? 'table' : 'timeline',
     );
   }
 
@@ -417,7 +417,7 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getSeverityColor(
-    severity: string
+    severity: string,
   ): 'success' | 'warning' | 'danger' | 'info' | 'secondary' {
     switch (severity) {
       case 'critical':
@@ -462,6 +462,8 @@ export class EventsComponent implements OnInit, AfterViewInit, OnDestroy {
           return `${info.name} - ${info.product_name || 'Unknown Product'}`;
         case 'shipment':
           return `${info.name} (${info.carrier || 'Unknown Carrier'})`;
+        case 'document':
+          return `${info.name || 'Document'} #${event.entity_id}`;
         default:
           return info.name;
       }

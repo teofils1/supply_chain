@@ -271,6 +271,79 @@
             </div>
           </div>
 
+          <!-- Blockchain Anchoring Metadata -->
+          <div
+            *ngIf="hasBlockchainMetadata()"
+            class="bg-slate-50 dark:bg-slate-900/30 p-4 rounded-lg border border-slate-200 dark:border-slate-700"
+          >
+            <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+              <div class="flex items-center gap-2">
+                <i class="pi pi-shield text-slate-600"></i>
+                <h4 class="font-semibold text-gray-900 dark:text-white">
+                  Blockchain verification / anchoring
+                </h4>
+              </div>
+              <p-tag
+                [value]="
+                  getIntegrityStatusText(event()?.integrity_status || 'pending')
+                "
+                [severity]="
+                  getIntegrityStatusColor(
+                    event()?.integrity_status || 'pending'
+                  )
+                "
+                [icon]="
+                  'pi ' +
+                  getIntegrityStatusIcon(event()?.integrity_status || 'pending')
+                "
+              ></p-tag>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <div class="font-medium text-gray-700 dark:text-gray-300">
+                  Event hash
+                </div>
+                <code
+                  class="block break-all text-xs text-gray-600 dark:text-gray-400"
+                >
+                  {{ event()?.event_hash || "Not generated" }}
+                </code>
+              </div>
+              <div>
+                <div class="font-medium text-gray-700 dark:text-gray-300">
+                  Transaction hash
+                </div>
+                <code
+                  class="block break-all text-xs text-gray-600 dark:text-gray-400"
+                >
+                  {{ event()?.blockchain_tx_hash || "Not anchored" }}
+                </code>
+              </div>
+              <div>
+                <div class="font-medium text-gray-700 dark:text-gray-300">
+                  Block number
+                </div>
+                <span class="text-gray-600 dark:text-gray-400">
+                  {{ event()?.blockchain_block_number || "Not anchored" }}
+                </span>
+              </div>
+              <div *ngIf="event()?.blockchain_explorer_url">
+                <div class="font-medium text-gray-700 dark:text-gray-300">
+                  Explorer
+                </div>
+                <a
+                  [href]="event()?.blockchain_explorer_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-blue-600 hover:underline break-all"
+                >
+                  View transaction
+                </a>
+              </div>
+            </div>
+          </div>
+
           <!-- Manual Integrity Verification Result -->
           <div
             *ngIf="integrityResult() as result"

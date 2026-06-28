@@ -314,6 +314,7 @@ class EventCreateSerializer(serializers.ModelSerializer):
                 "batch": m.Batch,
                 "pack": m.Pack,
                 "shipment": m.Shipment,
+                "document": m.Document,
                 "user": User,
             }
 
@@ -338,6 +339,7 @@ class EventCreateSerializer(serializers.ModelSerializer):
                 "batch": m.Batch,
                 "pack": m.Pack,
                 "shipment": m.Shipment,
+                "document": m.Document,
                 "user": User,
             }
 

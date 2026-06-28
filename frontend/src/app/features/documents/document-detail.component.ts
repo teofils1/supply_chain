@@ -72,8 +72,11 @@ export class DocumentDetailComponent implements OnInit {
   }
 
   get latestBlockchainEvent() {
-    return this.documentEvents().find(
-      (e) => e.is_blockchain_anchored && e.event_type === 'document_uploaded',
+    return (
+      this.documentEvents().find((e) => e.event_type === 'document_anchored') ||
+      this.documentEvents().find(
+        (e) => e.is_blockchain_anchored && e.event_type === 'document_uploaded',
+      )
     );
   }
 

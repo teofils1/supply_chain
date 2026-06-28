@@ -171,13 +171,24 @@ class DocumentNewVersionView(APIView):
             description=f"Document {new_doc.title} uploaded",
             user=request.user if request.user.is_authenticated else None,
             metadata={
+                "document_title": new_doc.title,
+                "file_name": new_doc.file_name,
                 "file_hash": new_doc.file_hash,
                 "version_number": new_doc.version_number,
-            }
+                "attached_entity_type": new_doc.entity_type,
+                "attached_entity_id": new_doc.object_id,
+            },
         )
         result = blockchain_service.anchor_event(event)
         if result.get("success"):
             event.mark_blockchain_anchored(result["tx_hash"], result["block_number"])
+            Event.create_document_anchored_event(
+                event,
+                result,
+                request.user if request.user.is_authenticated else None,
+            )
+        else:
+            event.mark_blockchain_failed()
 
         return Response(
             DocumentDetailSerializer(new_doc).data, status=status.HTTP_201_CREATED
@@ -192,11 +203,11 @@ class EntityDocumentsView(APIView):
     def get(self, request, entity_type, entity_id):
         # Convert plural entity types to singular for model lookup
         entity_type_singular = entity_type.lower()
-        if entity_type_singular.endswith('s'):
+        if entity_type_singular.endswith("s"):
             # Handle common plural forms
-            if entity_type_singular == 'batches':
-                entity_type_singular = 'batch'
-            elif entity_type_singular in ['products', 'packs', 'shipments']:
+            if entity_type_singular == "batches":
+                entity_type_singular = "batch"
+            elif entity_type_singular in ["products", "packs", "shipments"]:
                 entity_type_singular = entity_type_singular[:-1]
 
         try:
@@ -322,7 +333,9 @@ class BatchGenerateCoaView(APIView):
             "yes",
         }
 
-        result = PDFGeneratorService.generate_coa(batch, save_as_document=save_as_document)
+        result = PDFGeneratorService.generate_coa(
+            batch, save_as_document=save_as_document
+        )
 
         if save_as_document:
             return Response(

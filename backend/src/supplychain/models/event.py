@@ -29,7 +29,6 @@ class Event(BaseModel):
         ("batch_recalled", "Batch Recalled"),
         ("quality_control_passed", "QC Passed"),
         ("quality_control_failed", "QC Failed"),
-        
         # Shipment Events
         ("shipment_created", "Shipment Created"),
         ("shipment_dispatched", "Shipment Dispatched"),
@@ -37,24 +36,22 @@ class Event(BaseModel):
         ("shipment_delayed", "Shipment Delayed"),
         ("shipment_delivered", "Shipment Delivered"),
         ("shipment_customs_cleared", "Shipment Customs Cleared"),
-        
         # Pack/Inventory Events
         ("pack_commissioned", "Pack Commissioned"),
         ("pack_aggregated", "Pack Aggregated"),
         ("pack_disaggregated", "Pack Disaggregated"),
         ("pack_decommissioned", "Pack Decommissioned"),
         ("inventory_adjustment", "Inventory Adjustment"),
-        
         # Alert/Environmental Events
         ("temperature_deviation", "Temperature Deviation"),
         ("humidity_deviation", "Humidity Deviation"),
         ("location_transfer", "Location Transfer"),
         ("damage_reported", "Damage Reported"),
-        
         # System/Entity Events
         ("entity_created", "Entity Created"),
         ("configuration_changed", "Configuration Changed"),
         ("document_uploaded", "Document Uploaded"),
+        ("document_anchored", "Document Anchored"),
     ]
 
     ENTITY_TYPE_CHOICES = [
@@ -219,6 +216,8 @@ class Event(BaseModel):
                 return self.content_object.serial_number
             elif hasattr(self.content_object, "lot_number"):
                 return self.content_object.lot_number
+            elif hasattr(self.content_object, "title"):
+                return self.content_object.title
             elif hasattr(self.content_object, "username"):
                 return self.content_object.username
         return f"{self.entity_type}#{self.entity_id}"
@@ -260,6 +259,12 @@ class Event(BaseModel):
         elif self.entity_type == "shipment" and hasattr(self.content_object, "carrier"):
             entity_info["carrier"] = self.content_object.carrier
             entity_info["status"] = self.content_object.status
+        elif self.entity_type == "document" and hasattr(self.content_object, "title"):
+            entity_info["file_name"] = self.content_object.file_name
+            entity_info["category"] = self.content_object.category
+            entity_info["version_number"] = self.content_object.version_number
+            entity_info["attached_entity_type"] = self.content_object.entity_type
+            entity_info["attached_entity_id"] = self.content_object.object_id
 
         return entity_info
 
@@ -297,10 +302,21 @@ class Event(BaseModel):
         Returns:
             Event: Created event instance
         """
-        return cls.objects.create(
+        content_type = None
+        if entity_type and entity_id:
+            try:
+                content_type = ContentType.objects.get(
+                    app_label="supplychain", model=entity_type
+                )
+            except ContentType.DoesNotExist:
+                if entity_type == "user":
+                    content_type = ContentType.objects.get_for_model(User)
+
+        event = cls.objects.create(
             event_type=event_type,
             entity_type=entity_type,
             entity_id=entity_id,
+            content_type=content_type,
             description=description,
             user=user,
             severity=severity,
@@ -310,6 +326,54 @@ class Event(BaseModel):
             user_agent=user_agent,
             system_info=system_info or {},
         )
+        event.update_event_hash()
+        return event
+
+    @classmethod
+    def create_document_anchored_event(cls, source_event, anchor_result, user=None):
+        """Create a separate audit event when a document upload event is anchored."""
+        if source_event.entity_type != "document":
+            return None
+
+        existing = cls.objects.filter(
+            event_type="document_anchored",
+            entity_type="document",
+            entity_id=source_event.entity_id,
+            metadata__anchored_event_id=source_event.id,
+        ).first()
+        if existing:
+            if not existing.blockchain_tx_hash and anchor_result.get("tx_hash"):
+                existing.mark_blockchain_anchored(
+                    anchor_result.get("tx_hash"), anchor_result.get("block_number")
+                )
+            return existing
+
+        document_title = (
+            source_event.metadata.get("document_title")
+            or source_event.entity_display_name
+        )
+        anchor_event = cls.create_event(
+            event_type="document_anchored",
+            entity_type="document",
+            entity_id=source_event.entity_id,
+            description=f"Document {document_title} anchored to blockchain",
+            user=user or source_event.user,
+            severity="info",
+            metadata={
+                "document_title": document_title,
+                "anchored_event_id": source_event.id,
+                "anchored_event_hash": source_event.event_hash,
+                "blockchain_tx_hash": anchor_result.get("tx_hash"),
+                "blockchain_block_number": anchor_result.get("block_number"),
+                "file_hash": source_event.metadata.get("file_hash"),
+                "version_number": source_event.metadata.get("version_number"),
+            },
+        )
+        if anchor_result.get("tx_hash"):
+            anchor_event.mark_blockchain_anchored(
+                anchor_result.get("tx_hash"), anchor_result.get("block_number")
+            )
+        return anchor_event
 
     def compute_event_hash(self):
         """

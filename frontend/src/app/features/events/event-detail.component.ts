@@ -23,6 +23,7 @@ import {
   Event,
   EventListItem,
   EventIntegrityResult,
+  IntegrityStatus,
 } from '../../core/services/event.service';
 import { MessageService } from 'primeng/api';
 
@@ -229,11 +230,45 @@ export class EventDetailComponent implements OnInit, OnDestroy {
           return `${info.name} - ${info.product_name || 'Unknown Product'}`;
         case 'shipment':
           return `${info.name} (${info.carrier || 'Unknown Carrier'})`;
+        case 'document':
+          return `${info.name || this.getDocumentTitle(event) || 'Document'} #${event.entity_id}`;
         default:
           return info.name;
       }
     }
+    const documentTitle = this.getDocumentTitle(event);
+    if (event.entity_type === 'document' && documentTitle) {
+      return `${documentTitle} #${event.entity_id}`;
+    }
     return `${event.entity_type}#${event.entity_id}`;
+  }
+
+  getDocumentTitle(event: Event | EventListItem): string | null {
+    return 'metadata' in event ? event.metadata?.document_title || null : null;
+  }
+
+  getIntegrityStatusColor(
+    status: IntegrityStatus,
+  ): 'success' | 'warning' | 'danger' | 'info' {
+    return this.eventService.getIntegrityStatusColor(status);
+  }
+
+  getIntegrityStatusIcon(status: IntegrityStatus): string {
+    return this.eventService.getIntegrityStatusIcon(status);
+  }
+
+  getIntegrityStatusText(status: IntegrityStatus): string {
+    return this.eventService.getIntegrityStatusText(status);
+  }
+
+  hasBlockchainMetadata(): boolean {
+    const event = this.event();
+    return !!(
+      event?.integrity_status ||
+      event?.event_hash ||
+      event?.blockchain_tx_hash ||
+      event?.blockchain_block_number
+    );
   }
 
   hasRelatedEntityData(): boolean {
@@ -291,6 +326,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         break;
       case 'shipment':
         this.router.navigate(['/shipments', event.entity_id]);
+        break;
+      case 'document':
+        this.router.navigate(['/documents', event.entity_id]);
         break;
       default:
         this.messageService.add({

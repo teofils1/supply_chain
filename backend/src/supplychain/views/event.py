@@ -410,11 +410,25 @@ class EventBlockchainAnchorView(APIView):
 
         # Check if already anchored
         if event.integrity_status == "anchored":
+            anchor_event = None
+            if (
+                event.entity_type == "document"
+                and event.event_type == "document_uploaded"
+            ):
+                anchor_event = m.Event.create_document_anchored_event(
+                    event,
+                    {
+                        "tx_hash": event.blockchain_tx_hash,
+                        "block_number": event.blockchain_block_number,
+                    },
+                    request.user if request.user.is_authenticated else None,
+                )
             return Response(
                 {
                     "message": "Event already anchored",
                     "tx_hash": event.blockchain_tx_hash,
                     "block_number": event.blockchain_block_number,
+                    "anchor_event_id": anchor_event.id if anchor_event else None,
                 },
                 status=status.HTTP_200_OK,
             )
@@ -424,12 +438,23 @@ class EventBlockchainAnchorView(APIView):
 
         if result["success"]:
             event.mark_blockchain_anchored(result["tx_hash"], result["block_number"])
+            anchor_event = None
+            if (
+                event.entity_type == "document"
+                and event.event_type == "document_uploaded"
+            ):
+                anchor_event = m.Event.create_document_anchored_event(
+                    event,
+                    result,
+                    request.user if request.user.is_authenticated else None,
+                )
             return Response(
                 {
                     "message": "Event successfully anchored",
                     "tx_hash": result["tx_hash"],
                     "block_number": result["block_number"],
                     "explorer_url": event.blockchain_explorer_url,
+                    "anchor_event_id": anchor_event.id if anchor_event else None,
                 },
                 status=status.HTTP_200_OK,
             )

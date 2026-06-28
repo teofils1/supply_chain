@@ -11,6 +11,7 @@ from weasyprint import HTML
 
 from ..models.document import Document
 from ..models.event import Event
+from .blockchain import blockchain_service
 
 if TYPE_CHECKING:
     from ..models import Batch, Shipment
@@ -172,18 +173,28 @@ class PDFGeneratorService:
         document.file_hash = document.compute_file_hash()
         document.save(update_fields=["file_hash"])
 
-        # Generate unanchored event so users can anchor it later from UI
-        Event.create_event(
+        # Generate event and anchor to blockchain
+        event = Event.create_event(
             event_type="document_uploaded",
             entity_type="document",
             entity_id=document.id,
             description=f"Document {document.title} generated",
             user=None,
             metadata={
+                "document_title": document.title,
+                "file_name": document.file_name,
                 "file_hash": document.file_hash,
                 "version_number": document.version_number,
-            }
+                "attached_entity_type": content_type.model,
+                "attached_entity_id": entity.pk,
+            },
         )
+        result = blockchain_service.anchor_event(event)
+        if result.get("success"):
+            event.mark_blockchain_anchored(result["tx_hash"], result["block_number"])
+            Event.create_document_anchored_event(event, result)
+        else:
+            event.mark_blockchain_failed()
 
         return document
 

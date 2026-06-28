@@ -31,7 +31,31 @@ export type EventType =
   | 'warning'
   | 'error'
   | 'other'
-  | 'document_uploaded';
+  | 'batch_created'
+  | 'batch_released'
+  | 'batch_quarantined'
+  | 'batch_recalled'
+  | 'quality_control_passed'
+  | 'quality_control_failed'
+  | 'shipment_created'
+  | 'shipment_dispatched'
+  | 'shipment_in_transit'
+  | 'shipment_delayed'
+  | 'shipment_delivered'
+  | 'shipment_customs_cleared'
+  | 'pack_commissioned'
+  | 'pack_aggregated'
+  | 'pack_disaggregated'
+  | 'pack_decommissioned'
+  | 'inventory_adjustment'
+  | 'temperature_deviation'
+  | 'humidity_deviation'
+  | 'location_transfer'
+  | 'damage_reported'
+  | 'entity_created'
+  | 'configuration_changed'
+  | 'document_uploaded'
+  | 'document_anchored';
 
 export type EntityType =
   | 'product'
@@ -541,28 +565,31 @@ export class EventService {
    */
   getEventTypes(): { value: EventType; label: string }[] {
     return [
-      { value: 'created', label: 'Created' },
-      { value: 'updated', label: 'Updated' },
-      { value: 'deleted', label: 'Deleted' },
-      { value: 'status_changed', label: 'Status Changed' },
-      { value: 'location_changed', label: 'Location Changed' },
-      { value: 'quality_check', label: 'Quality Check' },
-      { value: 'temperature_alert', label: 'Temperature Alert' },
-      { value: 'shipped', label: 'Shipped' },
-      { value: 'delivered', label: 'Delivered' },
-      { value: 'returned', label: 'Returned' },
-      { value: 'damaged', label: 'Damaged' },
-      { value: 'expired', label: 'Expired' },
-      { value: 'recalled', label: 'Recalled' },
-      { value: 'inventory_count', label: 'Inventory Count' },
-      { value: 'maintenance', label: 'Maintenance' },
-      { value: 'calibration', label: 'Calibration' },
-      { value: 'user_action', label: 'User Action' },
-      { value: 'system_action', label: 'System Action' },
-      { value: 'alert', label: 'Alert' },
-      { value: 'warning', label: 'Warning' },
-      { value: 'error', label: 'Error' },
-      { value: 'other', label: 'Other' },
+      { value: 'batch_created', label: 'Batch Created' },
+      { value: 'batch_released', label: 'Batch Released' },
+      { value: 'batch_quarantined', label: 'Batch Quarantined' },
+      { value: 'batch_recalled', label: 'Batch Recalled' },
+      { value: 'quality_control_passed', label: 'QC Passed' },
+      { value: 'quality_control_failed', label: 'QC Failed' },
+      { value: 'shipment_created', label: 'Shipment Created' },
+      { value: 'shipment_dispatched', label: 'Shipment Dispatched' },
+      { value: 'shipment_in_transit', label: 'Shipment In Transit' },
+      { value: 'shipment_delayed', label: 'Shipment Delayed' },
+      { value: 'shipment_delivered', label: 'Shipment Delivered' },
+      { value: 'shipment_customs_cleared', label: 'Shipment Customs Cleared' },
+      { value: 'pack_commissioned', label: 'Pack Commissioned' },
+      { value: 'pack_aggregated', label: 'Pack Aggregated' },
+      { value: 'pack_disaggregated', label: 'Pack Disaggregated' },
+      { value: 'pack_decommissioned', label: 'Pack Decommissioned' },
+      { value: 'inventory_adjustment', label: 'Inventory Adjustment' },
+      { value: 'temperature_deviation', label: 'Temperature Deviation' },
+      { value: 'humidity_deviation', label: 'Humidity Deviation' },
+      { value: 'location_transfer', label: 'Location Transfer' },
+      { value: 'damage_reported', label: 'Damage Reported' },
+      { value: 'entity_created', label: 'Entity Created' },
+      { value: 'configuration_changed', label: 'Configuration Changed' },
+      { value: 'document_uploaded', label: 'Document Uploaded' },
+      { value: 'document_anchored', label: 'Document Anchored' },
     ];
   }
 
@@ -575,6 +602,7 @@ export class EventService {
       { value: 'batch', label: 'Batch' },
       { value: 'pack', label: 'Pack' },
       { value: 'shipment', label: 'Shipment' },
+      { value: 'document', label: 'Document' },
       { value: 'user', label: 'User' },
       { value: 'device', label: 'Device' },
       { value: 'location', label: 'Location' },
@@ -633,49 +661,43 @@ export class EventService {
    */
   getEventTypeIcon(eventType: EventType): string {
     switch (eventType) {
-      case 'created':
+      case 'batch_created':
+      case 'shipment_created':
+      case 'entity_created':
         return 'pi-plus-circle';
-      case 'updated':
+      case 'configuration_changed':
         return 'pi-pencil';
-      case 'deleted':
-        return 'pi-trash';
-      case 'status_changed':
-        return 'pi-refresh';
-      case 'location_changed':
-        return 'pi-map-marker';
-      case 'quality_check':
+      case 'batch_released':
+      case 'quality_control_passed':
+      case 'shipment_delivered':
         return 'pi-check-circle';
-      case 'temperature_alert':
-        return 'pi-exclamation-triangle';
-      case 'shipped':
-        return 'pi-truck';
-      case 'delivered':
-        return 'pi-check';
-      case 'returned':
-        return 'pi-undo';
-      case 'damaged':
+      case 'quality_control_failed':
+      case 'damage_reported':
         return 'pi-exclamation-circle';
-      case 'expired':
-        return 'pi-clock';
-      case 'recalled':
+      case 'batch_quarantined':
+      case 'batch_recalled':
+      case 'pack_decommissioned':
         return 'pi-ban';
-      case 'inventory_count':
+      case 'shipment_dispatched':
+      case 'shipment_in_transit':
+      case 'shipment_delayed':
+      case 'shipment_customs_cleared':
+        return 'pi-truck';
+      case 'pack_commissioned':
+      case 'pack_aggregated':
+      case 'pack_disaggregated':
+        return 'pi-box';
+      case 'inventory_adjustment':
         return 'pi-list';
-      case 'maintenance':
-        return 'pi-wrench';
-      case 'calibration':
-        return 'pi-cog';
-      case 'user_action':
-        return 'pi-user';
-      case 'system_action':
-        return 'pi-server';
-      case 'alert':
-        return 'pi-bell';
-      case 'warning':
+      case 'temperature_deviation':
+      case 'humidity_deviation':
         return 'pi-exclamation-triangle';
-      case 'error':
-        return 'pi-times-circle';
-      case 'other':
+      case 'location_transfer':
+        return 'pi-map-marker';
+      case 'document_uploaded':
+        return 'pi-upload';
+      case 'document_anchored':
+        return 'pi-shield';
       default:
         return 'pi-info-circle';
     }

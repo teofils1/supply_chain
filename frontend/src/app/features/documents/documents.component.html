@@ -177,7 +177,7 @@
           <td>{{ doc.uploaded_by_name || "System" }}</td>
 
           <!-- Uploaded At -->
-          <td>{{ doc.created_at | date : "short" }}</td>
+          <td>{{ doc.created_at | date: "short" }}</td>
 
           <!-- Actions -->
           <td>
@@ -235,11 +235,12 @@
     header="{{ 'pages.documents.uploadDocument' | translate }}"
     [(visible)]="showUploadDialog"
     [modal]="true"
-    [style]="{ width: '500px' }"
+    [style]="{ width: 'min(640px, 95vw)' }"
+    [contentStyle]="{ 'max-height': '70vh', overflow: 'auto' }"
     [draggable]="false"
     [resizable]="false"
   >
-    <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-4 pr-1">
       <!-- File Upload -->
       <div class="flex flex-col">
         <label class="text-sm font-medium mb-2">
@@ -296,6 +297,8 @@
           [(ngModel)]="uploadCategory"
           optionLabel="label"
           optionValue="value"
+          appendTo="body"
+          styleClass="w-full"
         ></p-select>
       </div>
 
@@ -308,8 +311,11 @@
         <p-select
           [options]="entityTypeOptions"
           [(ngModel)]="uploadEntityType"
+          (ngModelChange)="onUploadEntityTypeChange($event)"
           optionLabel="label"
           optionValue="value"
+          appendTo="body"
+          styleClass="w-full"
         ></p-select>
       </div>
 
@@ -319,12 +325,19 @@
           {{ "pages.documents.entityId" | translate }}
           <span class="text-red-500">*</span>
         </label>
-        <input
-          type="number"
-          pInputText
+        <p-select
+          [options]="uploadEntityOptions()"
           [(ngModel)]="uploadEntityId"
-          placeholder="Enter ID of the entity"
-        />
+          [loading]="loadingEntityOptions()"
+          [filter]="true"
+          filterBy="label"
+          optionLabel="label"
+          optionValue="value"
+          appendTo="body"
+          styleClass="w-full"
+          placeholder="Select entity"
+          emptyMessage="No entities found"
+        ></p-select>
       </div>
     </div>
 

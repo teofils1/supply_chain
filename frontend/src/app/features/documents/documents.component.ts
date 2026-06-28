@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Observable } from 'rxjs';
 
 // PrimeNG imports
 import { TableModule } from 'primeng/table';
@@ -22,11 +23,21 @@ import { TranslateModule } from '@ngx-translate/core';
 import { MessageService, ConfirmationService } from 'primeng/api';
 
 import { DocumentService } from '../../core/services/document.service';
+import { ProductService } from '../../core/services/product.service';
+import { BatchService } from '../../core/services/batch.service';
+import { PackService } from '../../core/services/pack.service';
+import { ShipmentService } from '../../core/services/shipment.service';
 import {
   DocumentListItem,
   DocumentCategory,
   EntityType,
 } from '../../core/models/document.model';
+import { PaginatedResponse } from '../../core/models/pagination.model';
+
+interface EntityOption {
+  label: string;
+  value: number;
+}
 
 @Component({
   selector: 'app-documents',
@@ -54,6 +65,10 @@ import {
 })
 export class DocumentsComponent implements OnInit {
   private documentService = inject(DocumentService);
+  private productService = inject(ProductService);
+  private batchService = inject(BatchService);
+  private packService = inject(PackService);
+  private shipmentService = inject(ShipmentService);
   private messageService = inject(MessageService);
   private confirmationService = inject(ConfirmationService);
   private router = inject(Router);
@@ -76,6 +91,8 @@ export class DocumentsComponent implements OnInit {
   uploadCategory = signal<DocumentCategory>('other');
   uploadEntityType = signal<EntityType>('product');
   uploadEntityId = signal<number | null>(null);
+  uploadEntityOptions = signal<EntityOption[]>([]);
+  loadingEntityOptions = signal(false);
   uploading = signal(false);
 
   // Options
@@ -102,7 +119,7 @@ export class DocumentsComponent implements OnInit {
         {
           page: Math.floor(this.first / this.rows) + 1,
           page_size: this.rows,
-        }
+        },
       )
       .subscribe({
         error: (err) => {
@@ -146,6 +163,7 @@ export class DocumentsComponent implements OnInit {
     this.uploadCategory.set('other');
     this.uploadEntityType.set('product');
     this.uploadEntityId.set(null);
+    this.loadEntityOptions('product');
     this.showUploadDialog.set(true);
   }
 
@@ -156,6 +174,61 @@ export class DocumentsComponent implements OnInit {
       if (!this.uploadTitle()) {
         this.uploadTitle.set(file.name.replace(/\.[^/.]+$/, ''));
       }
+    }
+  }
+
+  onUploadEntityTypeChange(entityType: EntityType): void {
+    this.uploadEntityId.set(null);
+    this.loadEntityOptions(entityType);
+  }
+
+  loadEntityOptions(entityType: EntityType): void {
+    this.loadingEntityOptions.set(true);
+
+    const pagination = { page: 1, page_size: 100 };
+    const request: Observable<PaginatedResponse<any>> =
+      entityType === 'product'
+        ? this.productService.load({}, pagination)
+        : entityType === 'batch'
+          ? this.batchService.load({}, pagination)
+          : entityType === 'pack'
+            ? this.packService.load({}, pagination)
+            : this.shipmentService.load({}, pagination);
+
+    request.subscribe({
+      next: (response) => {
+        this.uploadEntityOptions.set(
+          response.results.map((entity: any) => ({
+            label: this.getEntityOptionLabel(entityType, entity),
+            value: entity.id,
+          })),
+        );
+        this.loadingEntityOptions.set(false);
+      },
+      error: () => {
+        this.uploadEntityOptions.set([]);
+        this.loadingEntityOptions.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: `Failed to load ${entityType} options`,
+        });
+      },
+    });
+  }
+
+  getEntityOptionLabel(entityType: EntityType, entity: any): string {
+    switch (entityType) {
+      case 'product':
+        return `${entity.name} (${entity.gtin}) #${entity.id}`;
+      case 'batch':
+        return `${entity.lot_number} - ${entity.product_name} #${entity.id}`;
+      case 'pack':
+        return `${entity.serial_number} - ${entity.product_name} #${entity.id}`;
+      case 'shipment':
+        return `${entity.tracking_number} - ${entity.destination_name} #${entity.id}`;
+      default:
+        return `#${entity.id}`;
     }
   }
 
@@ -181,7 +254,7 @@ export class DocumentsComponent implements OnInit {
         this.uploadEntityType(),
         entityId,
         this.uploadCategory(),
-        this.uploadDescription()
+        this.uploadDescription(),
       )
       .subscribe({
         next: () => {
@@ -269,7 +342,7 @@ export class DocumentsComponent implements OnInit {
   }
 
   getCategorySeverity(
-    category: DocumentCategory
+    category: DocumentCategory,
   ): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
     const severityMap: Record<
       DocumentCategory,
