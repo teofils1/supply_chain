@@ -1,6 +1,7 @@
 import { CanActivateFn, Router } from '@angular/router';
 import { inject } from '@angular/core';
-import { AuthService } from './auth.service';
+import { catchError, map, of } from 'rxjs';
+import { AuthService, CurrentUser } from './auth.service';
 
 export const operatorOrAdminGuard: CanActivateFn = (route, state) => {
   const auth = inject(AuthService);
@@ -12,21 +13,24 @@ export const operatorOrAdminGuard: CanActivateFn = (route, state) => {
     });
   }
 
+  const checkOperatorOrAdmin = (user: CurrentUser) =>
+    user.active_role && ['Admin', 'Operator'].includes(user.active_role)
+      ? true
+      : router.createUrlTree(['/']);
+
   const user = auth.currentUser();
-  if (!user) {
-    return router.createUrlTree(['/login'], {
-      queryParams: { returnUrl: state.url },
-    });
+  if (user) {
+    return checkOperatorOrAdmin(user);
   }
 
-  // Check if user has Operator or Admin role
-  const hasOperatorOrAdminRole =
-    ['Admin', 'Operator'].includes(user.active_role!)
-
-  if (!hasOperatorOrAdminRole) {
-    // Redirect to home page if not operator or admin
-    return router.createUrlTree(['/']);
-  }
-
-  return true;
+  return auth.ensureCurrentUser().pipe(
+    map(checkOperatorOrAdmin),
+    catchError(() =>
+      of(
+        router.createUrlTree(['/login'], {
+          queryParams: { returnUrl: state.url },
+        }),
+      ),
+    ),
+  );
 };

@@ -2,7 +2,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs/operators';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 type Tokens = { access: string; refresh: string };
 
@@ -104,6 +104,11 @@ export class AuthService {
 
   loadCurrentUser(): Observable<CurrentUser> {
     return this.me().pipe(tap((user) => this._currentUser.set(user)));
+  }
+
+  ensureCurrentUser(): Observable<CurrentUser> {
+    const user = this._currentUser();
+    return user ? of(user) : this.loadCurrentUser();
   }
 
   switchRole(newRole: string): Observable<CurrentUser> {

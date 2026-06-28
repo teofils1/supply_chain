@@ -201,6 +201,16 @@ export interface CreateEventData {
   system_info?: any;
 }
 
+export interface EventIntegrityResult {
+  event_id: number;
+  integrity_verified: boolean;
+  stored_hash: string | null;
+  computed_hash: string;
+  message: string;
+  blockchain_anchored?: boolean;
+  integrity_status?: IntegrityStatus;
+}
+
 @Injectable({ providedIn: 'root' })
 export class EventService {
   private http = inject(HttpClient);
@@ -763,22 +773,8 @@ export class EventService {
   /**
    * Verify event data integrity (without blockchain check)
    */
-  verifyIntegrity(id: number): Observable<{
-    integrity_verified: boolean;
-    stored_hash: string;
-    computed_hash: string;
-    event_id: number;
-    blockchain_anchored: boolean;
-    integrity_status: IntegrityStatus;
-  }> {
-    return this.http.get<{
-      integrity_verified: boolean;
-      stored_hash: string;
-      computed_hash: string;
-      event_id: number;
-      blockchain_anchored: boolean;
-      integrity_status: IntegrityStatus;
-    }>(`/api/events/${id}/integrity/`);
+  verifyIntegrity(id: number): Observable<EventIntegrityResult> {
+    return this.http.get<EventIntegrityResult>(`/api/events/${id}/integrity/`);
   }
 
   /**

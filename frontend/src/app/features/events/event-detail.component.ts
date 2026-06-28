@@ -22,6 +22,7 @@ import {
   EventService,
   Event,
   EventListItem,
+  EventIntegrityResult,
 } from '../../core/services/event.service';
 import { MessageService } from 'primeng/api';
 
@@ -60,6 +61,8 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   relatedEvents = signal<EventListItem[]>([]);
   loading = signal(false);
   loadingRelated = signal(false);
+  verifyingIntegrity = signal(false);
+  integrityResult = signal<EventIntegrityResult | null>(null);
 
   // Event ID from route
   eventId = signal<number | null>(null);
@@ -91,6 +94,8 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     // Reset all state when navigating to a new event
     this.event.set(null);
     this.relatedEvents.set([]);
+    this.integrityResult.set(null);
+    this.verifyingIntegrity.set(false);
   }
 
   loadEvent() {
@@ -146,6 +151,36 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   goBack() {
     this.router.navigate(['/events']);
+  }
+
+  verifyIntegrity() {
+    const id = this.eventId();
+    if (!id) return;
+
+    this.verifyingIntegrity.set(true);
+    this.eventService.verifyIntegrity(id).subscribe({
+      next: (result) => {
+        this.integrityResult.set(result);
+        this.verifyingIntegrity.set(false);
+        this.messageService.add({
+          severity: result.integrity_verified ? 'success' : 'warn',
+          summary: result.integrity_verified
+            ? 'Integrity verified'
+            : 'Integrity warning',
+          detail: result.message,
+        });
+      },
+      error: (error) => {
+        console.error('Error verifying event integrity:', error);
+        this.integrityResult.set(null);
+        this.verifyingIntegrity.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Could not verify event integrity',
+        });
+      },
+    });
   }
 
   getSeverityColor(

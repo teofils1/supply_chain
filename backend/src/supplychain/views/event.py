@@ -536,19 +536,21 @@ class EventIntegrityVerifyView(APIView):
                 {"error": "Event not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
-        if not event.event_hash:
-            # Generate hash if missing
-            event.update_event_hash()
-
         current_hash = event.compute_event_hash()
-        integrity_verified = event.event_hash == current_hash
+        integrity_verified = event.verify_integrity()
+        message = (
+            "Integrity verified — stored hash matches recomputed hash"
+            if integrity_verified
+            else "Possible tampering detected — stored hash differs from recomputed hash"
+        )
 
         return Response(
             {
+                "event_id": event.id,
                 "integrity_verified": integrity_verified,
                 "stored_hash": event.event_hash,
                 "computed_hash": current_hash,
-                "event_id": event.id,
+                "message": message,
                 "blockchain_anchored": event.is_blockchain_anchored,
                 "integrity_status": event.integrity_status,
             },
