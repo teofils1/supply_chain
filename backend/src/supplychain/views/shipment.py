@@ -177,6 +177,16 @@ class ShipmentListCreateView(generics.ListCreateAPIView):
             )
         elif delivery_status == "pending":
             queryset = queryset.filter(status__in=["pending", "confirmed"])
+        elif delivery_status == "active":
+            queryset = queryset.filter(
+                status__in=[
+                    "pending",
+                    "confirmed",
+                    "picked_up",
+                    "in_transit",
+                    "out_for_delivery",
+                ]
+            )
         elif delivery_status == "overdue":
             # Shipments past estimated delivery date but not delivered
             today = date.today()

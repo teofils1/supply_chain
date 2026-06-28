@@ -169,17 +169,14 @@ export class WelcomeComponent implements OnInit, OnDestroy {
   private async loadStats() {
     try {
       // Load all stats in parallel
-      const [products, batches, packs, shipments] = await Promise.all([
-        this.productService.load().toPromise(),
-        this.batchService.load().toPromise(),
-        this.packService.load().toPromise(),
-        this.shipmentService.load().toPromise(),
-      ]);
-
-      const activeShipments =
-        shipments?.results.filter((s) =>
-          ['picked_up', 'in_transit', 'out_for_delivery'].includes(s.status),
-        ).length || 0;
+      const [products, batches, packs, shipments, activeShipments] =
+        await Promise.all([
+          this.productService.load().toPromise(),
+          this.batchService.load().toPromise(),
+          this.packService.load().toPromise(),
+          this.shipmentService.load().toPromise(),
+          this.shipmentService.count({ delivery_status: 'active' }).toPromise(),
+        ]);
 
       const events = this.recentEvents();
       const criticalEvents = events.filter(
@@ -191,7 +188,7 @@ export class WelcomeComponent implements OnInit, OnDestroy {
         totalBatches: batches?.count || 0,
         totalPacks: packs?.count || 0,
         totalShipments: shipments?.count || 0,
-        activeShipments,
+        activeShipments: activeShipments || 0,
         criticalEvents,
       });
     } catch (error) {

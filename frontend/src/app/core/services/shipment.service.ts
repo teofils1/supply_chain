@@ -20,14 +20,7 @@ export type ShipmentStatus =
   | 'lost'
   | 'damaged';
 export type Carrier =
-  | 'fedex'
-  | 'ups'
-  | 'dhl'
-  | 'usps'
-  | 'amazon'
-  | 'local'
-  | 'internal'
-  | 'other';
+  'fedex' | 'ups' | 'dhl' | 'usps' | 'amazon' | 'local' | 'internal' | 'other';
 export type ServiceType =
   | 'standard'
   | 'express'
@@ -38,11 +31,7 @@ export type ServiceType =
   | 'freight'
   | 'cold_chain';
 export type TemperatureRequirement =
-  | 'ambient'
-  | 'cool'
-  | 'frozen'
-  | 'ultra_cold'
-  | 'controlled';
+  'ambient' | 'cool' | 'frozen' | 'ultra_cold' | 'controlled';
 
 export interface ShipmentPack {
   id: number;
@@ -151,7 +140,8 @@ export interface ShipmentFilters {
   pack?: number;
   batch?: number;
   product?: number;
-  delivery_status?: 'delivered' | 'in_transit' | 'pending' | 'overdue';
+  delivery_status?:
+    'active' | 'delivered' | 'in_transit' | 'pending' | 'overdue';
   special_handling?: boolean;
 }
 
@@ -209,7 +199,7 @@ export class ShipmentService {
    */
   load(
     filters?: ShipmentFilters,
-    pagination?: PaginationParams
+    pagination?: PaginationParams,
   ): Observable<PaginatedResponse<ShipmentListItem>> {
     this._loading.set(true);
 
@@ -237,7 +227,7 @@ export class ShipmentService {
     if (filters?.temperature_requirement) {
       params = params.set(
         'temperature_requirement',
-        filters.temperature_requirement
+        filters.temperature_requirement,
       );
     }
     if (filters?.origin_city) {
@@ -261,13 +251,13 @@ export class ShipmentService {
     if (filters?.estimated_delivery_from) {
       params = params.set(
         'estimated_delivery_from',
-        filters.estimated_delivery_from
+        filters.estimated_delivery_from,
       );
     }
     if (filters?.estimated_delivery_to) {
       params = params.set(
         'estimated_delivery_to',
-        filters.estimated_delivery_to
+        filters.estimated_delivery_to,
       );
     }
     if (filters?.pack) {
@@ -285,7 +275,7 @@ export class ShipmentService {
     if (filters?.special_handling !== undefined) {
       params = params.set(
         'special_handling',
-        filters.special_handling.toString()
+        filters.special_handling.toString(),
       );
     }
 
@@ -298,8 +288,103 @@ export class ShipmentService {
           this._currentPage.set(response.current_page);
           this._pageSize.set(response.page_size);
           this._loading.set(false);
-        })
+        }),
       );
+  }
+
+  /**
+   * Get the total count for a shipment filter without updating list state.
+   */
+  count(filters?: ShipmentFilters): Observable<number> {
+    return this.loadPage(filters, { page: 1, page_size: 1 }).pipe(
+      map((response) => response.count),
+    );
+  }
+
+  private loadPage(
+    filters?: ShipmentFilters,
+    pagination?: PaginationParams,
+  ): Observable<PaginatedResponse<ShipmentListItem>> {
+    let params = new HttpParams();
+
+    const page = pagination?.page || 1;
+    const pageSize = pagination?.page_size || DEFAULT_PAGE_SIZE;
+    params = params.set('page', page.toString());
+    params = params.set('page_size', pageSize.toString());
+
+    if (filters?.search) {
+      params = params.set('search', filters.search);
+    }
+    if (filters?.status) {
+      params = params.set('status', filters.status);
+    }
+    if (filters?.carrier) {
+      params = params.set('carrier', filters.carrier);
+    }
+    if (filters?.service_type) {
+      params = params.set('service_type', filters.service_type);
+    }
+    if (filters?.temperature_requirement) {
+      params = params.set(
+        'temperature_requirement',
+        filters.temperature_requirement,
+      );
+    }
+    if (filters?.origin_city) {
+      params = params.set('origin_city', filters.origin_city);
+    }
+    if (filters?.origin_state) {
+      params = params.set('origin_state', filters.origin_state);
+    }
+    if (filters?.destination_city) {
+      params = params.set('destination_city', filters.destination_city);
+    }
+    if (filters?.destination_state) {
+      params = params.set('destination_state', filters.destination_state);
+    }
+    if (filters?.shipped_from) {
+      params = params.set('shipped_from', filters.shipped_from);
+    }
+    if (filters?.shipped_to) {
+      params = params.set('shipped_to', filters.shipped_to);
+    }
+    if (filters?.estimated_delivery_from) {
+      params = params.set(
+        'estimated_delivery_from',
+        filters.estimated_delivery_from,
+      );
+    }
+    if (filters?.estimated_delivery_to) {
+      params = params.set(
+        'estimated_delivery_to',
+        filters.estimated_delivery_to,
+      );
+    }
+    if (filters?.pack) {
+      params = params.set('pack', filters.pack.toString());
+    }
+    if (filters?.batch) {
+      params = params.set('batch', filters.batch.toString());
+    }
+    if (filters?.product) {
+      params = params.set('product', filters.product.toString());
+    }
+    if (filters?.delivery_status) {
+      params = params.set('delivery_status', filters.delivery_status);
+    }
+    if (filters?.special_handling !== undefined) {
+      params = params.set(
+        'special_handling',
+        filters.special_handling.toString(),
+      );
+    }
+
+    return this.http.get<PaginatedResponse<ShipmentListItem>>(
+      '/api/shipments/',
+      {
+        params,
+      },
+    );
   }
 
   /**
@@ -307,7 +392,7 @@ export class ShipmentService {
    */
   loadAll(filters?: ShipmentFilters): Observable<ShipmentListItem[]> {
     return this.load(filters, { page: 1, page_size: 100 }).pipe(
-      map((response) => response.results)
+      map((response) => response.results),
     );
   }
 
@@ -361,7 +446,7 @@ export class ShipmentService {
           is_deleted: shipment.is_deleted,
         };
         this._shipments.update((list) => [...list, listItem]);
-      })
+      }),
     );
   }
 
@@ -400,9 +485,9 @@ export class ShipmentService {
           is_deleted: shipment.is_deleted,
         };
         this._shipments.update((list) =>
-          list.map((s) => (s.id === id ? listItem : s))
+          list.map((s) => (s.id === id ? listItem : s)),
         );
-      })
+      }),
     );
   }
 
@@ -417,9 +502,9 @@ export class ShipmentService {
           this.cacheService.invalidateEntity('shipments');
           // Remove the shipment from the list or mark as deleted
           this._shipments.update((list) =>
-            list.map((s) => (s.id === id ? { ...s, is_deleted: true } : s))
+            list.map((s) => (s.id === id ? { ...s, is_deleted: true } : s)),
           );
-        })
+        }),
       );
   }
 
@@ -514,6 +599,7 @@ export class ShipmentService {
    */
   getDeliveryStatusOptions(): { value: string; label: string }[] {
     return [
+      { value: 'active', label: 'Active' },
       { value: 'pending', label: 'Pending' },
       { value: 'in_transit', label: 'In Transit' },
       { value: 'delivered', label: 'Delivered' },

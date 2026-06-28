@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 // PrimeNG imports
 import { CardModule } from 'primeng/card';
@@ -61,6 +61,7 @@ export class ShipmentsComponent implements OnInit {
   private batchService = inject(BatchService);
   private productService = inject(ProductService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private confirmationService = inject(ConfirmationService);
   private messageService = inject(MessageService);
 
@@ -104,11 +105,26 @@ export class ShipmentsComponent implements OnInit {
   products = this.productService.products;
 
   ngOnInit() {
+    this.applyQueryParams();
+
     // Load related data for filter dropdowns
     this.packService.load().subscribe();
     this.batchService.load().subscribe();
     this.productService.load().subscribe();
     // Initial load will be triggered by the table's onLazyLoad event
+  }
+
+  private applyQueryParams() {
+    const deliveryStatus =
+      this.route.snapshot.queryParamMap.get('delivery_status');
+
+    if (deliveryStatus) {
+      this.selectedDeliveryStatus.set(deliveryStatus);
+      this.filters.update((f) => ({
+        ...f,
+        delivery_status: deliveryStatus as any,
+      }));
+    }
   }
 
   /**
@@ -344,7 +360,7 @@ export class ShipmentsComponent implements OnInit {
   }
 
   getDeliveryStatusSeverity(
-    shipment: ShipmentListItem
+    shipment: ShipmentListItem,
   ): 'success' | 'warning' | 'danger' | 'info' {
     if (shipment.is_delivered) {
       return 'success';

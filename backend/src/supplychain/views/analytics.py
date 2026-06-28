@@ -106,9 +106,7 @@ class SupplyChainKPIsView(APIView):
         # Average delivery time (in days)
         avg_delivery_time = delivered_shipments.filter(
             actual_delivery_date__isnull=False, shipped_date__isnull=False
-        ).annotate(
-            delivery_days=F("actual_delivery_date") - F("shipped_date")
-        )
+        ).annotate(delivery_days=F("actual_delivery_date") - F("shipped_date"))
 
         # Calculate average in Python since Django doesn't handle timedelta well
         delivery_times = []
@@ -187,15 +185,11 @@ class BatchYieldAnalysisView(APIView):
 
         # Batches by status
         status_distribution = (
-            batches.values("status")
-            .annotate(count=Count("id"))
-            .order_by("-count")
+            batches.values("status").annotate(count=Count("id")).order_by("-count")
         )
 
         # Active batches (not expired, recalled, or destroyed)
-        active_batches = batches.filter(
-            status__in=["active", "released"]
-        ).count()
+        active_batches = batches.filter(status__in=["active", "released"]).count()
 
         # Expired batches
         expired_batches = batches.filter(status="expired").count()
@@ -332,7 +326,9 @@ class CarrierPerformanceView(APIView):
                 actual_delivery_date__lte=F("estimated_delivery_date"),
             ).count()
 
-            on_time_rate = (on_time / delivered_count * 100) if delivered_count > 0 else 0
+            on_time_rate = (
+                (on_time / delivered_count * 100) if delivered_count > 0 else 0
+            )
 
             # Damage rate
             damaged = carrier_shipments.filter(status="damaged").count()
@@ -448,7 +444,7 @@ class TemperatureExcursionTrendsView(APIView):
         temp_events = m.Event.objects.filter(
             created_at__gte=start_date,
             created_at__lte=end_date,
-            event_type__in=["temperature_alert", "temperature_excursion"],
+            event_type="temperature_deviation",
         )
 
         total_excursions = temp_events.count()
@@ -498,18 +494,15 @@ class TemperatureExcursionTrendsView(APIView):
         )
 
         # Recent excursions (last 10)
-        recent_excursions = (
-            temp_events.values(
-                "id",
-                "entity_type",
-                "entity_id",
-                "severity",
-                "description",
-                "timestamp",
-                "location",
-            )
-            .order_by("-timestamp")[:10]
-        )
+        recent_excursions = temp_events.values(
+            "id",
+            "entity_type",
+            "entity_id",
+            "severity",
+            "description",
+            "timestamp",
+            "location",
+        ).order_by("-timestamp")[:10]
 
         # Excursions by location
         by_location = (
@@ -521,10 +514,14 @@ class TemperatureExcursionTrendsView(APIView):
         )
 
         # Calculate excursion rate per shipment
-        total_temp_shipments = m.Shipment.objects.filter(
-            created_at__gte=start_date,
-            created_at__lte=end_date,
-        ).exclude(temperature_requirement="ambient").count()
+        total_temp_shipments = (
+            m.Shipment.objects.filter(
+                created_at__gte=start_date,
+                created_at__lte=end_date,
+            )
+            .exclude(temperature_requirement="ambient")
+            .count()
+        )
 
         excursion_rate = (
             (len(affected_shipment_ids) / total_temp_shipments * 100)
@@ -546,7 +543,6 @@ class TemperatureExcursionTrendsView(APIView):
                 "recent_excursions": list(recent_excursions),
             }
         )
-
 
 
 class AnalyticsSummaryView(APIView):
@@ -594,13 +590,11 @@ class AnalyticsSummaryView(APIView):
         qc_passed = batches.filter(quality_control_passed=True).count()
         qc_rate = (qc_passed / total_batches * 100) if total_batches > 0 else 0
 
-        temp_excursions = events.filter(event_type="temperature_alert").count()
+        temp_excursions = events.filter(event_type="temperature_deviation").count()
 
         # Status distribution
         shipment_status = (
-            shipments.values("status")
-            .annotate(count=Count("id"))
-            .order_by("-count")
+            shipments.values("status").annotate(count=Count("id")).order_by("-count")
         )
 
         # Top carriers

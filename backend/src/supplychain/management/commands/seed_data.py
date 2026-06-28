@@ -68,9 +68,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("Database seeded successfully!"))
         self.stdout.write(
-            self.style.SUCCESS(
-                "Main user (SUPERUSER): teodor (password: teodorpass)"
-            )
+            self.style.SUCCESS("Main user (SUPERUSER): teodor (password: teodorpass)")
         )
 
     def _clear_data(self):
@@ -387,17 +385,21 @@ class Command(BaseCommand):
             (50, 12, 4500, "quarantined", "Charlotte, NC", "Carolina Medical Center"),
         ]
 
-        for i, product in enumerate(products):
+        batch_config_index = 0
+        for product in products:
             # Each product gets 4-6 batches for better analytics
             num_batches = random.randint(4, 6)
             for j in range(num_batches):
-                config = batch_configs[(i + j) % len(batch_configs)]
+                config = batch_configs[batch_config_index % len(batch_configs)]
+                batch_config_index += 1
                 days_ago, months_exp, qty, status, location, facility = config
 
                 mfg_date = now - timedelta(days=days_ago)
                 exp_date = now + timedelta(days=months_exp * 30)
 
-                lot_number = f"LOT-{product.gtin[-4:]}-{mfg_date.strftime('%Y%m')}-{j + 1:03d}"
+                lot_number = (
+                    f"LOT-{product.gtin[-4:]}-{mfg_date.strftime('%Y%m')}-{j + 1:03d}"
+                )
 
                 batch, _ = m.Batch.objects.get_or_create(
                     product=product,
@@ -456,7 +458,9 @@ class Command(BaseCommand):
                         "pack_type": pack_type,
                         "status": status,
                         "location": location,
-                        "warehouse_section": location.split(" - ")[-1] if " - " in location else "Main",
+                        "warehouse_section": location.split(" - ")[-1]
+                        if " - " in location
+                        else "Main",
                         "quality_control_passed": True,
                         "quality_control_notes": "Pack verified during production",
                         "regulatory_code": f"RC-{random.randint(10000, 99999)}",
@@ -480,12 +484,12 @@ class Command(BaseCommand):
         # Define carrier-specific damage rates (some carriers are more reliable)
         # These are higher than real-world rates for demonstration purposes
         carrier_damage_rates = {
-            "fedex": 0.03,   # 3% damage rate
-            "ups": 0.015,    # 1.5% damage rate (most reliable)
-            "dhl": 0.04,     # 4% damage rate
-            "usps": 0.05,    # 5% damage rate
-            "local": 0.06,   # 6% damage rate
-            "internal": 0.025, # 2.5% damage rate
+            "fedex": 0.03,  # 3% damage rate
+            "ups": 0.015,  # 1.5% damage rate (most reliable)
+            "dhl": 0.04,  # 4% damage rate
+            "usps": 0.05,  # 5% damage rate
+            "local": 0.06,  # 6% damage rate
+            "internal": 0.025,  # 2.5% damage rate
         }
 
         statuses = [
@@ -500,21 +504,84 @@ class Command(BaseCommand):
         ]
 
         origins = [
-            ("PharmaCorp Warehouse", "123 Industrial Blvd", "New York", "NY", "10001", "USA"),
-            ("MediLife Distribution", "456 Pharma Way", "Los Angeles", "CA", "90001", "USA"),
-            ("DiabetesCare Hub", "789 Health Center Dr", "Chicago", "IL", "60601", "USA"),
-            ("HealthFirst Supply", "321 Medical Plaza", "Phoenix", "AZ", "85001", "USA"),
-            ("BioPharma Logistics", "555 Science Park Dr", "San Diego", "CA", "92101", "USA"),
+            (
+                "PharmaCorp Warehouse",
+                "123 Industrial Blvd",
+                "New York",
+                "NY",
+                "10001",
+                "USA",
+            ),
+            (
+                "MediLife Distribution",
+                "456 Pharma Way",
+                "Los Angeles",
+                "CA",
+                "90001",
+                "USA",
+            ),
+            (
+                "DiabetesCare Hub",
+                "789 Health Center Dr",
+                "Chicago",
+                "IL",
+                "60601",
+                "USA",
+            ),
+            (
+                "HealthFirst Supply",
+                "321 Medical Plaza",
+                "Phoenix",
+                "AZ",
+                "85001",
+                "USA",
+            ),
+            (
+                "BioPharma Logistics",
+                "555 Science Park Dr",
+                "San Diego",
+                "CA",
+                "92101",
+                "USA",
+            ),
         ]
 
         destinations = [
-            ("City Hospital Pharmacy", "100 Medical Center Dr", "Boston", "MA", "02101", "USA"),
+            (
+                "City Hospital Pharmacy",
+                "100 Medical Center Dr",
+                "Boston",
+                "MA",
+                "02101",
+                "USA",
+            ),
             ("CVS Pharmacy #1234", "200 Main Street", "Miami", "FL", "33101", "USA"),
             ("Walgreens #5678", "300 Oak Avenue", "Dallas", "TX", "75201", "USA"),
-            ("Regional Medical Center", "400 Hospital Ln", "Seattle", "WA", "98101", "USA"),
-            ("Community Health Clinic", "500 Wellness Blvd", "Denver", "CO", "80201", "USA"),
+            (
+                "Regional Medical Center",
+                "400 Hospital Ln",
+                "Seattle",
+                "WA",
+                "98101",
+                "USA",
+            ),
+            (
+                "Community Health Clinic",
+                "500 Wellness Blvd",
+                "Denver",
+                "CO",
+                "80201",
+                "USA",
+            ),
             ("University Hospital", "600 Campus Dr", "Ann Arbor", "MI", "48109", "USA"),
-            ("Memorial Hospital", "700 Healthcare Way", "Atlanta", "GA", "30303", "USA"),
+            (
+                "Memorial Hospital",
+                "700 Healthcare Way",
+                "Atlanta",
+                "GA",
+                "30303",
+                "USA",
+            ),
             ("Central Pharmacy", "800 Downtown Ave", "Portland", "OR", "97201", "USA"),
         ]
 
@@ -557,7 +624,9 @@ class Command(BaseCommand):
                 # Apply carrier-specific damage rate only to shipments that would otherwise be delivered
                 if base_status == "delivered":
                     damage_rate = carrier_damage_rates.get(carrier, 0.015)
-                    loss_rate = damage_rate * 0.2  # Loss rate is typically 20% of damage rate
+                    loss_rate = (
+                        damage_rate * 0.2
+                    )  # Loss rate is typically 20% of damage rate
 
                     rand = random.random()
                     if rand < loss_rate:
@@ -580,13 +649,17 @@ class Command(BaseCommand):
                     shipped_date = now - timedelta(days=day_offset)
                     days_to_deliver = random.randint(1, 5)
                     actual_delivery = shipped_date + timedelta(days=days_to_deliver)
-                    est_delivery = shipped_date + timedelta(days=days_to_deliver + random.randint(-1, 2))
+                    est_delivery = shipped_date + timedelta(
+                        days=days_to_deliver + random.randint(-1, 2)
+                    )
                 elif status in ["damaged", "lost"]:
                     # Damaged/lost shipments were shipped but had issues
                     shipped_date = now - timedelta(days=day_offset)
                     est_delivery = shipped_date + timedelta(days=random.randint(2, 7))
                     # Actual delivery date is when issue was identified
-                    actual_delivery = shipped_date + timedelta(days=random.randint(1, 5))
+                    actual_delivery = shipped_date + timedelta(
+                        days=random.randint(1, 5)
+                    )
                 else:  # picked_up or in_transit
                     shipped_date = now - timedelta(days=day_offset)
                     est_delivery = now + timedelta(days=random.randint(1, 5))
@@ -614,9 +687,14 @@ class Command(BaseCommand):
                         "estimated_delivery_date": est_delivery,
                         "actual_delivery_date": actual_delivery,
                         "temperature_requirement": temp_req,
-                        "special_handling_required": temp_req in ["frozen", "ultra_cold"],
-                        "special_instructions": "Handle with care" if temp_req != "ambient" else "",
-                        "shipping_cost": Decimal(str(random.uniform(50, 500))).quantize(Decimal("0.01")),
+                        "special_handling_required": temp_req
+                        in ["frozen", "ultra_cold"],
+                        "special_instructions": "Handle with care"
+                        if temp_req != "ambient"
+                        else "",
+                        "shipping_cost": Decimal(str(random.uniform(50, 500))).quantize(
+                            Decimal("0.01")
+                        ),
                         "currency": "USD",
                         "notes": f"Shipment {shipment_count} - {service} delivery",
                     },
@@ -640,7 +718,9 @@ class Command(BaseCommand):
 
                 shipments.append(shipment)
 
-        self.stdout.write(f"  Created {shipment_count} shipments ({damaged_count} damaged, {lost_count} lost)")
+        self.stdout.write(
+            f"  Created {shipment_count} shipments ({damaged_count} damaged, {lost_count} lost)"
+        )
         return shipments
 
     def _seed_events(self, products, batches, packs, shipments, users):
@@ -667,14 +747,18 @@ class Command(BaseCommand):
             """Helper to create event with custom created_at date (bypassing auto_now_add)."""
             event = m.Event.objects.create(**kwargs)
             # Update created_at manually to bypass auto_now_add
-            m.Event.objects.filter(id=event.id).update(created_at=now - timedelta(days=days_ago))
+            m.Event.objects.filter(id=event.id).update(
+                created_at=now - timedelta(days=days_ago)
+            )
             return event
 
         # Events for products - all products with varied event history
         for product in products:
             content_type = ContentType.objects.get_for_model(product)
             for _j in range(random.randint(3, 8)):
-                event_type = random.choice(["entity_created", "configuration_changed", "document_uploaded"])
+                event_type = random.choice(
+                    ["entity_created", "configuration_changed", "document_uploaded"]
+                )
                 days_ago = random.randint(1, 365)
                 create_event_with_date(
                     days_ago=days_ago,
@@ -696,7 +780,16 @@ class Command(BaseCommand):
 
             # Regular events
             for _j in range(random.randint(3, 8)):
-                event_type = random.choice(["batch_created", "batch_released", "batch_quarantined", "batch_recalled", "quality_control_passed", "quality_control_failed"])
+                event_type = random.choice(
+                    [
+                        "batch_created",
+                        "batch_released",
+                        "batch_quarantined",
+                        "batch_recalled",
+                        "quality_control_passed",
+                        "quality_control_failed",
+                    ]
+                )
                 days_ago = random.randint(1, 365)
                 create_event_with_date(
                     days_ago=days_ago,
@@ -735,7 +828,9 @@ class Command(BaseCommand):
                             "temperature_max": temp_max,
                             "duration_minutes": random.randint(5, 120),
                         },
-                        severity="high" if abs(temp_recorded - (temp_min + temp_max) / 2) > 5 else "medium",
+                        severity="high"
+                        if abs(temp_recorded - (temp_min + temp_max) / 2) > 5
+                        else "medium",
                         location=batch.manufacturing_location,
                         user=random.choice(users),
                     )
@@ -745,7 +840,18 @@ class Command(BaseCommand):
         for pack in packs[:200]:
             content_type = ContentType.objects.get_for_model(pack)
             for _j in range(random.randint(2, 5)):
-                event_type = random.choice(["pack_commissioned", "pack_aggregated", "pack_disaggregated", "pack_decommissioned", "inventory_adjustment", "temperature_deviation", "humidity_deviation", "location_transfer"])
+                event_type = random.choice(
+                    [
+                        "pack_commissioned",
+                        "pack_aggregated",
+                        "pack_disaggregated",
+                        "pack_decommissioned",
+                        "inventory_adjustment",
+                        "temperature_deviation",
+                        "humidity_deviation",
+                        "location_transfer",
+                    ]
+                )
                 days_ago = random.randint(1, 180)
                 create_event_with_date(
                     days_ago=days_ago,
@@ -754,7 +860,10 @@ class Command(BaseCommand):
                     entity_id=pack.id,
                     content_type=content_type,
                     description=f"Pack {pack.serial_number}: {event_type} event",
-                    metadata={"serial_number": pack.serial_number, "status": pack.status},
+                    metadata={
+                        "serial_number": pack.serial_number,
+                        "status": pack.status,
+                    },
                     severity=random.choice(severities),
                     location=pack.location,
                     user=random.choice(users),
@@ -792,7 +901,17 @@ class Command(BaseCommand):
         for shipment in shipments:
             content_type = ContentType.objects.get_for_model(shipment)
             for _j in range(random.randint(3, 7)):
-                event_type = random.choice(["shipment_created", "shipment_dispatched", "shipment_in_transit", "shipment_delayed", "shipment_delivered", "shipment_customs_cleared", "damage_reported"])
+                event_type = random.choice(
+                    [
+                        "shipment_created",
+                        "shipment_dispatched",
+                        "shipment_in_transit",
+                        "shipment_delayed",
+                        "shipment_delivered",
+                        "shipment_customs_cleared",
+                        "damage_reported",
+                    ]
+                )
                 days_ago = random.randint(1, 90)
                 create_event_with_date(
                     days_ago=days_ago,
@@ -814,9 +933,11 @@ class Command(BaseCommand):
 
             # Add temperature excursion events for shipments with temperature requirements (25% chance)
             # Only create for non-ambient shipments that are shipped or delivered
-            if (shipment.temperature_requirement != "ambient" and
-                shipment.status in ["shipped", "in_transit", "delivered", "damaged"] and
-                random.random() < 0.25):
+            if (
+                shipment.temperature_requirement != "ambient"
+                and shipment.status in ["shipped", "in_transit", "delivered", "damaged"]
+                and random.random() < 0.25
+            ):
                 days_ago = random.randint(1, 90)
 
                 # Define temperature ranges based on requirement
@@ -826,7 +947,9 @@ class Command(BaseCommand):
                     "ultra_cold": (-80, -70),
                     "controlled": (15, 25),
                 }
-                temp_min, temp_max = temp_ranges.get(shipment.temperature_requirement, (2, 8))
+                temp_min, temp_max = temp_ranges.get(
+                    shipment.temperature_requirement, (2, 8)
+                )
 
                 # Generate an out-of-range temperature
                 if random.random() < 0.5:
@@ -851,7 +974,9 @@ class Command(BaseCommand):
                         "temperature_requirement": shipment.temperature_requirement,
                         "duration_minutes": random.randint(10, 180),
                     },
-                    severity="critical" if abs(temp_recorded - (temp_min + temp_max) / 2) > 8 else "high",
+                    severity="critical"
+                    if abs(temp_recorded - (temp_min + temp_max) / 2) > 8
+                    else "high",
                     location=f"In transit: {shipment.origin_city} to {shipment.destination_city}",
                     user=random.choice(users),
                 )
@@ -877,8 +1002,12 @@ class Command(BaseCommand):
                     metadata={
                         "tracking_number": shipment.tracking_number,
                         "carrier": shipment.carrier,
-                        "damage_type": random.choice(["physical", "environmental", "handling"]),
-                        "reported_by": random.choice(["carrier", "recipient", "inspector"]),
+                        "damage_type": random.choice(
+                            ["physical", "environmental", "handling"]
+                        ),
+                        "reported_by": random.choice(
+                            ["carrier", "recipient", "inspector"]
+                        ),
                     },
                     severity="high",
                     location=f"{shipment.destination_city}",
@@ -898,7 +1027,9 @@ class Command(BaseCommand):
                     metadata={
                         "tracking_number": shipment.tracking_number,
                         "carrier": shipment.carrier,
-                        "last_known_location": random.choice([shipment.origin_city, shipment.destination_city]),
+                        "last_known_location": random.choice(
+                            [shipment.origin_city, shipment.destination_city]
+                        ),
                     },
                     severity="critical",
                     location=f"Unknown - Last seen: {shipment.origin_city}",
@@ -973,7 +1104,9 @@ class Command(BaseCommand):
                 self.stdout.write(f"  Generated CoA for batch {batch.lot_number}")
             except Exception as e:
                 self.stdout.write(
-                    self.style.WARNING(f"  Failed to generate CoA for batch {batch.lot_number}: {e}")
+                    self.style.WARNING(
+                        f"  Failed to generate CoA for batch {batch.lot_number}: {e}"
+                    )
                 )
 
         # Generate shipping labels and packing lists for delivered shipments
