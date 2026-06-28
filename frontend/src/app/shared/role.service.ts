@@ -7,24 +7,20 @@ export type UserRole = 'Admin' | 'Operator' | 'Auditor';
 export class RoleService {
   private auth = inject(AuthService);
 
-  // Check if user has specific role
+  // Check if the user's currently selected role matches the required role
   hasRole(role: UserRole): boolean {
     const user = this.auth.currentUser();
     if (!user) return false;
 
-    return user.active_role === role || user.roles?.includes(role) || false;
+    return user.active_role === role;
   }
 
-  // Check if user has any of the specified roles
+  // Check if the user's currently selected role matches any required role
   hasAnyRole(roles: UserRole[]): boolean {
     const user = this.auth.currentUser();
     if (!user) return false;
 
-    return (
-      roles.includes(user.active_role as UserRole) ||
-      user.roles?.some((role) => roles.includes(role as UserRole)) ||
-      false
-    );
+    return roles.includes(user.active_role as UserRole);
   }
 
   // Role-specific checks
