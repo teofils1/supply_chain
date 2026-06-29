@@ -283,20 +283,37 @@
                   Blockchain verification / anchoring
                 </h4>
               </div>
-              <p-tag
-                [value]="
-                  getIntegrityStatusText(event()?.integrity_status || 'pending')
-                "
-                [severity]="
-                  getIntegrityStatusColor(
-                    event()?.integrity_status || 'pending'
-                  )
-                "
-                [icon]="
-                  'pi ' +
-                  getIntegrityStatusIcon(event()?.integrity_status || 'pending')
-                "
-              ></p-tag>
+              <div class="flex items-center gap-2">
+                <p-button
+                  label="Anchor Event"
+                  icon="pi pi-link"
+                  size="small"
+                  [outlined]="event()?.integrity_status === 'anchored'"
+                  [loading]="anchoringEvent()"
+                  [disabled]="
+                    anchoringEvent() || event()?.integrity_status === 'anchored'
+                  "
+                  (onClick)="anchorEvent()"
+                ></p-button>
+                <p-tag
+                  [value]="
+                    getIntegrityStatusText(
+                      event()?.integrity_status || 'pending'
+                    )
+                  "
+                  [severity]="
+                    getIntegrityStatusColor(
+                      event()?.integrity_status || 'pending'
+                    )
+                  "
+                  [icon]="
+                    'pi ' +
+                    getIntegrityStatusIcon(
+                      event()?.integrity_status || 'pending'
+                    )
+                  "
+                ></p-tag>
+              </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">

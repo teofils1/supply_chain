@@ -233,6 +233,7 @@ export interface EventIntegrityResult {
   message: string;
   blockchain_anchored?: boolean;
   integrity_status?: IntegrityStatus;
+  tamper_alert_event_id?: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -775,15 +776,17 @@ export class EventService {
    */
   anchorEvent(id: number): Observable<{
     message: string;
-    tx_hash: string;
-    block_number: number;
-    explorer_url: string;
+    tx_hash: string | null;
+    block_number: number | null;
+    explorer_url?: string | null;
+    anchor_event_id?: number | null;
   }> {
     return this.http.post<{
       message: string;
-      tx_hash: string;
-      block_number: number;
-      explorer_url: string;
+      tx_hash: string | null;
+      block_number: number | null;
+      explorer_url?: string | null;
+      anchor_event_id?: number | null;
     }>(`/api/events/${id}/anchor/`, {});
   }
 

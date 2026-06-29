@@ -568,6 +568,46 @@ class EventIntegrityVerifyView(APIView):
             if integrity_verified
             else "Possible tampering detected — stored hash differs from recomputed hash"
         )
+        tamper_alert_event = None
+
+        if not integrity_verified:
+            metadata = {
+                "tamper_alert": True,
+                "source": "integrity_verification",
+                "tampered_event_id": event.id,
+                "tampered_event_type": event.event_type,
+                "tampered_entity_type": event.entity_type,
+                "tampered_entity_id": event.entity_id,
+                "stored_hash": event.event_hash,
+                "computed_hash": current_hash,
+                "verified_by_user_id": request.user.id
+                if request.user.is_authenticated
+                else None,
+            }
+
+            tamper_alert_event = m.Event.objects.filter(
+                event_type="alert",
+                severity="critical",
+                metadata__tamper_alert=True,
+                metadata__tampered_event_id=event.id,
+                metadata__stored_hash=event.event_hash,
+                metadata__computed_hash=current_hash,
+            ).first()
+
+            if tamper_alert_event is None:
+                tamper_alert_event = m.Event.create_event(
+                    event_type="alert",
+                    entity_type=event.entity_type,
+                    entity_id=event.entity_id,
+                    description=(
+                        f"Possible tampering detected for event #{event.id}: "
+                        "stored hash differs from recomputed hash"
+                    ),
+                    user=request.user if request.user.is_authenticated else None,
+                    severity="critical",
+                    location=event.location,
+                    metadata=metadata,
+                )
 
         return Response(
             {
@@ -578,6 +618,9 @@ class EventIntegrityVerifyView(APIView):
                 "message": message,
                 "blockchain_anchored": event.is_blockchain_anchored,
                 "integrity_status": event.integrity_status,
+                "tamper_alert_event_id": tamper_alert_event.id
+                if tamper_alert_event
+                else None,
             },
             status=status.HTTP_200_OK,
         )

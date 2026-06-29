@@ -63,6 +63,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   loading = signal(false);
   loadingRelated = signal(false);
   verifyingIntegrity = signal(false);
+  anchoringEvent = signal(false);
   integrityResult = signal<EventIntegrityResult | null>(null);
 
   // Event ID from route
@@ -97,6 +98,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     this.relatedEvents.set([]);
     this.integrityResult.set(null);
     this.verifyingIntegrity.set(false);
+    this.anchoringEvent.set(false);
   }
 
   loadEvent() {
@@ -168,7 +170,10 @@ export class EventDetailComponent implements OnInit, OnDestroy {
           summary: result.integrity_verified
             ? 'Integrity verified'
             : 'Integrity warning',
-          detail: result.message,
+          detail:
+            !result.integrity_verified && result.tamper_alert_event_id
+              ? `${result.message}. Critical alert event #${result.tamper_alert_event_id} was created.`
+              : result.message,
         });
       },
       error: (error) => {
@@ -179,6 +184,36 @@ export class EventDetailComponent implements OnInit, OnDestroy {
           severity: 'error',
           summary: 'Error',
           detail: 'Could not verify event integrity',
+        });
+      },
+    });
+  }
+
+  anchorEvent() {
+    const id = this.eventId();
+    const event = this.event();
+    if (!id || !event || event.integrity_status === 'anchored') return;
+
+    this.anchoringEvent.set(true);
+    this.eventService.anchorEvent(id).subscribe({
+      next: (result) => {
+        this.anchoringEvent.set(false);
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Event anchored',
+          detail: result.block_number
+            ? `${result.message} at block ${result.block_number}`
+            : result.message,
+        });
+        this.loadEvent();
+      },
+      error: (error) => {
+        console.error('Error anchoring event:', error);
+        this.anchoringEvent.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Anchoring failed',
+          detail: 'Could not anchor this event',
         });
       },
     });
