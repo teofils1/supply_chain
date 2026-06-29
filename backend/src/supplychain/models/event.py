@@ -22,6 +22,29 @@ class Event(BaseModel):
 
     # Event Types
     EVENT_TYPE_CHOICES = [
+        # Generic automated events emitted by model signals
+        ("created", "Created"),
+        ("updated", "Updated"),
+        ("deleted", "Deleted"),
+        ("status_changed", "Status Changed"),
+        ("location_changed", "Location Changed"),
+        ("quality_check", "Quality Check"),
+        ("temperature_alert", "Temperature Alert"),
+        ("shipped", "Shipped"),
+        ("delivered", "Delivered"),
+        ("returned", "Returned"),
+        ("damaged", "Damaged"),
+        ("expired", "Expired"),
+        ("recalled", "Recalled"),
+        ("inventory_count", "Inventory Count"),
+        ("maintenance", "Maintenance"),
+        ("calibration", "Calibration"),
+        ("user_action", "User Action"),
+        ("system_action", "System Action"),
+        ("alert", "Alert"),
+        ("warning", "Warning"),
+        ("error", "Error"),
+        ("other", "Other"),
         # Batch Events
         ("batch_created", "Batch Created"),
         ("batch_released", "Batch Released"),
@@ -232,8 +255,14 @@ class Event(BaseModel):
         """Check if this event should trigger an alert."""
         return self.severity in ["high", "critical"] or self.event_type in [
             "temperature_alert",
+            "temperature_deviation",
+            "humidity_deviation",
+            "damage_reported",
             "damaged",
+            "batch_recalled",
             "recalled",
+            "expired",
+            "alert",
             "error",
         ]
 

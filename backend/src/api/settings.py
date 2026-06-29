@@ -191,13 +191,10 @@ EMAIL_BACKEND = os.getenv(
 EMAIL_TIMEOUT = 30
 
 # Blockchain anchoring settings
-BLOCKCHAIN_ANCHORING_ENABLED = (
-    os.getenv("BLOCKCHAIN_ANCHORING_ENABLED", "false").lower()
-    in {"1", "true", "yes"}
-)
-BLOCKCHAIN_PROVIDER_URL = os.getenv(
-    "BLOCKCHAIN_PROVIDER_URL", "http://localhost:8545"
-)
+BLOCKCHAIN_ANCHORING_ENABLED = os.getenv(
+    "BLOCKCHAIN_ANCHORING_ENABLED", "false"
+).lower() in {"1", "true", "yes"}
+BLOCKCHAIN_PROVIDER_URL = os.getenv("BLOCKCHAIN_PROVIDER_URL", "http://localhost:8545")
 BLOCKCHAIN_CONTRACT_ADDRESS = os.getenv("BLOCKCHAIN_CONTRACT_ADDRESS", None)
 BLOCKCHAIN_PRIVATE_KEY = os.getenv("BLOCKCHAIN_PRIVATE_KEY", None)
 BLOCKCHAIN_NETWORK_NAME = os.getenv("BLOCKCHAIN_NETWORK_NAME", "ethereum-mainnet")
@@ -218,7 +215,11 @@ BLOCKCHAIN_NETWORK_NAME = os.getenv("BLOCKCHAIN_NETWORK_NAME", "ethereum-mainnet
 # - LOG_TO_FILE: Enable file logging (true/false, defaults to true)
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO" if not DEBUG else "DEBUG")
-LOG_JSON = os.getenv("LOG_JSON", "").lower() in {"1", "true", "yes"} if os.getenv("LOG_JSON") else None
+LOG_JSON = (
+    os.getenv("LOG_JSON", "").lower() in {"1", "true", "yes"}
+    if os.getenv("LOG_JSON")
+    else None
+)
 LOG_TO_FILE = os.getenv("LOG_TO_FILE", "true").lower() in {"1", "true", "yes"}
 LOG_DIR = BASE_DIR.parent / "logs" if LOG_TO_FILE else None
 
@@ -298,6 +299,7 @@ CACHE_TIMEOUT = int(os.getenv("CACHE_TIMEOUT", "300"))
 try:
     # Try to use Redis if available
     import socket
+
     host, port = REDIS_URL.replace("redis://", "").split("/")[0].split(":")
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(1)
@@ -379,7 +381,9 @@ STORAGES = {
 # File upload settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50MB
-MAX_UPLOAD_SIZE = int(os.getenv("MAX_UPLOAD_SIZE", str(50 * 1024 * 1024)))  # 50MB default
+MAX_UPLOAD_SIZE = int(
+    os.getenv("MAX_UPLOAD_SIZE", str(50 * 1024 * 1024))
+)  # 50MB default
 
 # Allowed file types for document uploads
 ALLOWED_DOCUMENT_TYPES = [
@@ -398,7 +402,9 @@ ALLOWED_DOCUMENT_TYPES = [
 # =============================================================================
 # Celery Configuration (RabbitMQ Broker)
 # =============================================================================
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "amqp://guest:guest@localhost:5672//")
+CELERY_BROKER_URL = os.getenv(
+    "CELERY_BROKER_URL", "amqp://guest:guest@localhost:5672//"
+)
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "rpc://")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
@@ -421,10 +427,15 @@ CELERY_FIXUPS = []  # Disable all fixups including the buggy Django fixup
 # =============================================================================
 # Event types that trigger immediate notifications
 NOTIFICATION_CRITICAL_EVENTS = [
-    "recalled",
     "temperature_alert",
+    "temperature_deviation",
+    "humidity_deviation",
+    "damage_reported",
     "damaged",
+    "batch_recalled",
+    "recalled",
     "expired",
+    "alert",
     "error",
 ]
 
@@ -432,5 +443,6 @@ NOTIFICATION_CRITICAL_EVENTS = [
 NOTIFICATION_ALERT_SEVERITIES = ["critical", "high"]
 
 # Escalation timeout in minutes (escalate if not acknowledged)
-NOTIFICATION_ESCALATION_TIMEOUT = int(os.getenv("NOTIFICATION_ESCALATION_TIMEOUT", "30"))
-
+NOTIFICATION_ESCALATION_TIMEOUT = int(
+    os.getenv("NOTIFICATION_ESCALATION_TIMEOUT", "30")
+)

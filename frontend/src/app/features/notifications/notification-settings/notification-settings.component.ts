@@ -12,6 +12,7 @@ import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { Router } from '@angular/router';
 import { NotificationService } from '../../../core/services/notification.service';
+import { EventService } from '../../../core/services/event.service';
 import {
   NotificationRule,
   NotificationRuleCreate,
@@ -38,6 +39,7 @@ import {
 })
 export class NotificationSettingsComponent implements OnInit {
   private notificationService = inject(NotificationService);
+  private eventService = inject(EventService);
   private messageService = inject(MessageService);
   private router = inject(Router);
 
@@ -56,21 +58,14 @@ export class NotificationSettingsComponent implements OnInit {
   };
 
   // Options for multi-selects
-  eventTypeOptions = [
-    { label: 'Created', value: 'created' },
-    { label: 'Updated', value: 'updated' },
-    { label: 'Deleted', value: 'deleted' },
-    { label: 'Status Changed', value: 'status_changed' },
-    { label: 'Expired', value: 'expired' },
-  ];
-
-  severityOptions = [
-    { label: 'Critical', value: 'critical' },
-    { label: 'High', value: 'high' },
-    { label: 'Medium', value: 'medium' },
-    { label: 'Low', value: 'low' },
-    { label: 'Info', value: 'info' },
-  ];
+  eventTypeOptions = this.eventService.getEventTypes();
+  severityOptions = this.eventService.getSeverityLevels();
+  private eventTypeLabelMap = new Map(
+    this.eventTypeOptions.map((option) => [option.value, option.label]),
+  );
+  private severityLabelMap = new Map(
+    this.severityOptions.map((option) => [option.value, option.label]),
+  );
 
   channelOptions = [
     { label: 'Email', value: 'email' },
@@ -149,19 +144,19 @@ export class NotificationSettingsComponent implements OnInit {
   }
 
   saveRule(): void {
-    if (
-      !this.formData.name ||
-      this.formData.event_types.length === 0 ||
-      this.formData.severity_levels.length === 0 ||
-      this.formData.channels.length === 0
-    ) {
+    if (!this.formData.name.trim() || this.formData.channels.length === 0) {
       this.messageService.add({
         severity: 'error',
         summary: 'Validation Error',
-        detail: 'Please fill all required fields',
+        detail: 'Rule name and at least one channel are required',
       });
       return;
     }
+
+    this.formData = {
+      ...this.formData,
+      name: this.formData.name.trim(),
+    };
 
     if (this.editingRule) {
       this.notificationService
@@ -229,6 +224,14 @@ export class NotificationSettingsComponent implements OnInit {
         });
       },
     });
+  }
+
+  getEventTypeLabel(value: string): string {
+    return this.eventTypeLabelMap.get(value as any) ?? value;
+  }
+
+  getSeverityLabel(value: string): string {
+    return this.severityLabelMap.get(value as any) ?? value;
   }
 
   deleteRule(rule: NotificationRule): void {

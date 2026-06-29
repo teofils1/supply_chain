@@ -1040,47 +1040,119 @@ class Command(BaseCommand):
         self.stdout.write(f"  Created {events_created} events")
 
     def _seed_notification_rules(self, users):
-        """Seed notification rules for users."""
-        rule_configs = [
-            {
-                "name": "Critical & Expiry Alerts",
-                "event_types": ["expired", "status_changed", "deleted"],
-                "severity_levels": ["high", "critical"],
-                "channels": ["email", "websocket"],
-            },
-            {
-                "name": "Lifecycle Events",
-                "event_types": ["created", "updated", "deleted"],
-                "severity_levels": [],
-                "channels": ["websocket"],
-            },
-            {
-                "name": "Status Monitoring",
-                "event_types": ["status_changed"],
-                "severity_levels": ["medium", "high", "critical"],
-                "channels": ["email", "websocket"],
-            },
-            {
-                "name": "All Critical Events",
-                "event_types": [],
-                "severity_levels": ["critical"],
-                "channels": ["email", "websocket"],
-            },
-            {
-                "name": "All Events",
-                "event_types": [],
-                "severity_levels": [],
-                "channels": ["websocket"],
-            },
+        """Seed deterministic notification rules for demo users.
+
+        Empty event_types means "all event types" and empty severity_levels means
+        "all severities". The main admin user intentionally receives everything
+        so the demo can always show new notifications after any entity change.
+        """
+        critical_supply_chain_events = [
+            "temperature_deviation",
+            "humidity_deviation",
+            "damage_reported",
+            "damaged",
+            "batch_recalled",
+            "recalled",
+            "expired",
+            "alert",
+        ]
+        lifecycle_events = [
+            "created",
+            "updated",
+            "deleted",
+            "status_changed",
+            "batch_created",
+            "shipment_created",
+            "pack_commissioned",
+            "document_uploaded",
+        ]
+        shipment_events = [
+            "shipment_created",
+            "shipment_dispatched",
+            "shipment_in_transit",
+            "shipment_delayed",
+            "shipment_delivered",
+            "shipment_customs_cleared",
+            "temperature_deviation",
+            "damage_reported",
+            "status_changed",
+        ]
+        quality_events = [
+            "quality_check",
+            "quality_control_passed",
+            "quality_control_failed",
+            "batch_quarantined",
+            "batch_recalled",
+            "document_uploaded",
+            "document_anchored",
         ]
 
-        for user in users:
-            # Give each user 1-2 notification rules
-            num_rules = random.randint(1, 2)
-            selected_configs = random.sample(rule_configs, num_rules)
+        rules_by_username = {
+            "teodor": [
+                {
+                    "name": "Admin Demo - All Notifications",
+                    "event_types": [],
+                    "severity_levels": [],
+                    "channels": ["websocket"],
+                },
+            ],
+            "admin1": [
+                {
+                    "name": "Admin Critical Alerts",
+                    "event_types": [],
+                    "severity_levels": ["critical"],
+                    "channels": ["websocket", "email"],
+                },
+                {
+                    "name": "Admin Lifecycle Watch",
+                    "event_types": lifecycle_events,
+                    "severity_levels": [],
+                    "channels": ["websocket"],
+                },
+            ],
+            "operator1": [
+                {
+                    "name": "Operator Shipment Monitoring",
+                    "event_types": shipment_events,
+                    "severity_levels": ["medium", "high", "critical"],
+                    "channels": ["websocket"],
+                }
+            ],
+            "operator2": [
+                {
+                    "name": "Operator Critical Exceptions",
+                    "event_types": critical_supply_chain_events,
+                    "severity_levels": ["high", "critical"],
+                    "channels": ["websocket", "email"],
+                }
+            ],
+            "auditor1": [
+                {
+                    "name": "Auditor Quality & Documents",
+                    "event_types": quality_events,
+                    "severity_levels": [],
+                    "channels": ["websocket"],
+                },
+                {
+                    "name": "Auditor Critical Only",
+                    "event_types": [],
+                    "severity_levels": ["critical"],
+                    "channels": ["websocket"],
+                },
+            ],
+            "multiuser": [
+                {
+                    "name": "Multi-Role Operational Feed",
+                    "event_types": lifecycle_events + shipment_events,
+                    "severity_levels": ["info", "medium", "high", "critical"],
+                    "channels": ["websocket"],
+                }
+            ],
+        }
 
-            for config in selected_configs:
-                m.NotificationRule.objects.get_or_create(
+        for user in users:
+            for config in rules_by_username.get(user.username, []):
+                m.NotificationRule.objects.update_or_create(
                     user=user,
                     name=config["name"],
                     defaults={

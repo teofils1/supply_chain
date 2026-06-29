@@ -43,37 +43,53 @@
         <td>{{ rule.name }}</td>
         <td>
           <div class="flex flex-wrap gap-1">
-            @for (type of rule.event_types.slice(0, 2); track type) {
+            @if (rule.event_types.length === 0) {
               <span
                 class="text-xs bg-gray-200 dark:bg-surface-700 text-surface-900 dark:text-surface-0 px-2 py-1 rounded"
-                >{{ type }}</span
               >
-            }
-            @if (rule.event_types.length > 2) {
-              <span class="text-xs text-surface-500 dark:text-surface-300"
-                >+{{ rule.event_types.length - 2 }} more</span
-              >
+                All event types
+              </span>
+            } @else {
+              @for (type of rule.event_types.slice(0, 2); track type) {
+                <span
+                  class="text-xs bg-gray-200 dark:bg-surface-700 text-surface-900 dark:text-surface-0 px-2 py-1 rounded"
+                  >{{ getEventTypeLabel(type) }}</span
+                >
+              }
+              @if (rule.event_types.length > 2) {
+                <span class="text-xs text-surface-500 dark:text-surface-300"
+                  >+{{ rule.event_types.length - 2 }} more</span
+                >
+              }
             }
           </div>
         </td>
         <td>
           <div class="flex flex-wrap gap-1">
-            @for (level of rule.severity_levels; track level) {
+            @if (rule.severity_levels.length === 0) {
               <span
-                class="text-xs px-2 py-1 rounded text-surface-900"
-                [class.bg-red-100]="level === 'critical'"
-                [class.dark:bg-red-300]="level === 'critical'"
-                [class.bg-orange-100]="level === 'high'"
-                [class.dark:bg-orange-300]="level === 'high'"
-                [class.bg-blue-100]="level === 'medium'"
-                [class.dark:bg-blue-300]="level === 'medium'"
-                [class.bg-green-100]="level === 'low'"
-                [class.dark:bg-green-300]="level === 'low'"
-                [class.bg-gray-100]="level === 'info'"
-                [class.dark:bg-surface-300]="level === 'info'"
+                class="text-xs bg-gray-100 dark:bg-surface-300 px-2 py-1 rounded text-surface-900"
               >
-                {{ level }}
+                All severities
               </span>
+            } @else {
+              @for (level of rule.severity_levels; track level) {
+                <span
+                  class="text-xs px-2 py-1 rounded text-surface-900"
+                  [class.bg-red-100]="level === 'critical'"
+                  [class.dark:bg-red-300]="level === 'critical'"
+                  [class.bg-orange-100]="level === 'high'"
+                  [class.dark:bg-orange-300]="level === 'high'"
+                  [class.bg-blue-100]="level === 'medium'"
+                  [class.dark:bg-blue-300]="level === 'medium'"
+                  [class.bg-green-100]="level === 'low'"
+                  [class.dark:bg-green-300]="level === 'low'"
+                  [class.bg-gray-100]="level === 'info'"
+                  [class.dark:bg-surface-300]="level === 'info'"
+                >
+                  {{ getSeverityLabel(level) }}
+                </span>
+              }
             }
           </div>
         </td>
@@ -142,9 +158,10 @@
   [(visible)]="showDialog"
   [header]="editingRule ? 'Edit Notification Rule' : 'Create Notification Rule'"
   [modal]="true"
-  [style]="{ width: '600px' }"
+  [style]="{ width: 'min(760px, 95vw)' }"
+  [contentStyle]="{ 'max-height': '70vh', overflow: 'auto' }"
 >
-  <div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-4 notification-rule-form">
     <div>
       <label class="block mb-2 font-medium text-surface-900 dark:text-surface-0"
         >Rule Name *</label
@@ -159,29 +176,37 @@
 
     <div>
       <label class="block mb-2 font-medium text-surface-900 dark:text-surface-0"
-        >Event Types *</label
+        >Event Types</label
       >
+      <p class="field-hint">Leave empty to match all event types.</p>
       <p-multiselect
         [(ngModel)]="formData.event_types"
         [options]="eventTypeOptions"
         optionLabel="label"
         optionValue="value"
-        placeholder="Select event types"
+        placeholder="All event types"
         [filter]="true"
+        [showClear]="true"
+        [maxSelectedLabels]="3"
+        appendTo="body"
         styleClass="w-full"
       ></p-multiselect>
     </div>
 
     <div>
       <label class="block mb-2 font-medium text-surface-900 dark:text-surface-0"
-        >Severity Levels *</label
+        >Severity Levels</label
       >
+      <p class="field-hint">Leave empty to match all severity levels.</p>
       <p-multiselect
         [(ngModel)]="formData.severity_levels"
         [options]="severityOptions"
         optionLabel="label"
         optionValue="value"
-        placeholder="Select severity levels"
+        placeholder="All severity levels"
+        [showClear]="true"
+        [maxSelectedLabels]="3"
+        appendTo="body"
         styleClass="w-full"
       ></p-multiselect>
     </div>
@@ -196,6 +221,8 @@
         optionLabel="label"
         optionValue="value"
         placeholder="Select channels"
+        [maxSelectedLabels]="3"
+        appendTo="body"
         styleClass="w-full"
       ></p-multiselect>
     </div>
